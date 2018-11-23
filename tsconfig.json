@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+      "target": "ES6",
+      "module": "commonjs",
+      "lib": ["es2017", "dom"],
+      "allowJs": true,
+      "checkJs": true,
+      "noEmit": true
+    },
+    "include": [
+      "src/**/*.js"
+    ]
+}
