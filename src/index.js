@@ -1,57 +1,81 @@
-import Map from 'ol/Map';
-import View from 'ol/View';
+import Feature from 'ol/Feature';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
 import GPX from 'ol/format/GPX';
-import GeoJSON from 'ol/format/GeoJSON';
-import {Fill, Stroke, Style} from 'ol/style';
+import {LineString, Polygon} from 'ol/geom';
+import {loadFeaturesXhr} from 'ol/featureloader';
 
-import buffer from '@turf/buffer';
+import * as style from './style';
+import {map, view} from './map';
+import {getBufferCoordinates} from './geom';
+import Monitor from './monitor';
 
-const geojson = new GeoJSON({
-  featureProjection: 'EPSG:3857'
-});
+const fenceWidth = 3;
 
-const view = new View({
-  center: [0, 0],
-  zoom: 0
-});
-const buffered = new VectorSource();
+/**
+ * @type {LineString}
+ */
+const segmentGeometry = new LineString([]);
 
-const track = new VectorSource({
-  url: 'track.gpx',
-  format: new GPX()
-});
-track.on('addfeature', (event) => {
-  const geom = event.feature.getGeometry();
-  if (geom.getType() == 'MultiLineString') {
-    const polygon = geojson.readFeature(buffer(geojson.writeGeometryObject(geom), 0.05));
-    buffered.addFeature(polygon);
-    view.fit(polygon.getGeometry());
+/**
+ * @type {Feature}
+ */
+const segmentFeature = new Feature(segmentGeometry);
+segmentFeature.setStyle(style.track);
+
+/**
+ * @type {Polygon}
+ */
+const bufferGeometry = new Polygon([]);
+
+/**
+ * @type {Feature}
+ */
+const bufferFeature = new Feature(bufferGeometry);
+bufferFeature.setStyle(style.buffer);
+
+
+const loader = loadFeaturesXhr('inside.gpx', new GPX(), (features, projection) => {
+  for (const feature of features) {
+    const geom = feature.getGeometry();
+    const type = geom.getType();
+    if (type === 'MultiLineString' || type === 'LineString') {
+      geom.transform(projection, view.getProjection());
+      if (geom.getLineString) {
+        // MultiLineString
+        segmentGeometry.setCoordinates(geom.getLineString(0).getCoordinates());
+      } else {
+        segmentGeometry.setCoordinates(geom.getCoordinates());
+      }
+      const polygonCoordinates = getBufferCoordinates(segmentGeometry, view.getProjection(), fenceWidth);
+      bufferGeometry.setCoordinates(polygonCoordinates);
+      // fixme: limit view extent ?
+      view.fit(bufferGeometry);
+    }
   }
 });
+loader();
 
-const map = new Map({
-  target: 'map',
-  controls: [],
-  layers: [
-    new VectorLayer({
-      source: track,
-      style: new Style({
-        stroke: new Stroke({
-          color: '#3399CCFF',
-          width: 3
-        })
-      })
+map.setTarget('map');
+
+const monitor = new Monitor(view, segmentGeometry, fenceWidth);
+
+map.addLayer(
+  new VectorLayer({
+    source: new VectorSource({
+      features: [
+        monitor.positionFeature, monitor.shortestLineFeature,
+        segmentFeature, bufferFeature
+      ]
     }),
-    new VectorLayer({
-      source: buffered,
-      style: new Style({
-        fill: new Fill({
-          color: '#3399CC11'
-        })
-      })
-    })
-  ],
-  view: view
+    updateWhileInteracting: true
+  })
+);
+
+document.querySelector('.start').addEventListener('click', () => {
+  monitor.tracking = true;
+});
+
+document.querySelector('.stop').addEventListener('click', () => {
+  monitor.tracking = false;
 });

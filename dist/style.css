@@ -4,3 +4,10 @@ html, body, .map {
   margin: 0;
   padding: 0;
 }
+
+.controls {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  color:#3399CC;
+}
