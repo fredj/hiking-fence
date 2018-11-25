@@ -1,15 +1,19 @@
 export default class Notifier {
 
-  constructor() {
+  constructor(actionHandler) {
+
     Notification.requestPermission().then((result) => {
       if (result === 'granted') {
         navigator.serviceWorker.register('service-worker.js').then((registration) => {
           this.registration = registration;
         });
 
-        navigator.serviceWorker.addEventListener('message', (event) => {
-          console.log('from service worker:', event);
-        });
+      }
+    });
+
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data.action) {
+        actionHandler(event.data);
       }
     });
   }
@@ -19,4 +23,5 @@ export default class Notifier {
       this.registration.showNotification(title, options);
     }
   }
+
 }

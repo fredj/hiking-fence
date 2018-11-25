@@ -4,11 +4,11 @@ const matchAllWindow = {
 };
 
 self.addEventListener('notificationclick', (event) => {
-  if (event.action === 'mute') {
+  if (event.action) {
     const promise = clients.matchAll(matchAllWindow).then((windowClients) => {
       for (const windowClient of windowClients) {
         windowClient.postMessage({
-          action: 'mute'
+          action: event.action
         });
       }
     });

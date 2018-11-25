@@ -10,7 +10,10 @@ import {map, view} from './map';
 import {getBufferCoordinates} from './geom';
 import Monitor from './monitor';
 
-const fenceWidth = 3;
+/**
+ * @type {number}
+ */
+const fenceWidth = 75;
 
 /**
  * @type {LineString}
@@ -49,7 +52,6 @@ const loader = loadFeaturesXhr('inside.gpx', new GPX(), (features, projection) =
       }
       const polygonCoordinates = getBufferCoordinates(segmentGeometry, view.getProjection(), fenceWidth);
       bufferGeometry.setCoordinates(polygonCoordinates);
-      // fixme: limit view extent ?
       view.fit(bufferGeometry);
     }
   }
@@ -64,8 +66,17 @@ map.addLayer(
   new VectorLayer({
     source: new VectorSource({
       features: [
-        monitor.positionFeature, monitor.shortestLineFeature,
         segmentFeature, bufferFeature
+      ]
+    }),
+    updateWhileInteracting: true
+  })
+);
+map.addLayer(
+  new VectorLayer({
+    source: new VectorSource({
+      features: [
+        monitor.positionFeature, monitor.shortestLineFeature
       ]
     }),
     updateWhileInteracting: true

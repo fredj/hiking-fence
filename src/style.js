@@ -25,11 +25,15 @@ export const buffer = [
 ];
 
 export function position(feature) {
-  return feature.get('outside') ? positionOutside : positionInside;
+  if (feature.get('visible')) {
+    return feature.get('outside') ? positionOutside : positionInside;
+  }
 }
 
 export function shortestLine(feature) {
-  return feature.get('outside') ? shortestLineOutside : shortestLineInside;
+  if (feature.get('visible')) {
+    return feature.get('outside') ? shortestLineOutside : null;
+  }
 }
 
 const positionBackgroundStyle = new Style({
@@ -66,27 +70,14 @@ const positionInside = [
   })
 ];
 
-const shortestLineBackgroundStyle = new Style({
-  stroke: new Stroke({
-    color: '#FFF',
-    width: 8,
-    lineDash: [8, 14]
-  })
-})
-
-const shortestLineInside = [
-  shortestLineBackgroundStyle,
+const shortestLineOutside = [
   new Style({
     stroke: new Stroke({
-      color: 'green',
-      width: 4,
+      color: '#FFF',
+      width: 8,
       lineDash: [8, 14]
     })
-  })
-];
-
-const shortestLineOutside = [
-  shortestLineBackgroundStyle,
+  }),
   new Style({
     stroke: new Stroke({
       color: 'red',

@@ -13,6 +13,9 @@ export default class Monitor {
 
       this.segment = segment;
 
+      /**
+       * @type {number}
+       */
       this.distance = distance;
 
       this.geolocation = new Geolocation({
@@ -27,7 +30,7 @@ export default class Monitor {
 
       this.geolocation.on('change:position', this.onPositionChange.bind(this));
 
-      this.notifier = new Notifier();
+      this.notifier = new Notifier(this.onAction.bind(this));
 
       /**
        * @type {number}
@@ -39,6 +42,15 @@ export default class Monitor {
        */
       this.outside = false;
 
+      /**
+       * @type {boolean}
+       */
+      this.mutted = false
+    }
+
+    onAction(eventData) {
+      this.mutted = eventData.action === 'mute';
+      this.notify();
     }
 
     onPositionChange(event) {
@@ -56,15 +68,24 @@ export default class Monitor {
     }
 
     notify() {
+      const actions = [];
+      if (this.mutted) {
+        actions.push({
+          action: 'Unmute',
+          title: 'Unmute'
+        });
+      } else {
+        actions.push({
+          action: 'mute',
+          title: 'Mute'
+        });
+      }
       this.notifier.showNotification('You are lost!', {
           body: `${Math.round(this.difference)}m away from the track `,
-          image: 'lost.jpg',
+          image: 'img/lost.jpg',
           tag: 'outside',
-          renotify: true,
-          actions: [{
-            action: 'mute',
-            title: 'mute'
-          }]
+          renotify: !this.mutted,
+          actions: actions
       });
     }
 
@@ -82,5 +103,7 @@ export default class Monitor {
 
     set tracking(value) {
       this.geolocation.setTracking(value);
+      this.positionFeature.set('visible', value);
+      this.shortestLineFeature.set('visible', value);
     }
 }
