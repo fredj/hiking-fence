@@ -37,8 +37,9 @@ const bufferGeometry = new Polygon([]);
 const bufferFeature = new Feature(bufferGeometry);
 bufferFeature.setStyle(style.buffer);
 
+const searchParams = new URLSearchParams(location.search);
 
-const loader = loadFeaturesXhr('inside.gpx', new GPX(), (features, projection) => {
+const loader = loadFeaturesXhr(searchParams.get('gpx'), new GPX(), (features, projection) => {
   for (const feature of features) {
     const geom = feature.getGeometry();
     const type = geom.getType();
