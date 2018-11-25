@@ -2,7 +2,7 @@
   "name": "hiking-fence",
   "version": "0.0.0",
   "scripts": {
-    "lint": "eslint src/** dist/service-worker.js",
+    "lint": "eslint src/** dist/service-worker.*.js",
     "start": "webpack-dev-server --mode development --content-base dist/ --watch",
     "build": "webpack --mode=production",
     "publish": "npm run build && gh-pages -d dist"
