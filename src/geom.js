@@ -9,5 +9,5 @@ export function getBufferCoordinates(geom, projection, distance) {
   const geojsonGeom = format.writeGeometryObject(geom);
   const bufferFeature = format.readFeature(buffer(geojsonGeom, distance / 1000));
 
-  return bufferFeature.getGeometry().getCoordinates()
+  return bufferFeature.getGeometry().getCoordinates();
 }

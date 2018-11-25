@@ -1,3 +1,5 @@
+/* global clients */
+
 const matchAllWindow = {
   type: 'window',
   includeUncontrolled: true
@@ -5,7 +7,7 @@ const matchAllWindow = {
 
 self.addEventListener('notificationclick', (event) => {
   if (event.action) {
-    const promise = clients.matchAll(matchAllWindow).then((windowClients) => {
+    clients.matchAll(matchAllWindow).then((windowClients) => {
       for (const windowClient of windowClients) {
         windowClient.postMessage({
           action: event.action

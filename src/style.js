@@ -1,5 +1,55 @@
 import {Circle, Fill, Stroke, Style} from 'ol/style';
 
+const positionBackgroundStyle = new Style({
+  image: new Circle({
+    radius: 10,
+    fill: new Fill({
+      color: '#FFF'
+    })
+  })
+});
+
+const positionOutside = [
+  positionBackgroundStyle,
+  new Style({
+    image: new Circle({
+      radius: 8,
+      fill: new Fill({
+        color: 'red'
+      })
+    })
+  })
+];
+
+const positionInside = [
+  positionBackgroundStyle,
+  new Style({
+    image: new Circle({
+      radius: 8,
+      fill: new Fill({
+        color: 'green'
+      })
+    })
+  })
+];
+
+const shortestLineOutside = [
+  new Style({
+    stroke: new Stroke({
+      color: '#FFF',
+      width: 8,
+      lineDash: [8, 14]
+    })
+  }),
+  new Style({
+    stroke: new Stroke({
+      color: 'red',
+      width: 4,
+      lineDash: [8, 14]
+    })
+  })
+];
+
 
 export const track = [
   new Style({
@@ -35,54 +85,3 @@ export function shortestLine(feature) {
     return feature.get('outside') ? shortestLineOutside : null;
   }
 }
-
-const positionBackgroundStyle = new Style({
-  image: new Circle({
-    radius: 10,
-    fill: new Fill({
-      color: '#FFF'
-    })
-  })
-});
-
-const positionOutside = [
-  positionBackgroundStyle,
-  new Style({
-    image: new Circle({
-      radius: 8,
-      fill: new Fill({
-        color: 'red'
-      })
-    })
-  })
-];
-
-
-const positionInside = [
-  positionBackgroundStyle,
-  new Style({
-    image: new Circle({
-      radius: 8,
-      fill: new Fill({
-        color: 'green'
-      })
-    })
-  })
-];
-
-const shortestLineOutside = [
-  new Style({
-    stroke: new Stroke({
-      color: '#FFF',
-      width: 8,
-      lineDash: [8, 14]
-    })
-  }),
-  new Style({
-    stroke: new Stroke({
-      color: 'red',
-      width: 4,
-      lineDash: [8, 14]
-    })
-  })
-];
