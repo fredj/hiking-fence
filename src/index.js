@@ -10,10 +10,6 @@ import {map, view} from './map';
 import {getBufferCoordinates} from './geom';
 import Monitor from './monitor';
 
-/**
- * @type {number}
- */
-const fenceWidth = 75;
 
 /**
  * @type {LineString}
@@ -38,6 +34,8 @@ const bufferFeature = new Feature(bufferGeometry);
 bufferFeature.setStyle(style.buffer);
 
 const searchParams = new URLSearchParams(location.search);
+
+const fenceWidth = searchParams.has('width') ? searchParams.get('width') : 75;
 
 const loader = loadFeaturesXhr(searchParams.get('gpx'), new GPX(), (features, projection) => {
   for (const feature of features) {
