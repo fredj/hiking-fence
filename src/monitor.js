@@ -27,7 +27,18 @@ export default class Monitor {
 
       this.geolocation.on('change:position', this.onPositionChange.bind(this));
 
-      this.notifier = new Notifier()
+      this.notifier = new Notifier();
+
+      /**
+       * @type {number}
+       */
+      this.difference = 0;
+
+      /**
+       * @type {boolean}
+       */
+      this.outside = false;
+
     }
 
     onPositionChange(event) {
@@ -40,15 +51,20 @@ export default class Monitor {
       this.shortestLineFeature.getGeometry().setCoordinates([position, closest]);
       const distance = coordinateDistance(closest, position);
 
-      this.outside = distance > this.distance;
+      this.difference = distance - this.distance;
+      this.outside = this.difference > 0;
     }
 
     notify() {
-      this.notifier.showNotification('Watch out!', {
-          body: 'Your are almost dead',
+      this.notifier.showNotification('You are lost!', {
+          body: `${Math.round(this.difference)}m away from the track `,
           image: 'lost.jpg',
           tag: 'outside',
-          renotify: true
+          renotify: true,
+          actions: [{
+            action: 'mute',
+            title: 'mute'
+          }]
       });
     }
 
