@@ -2,6 +2,7 @@ import {distance as coordinateDistance} from 'ol/coordinate';
 import Geolocation from 'ol/Geolocation';
 import Feature from 'ol/Feature';
 import {Point, LineString} from 'ol/geom';
+import {containsCoordinate} from 'ol/extent';
 
 import * as style from './style';
 import Notifier from './notification';
@@ -11,6 +12,8 @@ export default class Monitor {
 
   constructor(view, segment, distance) {
 
+    this.view = view;
+
     this.segment = segment;
 
     /**
@@ -19,7 +22,7 @@ export default class Monitor {
     this.distance = distance;
 
     this.geolocation = new Geolocation({
-      projection: view.getProjection()
+      projection: this.view.getProjection()
     });
 
     this.positionFeature = new Feature(new Point([]));
@@ -56,7 +59,13 @@ export default class Monitor {
   onPositionChange(event) {
     const position = event.target.getPosition();
     // fixme: recenter only if not in viewport
-    //view.setCenter(position);
+    if (!containsCoordinate(this.view.calculateExtent(), position)) {
+      this.view.animate({
+        center: position,
+        duration: 250
+      });
+    }
+
     this.positionFeature.getGeometry().setCoordinates(position);
 
     const closest = this.segment.getClosestPoint(position);
