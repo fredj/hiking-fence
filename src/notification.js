@@ -5,7 +5,7 @@ export default class Notifier {
     navigator.serviceWorker.ready.then((registration) => {
       Notification.requestPermission().then((result) => {
         if (result === 'granted') {
-          navigator.serviceWorker.register('service-worker.notification.js').then((registration) => {
+          navigator.serviceWorker.register('service-worker.js').then((registration) => {
             this.registration = registration;
           });
         }

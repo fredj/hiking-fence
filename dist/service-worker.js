@@ -30,3 +30,8 @@ self.addEventListener('notificationclick', (event) => {
 self.addEventListener('notificationclose', (event) => {
 
 });
+
+// debug
+self.addEventListener('fetch', (event) => {
+  console.log('sw fetch', event.request.url);
+});
