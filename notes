@@ -1,5 +1,7 @@
+to check:
+ - https://lit-element.polymer-project.org/
+ - https://tonic.technology/
+
 buffer size input
 toggle OSM background
-mute alarm
 use gyroscope to rotate map
-https://developer.mozilla.org/en-US/docs/Web/API/Vibration_API

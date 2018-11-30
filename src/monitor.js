@@ -8,9 +8,10 @@ import * as style from './style';
 import Notifier from './notification';
 
 
-export default class Monitor {
+export default class Monitor extends EventTarget {
 
   constructor(view, segment, distance) {
+    super();
 
     this.view = view;
 
@@ -104,6 +105,14 @@ export default class Monitor {
     }
     this.positionFeature.set('outside', value);
     this.shortestLineFeature.set('outside', value);
+
+    const event = new CustomEvent('change', {
+      detail: {
+        outside: value,
+        difference: this.difference
+      }
+    });
+    this.dispatchEvent(event);
   }
 
   get tracking() {

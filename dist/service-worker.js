@@ -5,6 +5,14 @@ const matchAllWindow = {
   includeUncontrolled: true
 };
 
+self.addEventListener('install', (event) => {
+
+});
+
+self.addEventListener('activate', event => {
+  // event.waitUntil(clients.claim());
+});
+
 self.addEventListener('notificationclick', (event) => {
   if (event.action) {
     clients.matchAll(matchAllWindow).then((windowClients) => {
@@ -14,8 +22,6 @@ self.addEventListener('notificationclick', (event) => {
         });
       }
     });
-    // focus client
-    // postMessage
   } else {
     // focus on window
     const promise = clients.matchAll(matchAllWindow).then((windowClients) => {
