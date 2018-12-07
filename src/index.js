@@ -10,6 +10,16 @@ import {map, view} from './map';
 import {getBufferCoordinates} from './geom';
 import Monitor from './monitor';
 
+import {store} from './store';
+
+
+store.addEventListener('change', (event) => {
+  console.log('change event', event.detail);
+});
+
+
+store.values.distance = 42;
+
 
 /**
  * @type {LineString}
