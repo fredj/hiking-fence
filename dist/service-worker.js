@@ -39,5 +39,5 @@ self.addEventListener('notificationclose', (event) => {
 
 // debug
 self.addEventListener('fetch', (event) => {
-  console.log('sw fetch', event.request.url);
+  //console.log('sw fetch', event.request.url);
 });

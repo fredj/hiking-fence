@@ -1,33 +1,18 @@
 import {distance as coordinateDistance} from 'ol/coordinate';
 import Geolocation from 'ol/Geolocation';
 import Feature from 'ol/Feature';
-import {Point, LineString} from 'ol/geom';
-import {containsCoordinate} from 'ol/extent';
+import {LineString} from 'ol/geom';
 
+import {setGeolocation, store} from './store';
 import * as style from './style';
 import Notifier from './notification';
 
 
-export default class Monitor extends EventTarget {
+export default class Monitor {
 
-  constructor(view, segment, distance) {
-    super();
+  constructor() {
 
-    this.view = view;
-
-    this.segment = segment;
-
-    /**
-     * @type {number}
-     */
-    this.distance = distance;
-
-    this.geolocation = new Geolocation({
-      projection: this.view.getProjection()
-    });
-
-    this.positionFeature = new Feature(new Point([]));
-    this.positionFeature.setStyle(style.position);
+    this.geolocation = new Geolocation();
 
     this.shortestLineFeature = new Feature(new LineString([]));
     this.shortestLineFeature.setStyle(style.shortestLine);
@@ -35,6 +20,8 @@ export default class Monitor extends EventTarget {
     this.geolocation.on('change:position', this.onPositionChange.bind(this));
 
     this.notifier = new Notifier(this.onAction.bind(this));
+
+    this.fenceWidth = undefined;
 
     /**
      * @type {number}
@@ -50,6 +37,15 @@ export default class Monitor extends EventTarget {
      * @type {boolean}
      */
     this.mutted = false;
+
+    store.subscribe(() => this.onStoreChange());
+  }
+
+  onStoreChange() {
+    const state = store.getState();
+    if (state.fenceWidth) {
+      this.fenceWidth = state.fenceWidth;
+    }
   }
 
   onAction(eventData) {
@@ -58,22 +54,14 @@ export default class Monitor extends EventTarget {
   }
 
   onPositionChange(event) {
-    const position = event.target.getPosition();
-    // fixme: recenter only if not in viewport
-    if (!containsCoordinate(this.view.calculateExtent(), position)) {
-      this.view.animate({
-        center: position,
-        duration: 250
-      });
-    }
+    setGeolocation(event.target.getPosition());
 
-    this.positionFeature.getGeometry().setCoordinates(position);
-
+    return;
     const closest = this.segment.getClosestPoint(position);
     this.shortestLineFeature.getGeometry().setCoordinates([position, closest]);
     const distance = coordinateDistance(closest, position);
 
-    this.difference = distance - this.distance;
+    this.difference = distance - this.fenceWidth;
     this.outside = this.difference > 0;
   }
 
@@ -99,21 +87,13 @@ export default class Monitor extends EventTarget {
     });
   }
 
-  set outside(value) {
-    if (value) {
-      this.notify();
-    }
-    this.positionFeature.set('outside', value);
-    this.shortestLineFeature.set('outside', value);
-
-    const event = new CustomEvent('change', {
-      detail: {
-        outside: value,
-        difference: this.difference
-      }
-    });
-    this.dispatchEvent(event);
-  }
+//  set outside(value) {
+//    if (value) {
+//      this.notify();
+//    }
+//    this.positionFeature.set('outside', value);
+//    this.shortestLineFeature.set('outside', value);
+//  }
 
   get tracking() {
     return this.geolocation.getTracking();
@@ -121,7 +101,9 @@ export default class Monitor extends EventTarget {
 
   set tracking(value) {
     this.geolocation.setTracking(value);
-    this.positionFeature.set('visible', value);
+    if (!value) {
+      setGeolocation(null);
+    }
     this.shortestLineFeature.set('visible', value);
   }
 }

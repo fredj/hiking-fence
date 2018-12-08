@@ -75,9 +75,7 @@ export const buffer = [
 ];
 
 export function position(feature) {
-  if (feature.get('visible')) {
-    return feature.get('outside') ? positionOutside : positionInside;
-  }
+  return feature.get('outside') ? positionOutside : positionInside;
 }
 
 export function shortestLine(feature) {

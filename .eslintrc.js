@@ -1,3 +1,8 @@
 module.exports = {
-  "extends": "eslint-config-openlayers"
+  extends: "eslint-config-openlayers",
+  parserOptions: {
+    ecmaFeatures: {
+      experimentalObjectRestSpread: true
+    }
+  },
 };
