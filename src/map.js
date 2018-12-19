@@ -14,6 +14,7 @@ export const map = new Map({
   controls: [],
   layers: [
     new TileLayer({
+      preload: Infinity,
       source: new TileJSON({
         url: `https://api.mapbox.com/v4/mapbox.outdoors.json?secure&access_token=${mapbox_token}`,
         crossOrigin: 'anonymous'
