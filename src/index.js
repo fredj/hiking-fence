@@ -1,7 +1,7 @@
-import Feature from 'ol/Feature';
-import VectorSource from 'ol/source/Vector';
-import VectorLayer from 'ol/layer/Vector';
-import GPX from 'ol/format/GPX';
+import {Feature} from 'ol';
+import {Vector as VectorSource} from 'ol/source';
+import {Vector as VectorLayer} from 'ol/layer';
+import {GPX} from 'ol/format';
 import {LineString, Polygon} from 'ol/geom';
 import {loadFeaturesXhr} from 'ol/featureloader';
 

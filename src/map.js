@@ -1,7 +1,6 @@
-import Map from 'ol/Map';
-import View from 'ol/View';
-import TileLayer from 'ol/layer/Tile.js';
-import TileJSON from 'ol/source/TileJSON.js';
+import {Map, View} from 'ol';
+import {Tile as TileLayer} from 'ol/layer';
+import {TileJSON as TileJSONSource} from 'ol/source';
 
 const mapbox_token = 'pk.eyJ1IjoiZnJlZGoiLCJhIjoiMndGNGNINCJ9.yG14Tih1Vtuge0hsjL0grA';
 
@@ -15,12 +14,11 @@ export const map = new Map({
   layers: [
     new TileLayer({
       preload: Infinity,
-      source: new TileJSON({
+      source: new TileJSONSource({
         url: `https://api.mapbox.com/v4/mapbox.outdoors.json?secure&access_token=${mapbox_token}`,
         crossOrigin: 'anonymous'
       })
     })
   ],
-  loadTilesWhileInteracting: true,
   view: view
 });

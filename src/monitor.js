@@ -1,6 +1,5 @@
 import {distance as coordinateDistance} from 'ol/coordinate';
-import Geolocation from 'ol/Geolocation';
-import Feature from 'ol/Feature';
+import {Feature, Geolocation} from 'ol';
 import {Point, LineString} from 'ol/geom';
 import {containsCoordinate} from 'ol/extent';
 
