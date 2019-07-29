@@ -157,7 +157,6 @@ var uidCounter_ = 0;
  *
  * @param {Object} obj The object to get the unique ID for.
  * @return {string} The unique ID for the object.
- * @function module:ol.getUid
  * @api
  */
 
@@ -170,7 +169,7 @@ function getUid(obj) {
  */
 
 
-var VERSION = '6.0.0-beta.6';
+var VERSION = '6.0.0-beta.11';
 exports.VERSION = VERSION;
 },{}],"../node_modules/ol/AssertionError.js":[function(require,module,exports) {
 "use strict";
@@ -1136,6 +1135,13 @@ var _default = {
    * @api
    */
   CHANGE: 'change',
+
+  /**
+   * Generic error event. Triggered when an error occurs.
+   * @event module:ol/events/Event~Event#error
+   * @api
+   */
+  ERROR: 'error',
   CLEAR: 'clear',
   CONTEXTMENU: 'contextmenu',
   CLICK: 'click',
@@ -1143,7 +1149,6 @@ var _default = {
   DRAGENTER: 'dragenter',
   DRAGOVER: 'dragover',
   DROP: 'drop',
-  ERROR: 'error',
   KEYDOWN: 'keydown',
   KEYPRESS: 'keypress',
   LOAD: 'load',
@@ -2129,13 +2134,14 @@ var __extends = void 0 && (void 0).__extends || function () {
  * ```
  *
  * @api
+ * @template {import("./geom/Geometry.js").default} Geometry
  */
 var Feature =
 /** @class */
 function (_super) {
   __extends(Feature, _super);
   /**
-   * @param {import("./geom/Geometry.js").default|Object<string, *>=} opt_geometryOrProperties
+   * @param {Geometry|Object<string, *>=} opt_geometryOrProperties
    *     You may pass a Geometry object directly, or an object literal containing
    *     properties. If you pass an object literal, you may include a Geometry
    *     associated with a `geometry` key.
@@ -2183,7 +2189,7 @@ function (_super) {
       /** @type {?} */
       opt_geometryOrProperties.getSimplifiedGeometry === 'function') {
         var geometry =
-        /** @type {import("./geom/Geometry.js").default} */
+        /** @type {Geometry} */
         opt_geometryOrProperties;
 
         _this.setGeometry(geometry);
@@ -2226,7 +2232,7 @@ function (_super) {
    * Get the feature's default geometry.  A feature may have any number of named
    * geometries.  The "default" geometry (the one that is rendered by default) is
    * set when calling {@link module:ol/Feature~Feature#setGeometry}.
-   * @return {import("./geom/Geometry.js").default|undefined} The default geometry for the feature.
+   * @return {Geometry|undefined} The default geometry for the feature.
    * @api
    * @observable
    */
@@ -2234,7 +2240,7 @@ function (_super) {
 
   Feature.prototype.getGeometry = function () {
     return (
-      /** @type {import("./geom/Geometry.js").default|undefined} */
+      /** @type {Geometry|undefined} */
       this.get(this.geometryName_)
     );
   };
@@ -2314,7 +2320,7 @@ function (_super) {
   /**
    * Set the default geometry for the feature.  This will update the property
    * with the name returned by {@link module:ol/Feature~Feature#getGeometryName}.
-   * @param {import("./geom/Geometry.js").default|undefined} geometry The new geometry.
+   * @param {Geometry|undefined} geometry The new geometry.
    * @api
    * @observable
    */
@@ -3823,7 +3829,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.clamp = clamp;
-exports.roundUpToPowerOfTwo = roundUpToPowerOfTwo;
 exports.squaredSegmentDistance = squaredSegmentDistance;
 exports.squaredDistance = squaredDistance;
 exports.solveLinearSystem = solveLinearSystem;
@@ -3832,8 +3837,6 @@ exports.toRadians = toRadians;
 exports.modulo = modulo;
 exports.lerp = lerp;
 exports.cosh = void 0;
-
-var _asserts = require("./asserts.js");
 
 /**
  * @module ol/math
@@ -3882,19 +3885,6 @@ var cosh = function () {
   return cosh;
 }();
 /**
- * @param {number} x X.
- * @return {number} The smallest power of two greater than or equal to x.
- */
-
-
-exports.cosh = cosh;
-
-function roundUpToPowerOfTwo(x) {
-  (0, _asserts.assert)(0 < x, 29); // `x` must be greater than `0`
-
-  return Math.pow(2, Math.ceil(Math.log(x) / Math.LN2));
-}
-/**
  * Returns the square of the closest distance between the point (x, y) and the
  * line segment (x1, y1) to (x2, y2).
  * @param {number} x X.
@@ -3906,6 +3896,8 @@ function roundUpToPowerOfTwo(x) {
  * @return {number} Squared distance.
  */
 
+
+exports.cosh = cosh;
 
 function squaredSegmentDistance(x, y, x1, y1, x2, y2) {
   var dx = x2 - x1;
@@ -4049,7 +4041,7 @@ function modulo(a, b) {
 function lerp(a, b, x) {
   return a + x * (b - a);
 }
-},{"./asserts.js":"../node_modules/ol/asserts.js"}],"../node_modules/ol/sphere.js":[function(require,module,exports) {
+},{}],"../node_modules/ol/sphere.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -4085,8 +4077,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @property {import("./proj.js").ProjectionLike} [projection='EPSG:3857']
  * Projection of the  geometry.  By default, the geometry is assumed to be in
  * Web Mercator.
- * @property {number} [radius=6371008.8] Sphere radius.  By default, the radius of the
- * earth is used (Clarke 1866 Authalic Sphere).
+ * @property {number} [radius=6371008.8] Sphere radius.  By default, the
+ * [mean Earth radius](https://en.wikipedia.org/wiki/Earth_radius#Mean_radius)
+ * for the WGS84 ellipsoid is used.
  */
 
 /**
@@ -5010,52 +5003,7 @@ function (_super) {
 
 var PROJECTIONS = [new EPSG4326Projection('CRS:84'), new EPSG4326Projection('EPSG:4326', 'neu'), new EPSG4326Projection('urn:ogc:def:crs:EPSG::4326', 'neu'), new EPSG4326Projection('urn:ogc:def:crs:EPSG:6.6:4326', 'neu'), new EPSG4326Projection('urn:ogc:def:crs:OGC:1.3:CRS84'), new EPSG4326Projection('urn:ogc:def:crs:OGC:2:84'), new EPSG4326Projection('http://www.opengis.net/gml/srs/epsg.xml#4326', 'neu'), new EPSG4326Projection('urn:x-ogc:def:crs:EPSG:4326', 'neu')];
 exports.PROJECTIONS = PROJECTIONS;
-},{"./Projection.js":"../node_modules/ol/proj/Projection.js","./Units.js":"../node_modules/ol/proj/Units.js"}],"../node_modules/ol/proj/projections.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.clear = clear;
-exports.get = get;
-exports.add = add;
-
-/**
- * @module ol/proj/projections
- */
-
-/**
- * @type {Object<string, import("./Projection.js").default>}
- */
-var cache = {};
-/**
- * Clear the projections cache.
- */
-
-function clear() {
-  cache = {};
-}
-/**
- * Get a cached projection by code.
- * @param {string} code The code for the projection.
- * @return {import("./Projection.js").default} The projection (if cached).
- */
-
-
-function get(code) {
-  return cache[code] || null;
-}
-/**
- * Add a projection to the cache.
- * @param {string} code The projection code.
- * @param {import("./Projection.js").default} projection The projection to cache.
- */
-
-
-function add(code, projection) {
-  cache[code] = projection;
-}
-},{}],"../node_modules/ol/proj/transforms.js":[function(require,module,exports) {
+},{"./Projection.js":"../node_modules/ol/proj/Projection.js","./Units.js":"../node_modules/ol/proj/Units.js"}],"../node_modules/ol/proj/transforms.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -5144,7 +5092,52 @@ function get(sourceCode, destinationCode) {
 
   return transform;
 }
-},{"../obj.js":"../node_modules/ol/obj.js"}],"../node_modules/ol/proj.js":[function(require,module,exports) {
+},{"../obj.js":"../node_modules/ol/obj.js"}],"../node_modules/ol/proj/projections.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.clear = clear;
+exports.get = get;
+exports.add = add;
+
+/**
+ * @module ol/proj/projections
+ */
+
+/**
+ * @type {Object<string, import("./Projection.js").default>}
+ */
+var cache = {};
+/**
+ * Clear the projections cache.
+ */
+
+function clear() {
+  cache = {};
+}
+/**
+ * Get a cached projection by code.
+ * @param {string} code The code for the projection.
+ * @return {import("./Projection.js").default} The projection (if cached).
+ */
+
+
+function get(code) {
+  return cache[code] || null;
+}
+/**
+ * Add a projection to the cache.
+ * @param {string} code The projection code.
+ * @param {import("./Projection.js").default} projection The projection to cache.
+ */
+
+
+function add(code, projection) {
+  cache[code] = projection;
+}
+},{}],"../node_modules/ol/proj.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -5198,9 +5191,9 @@ var _Projection = _interopRequireDefault(require("./proj/Projection.js"));
 
 var _Units = _interopRequireWildcard(require("./proj/Units.js"));
 
-var projections = _interopRequireWildcard(require("./proj/projections.js"));
-
 var _transforms = require("./proj/transforms.js");
+
+var _projections = require("./proj/projections.js");
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
@@ -5330,7 +5323,7 @@ function identityTransform(input, opt_output, opt_dimension) {
 
 
 function addProjection(projection) {
-  projections.add(projection.getCode(), projection);
+  (0, _projections.add)(projection.getCode(), projection);
   (0, _transforms.add)(projection, projection, cloneTransform);
 }
 /**
@@ -5353,7 +5346,7 @@ function addProjections(projections) {
 
 
 function get(projectionLike) {
-  return typeof projectionLike === 'string' ? projections.get(
+  return typeof projectionLike === 'string' ? (0, _projections.get)(
   /** @type {string} */
   projectionLike) :
   /** @type {Projection} */
@@ -5469,7 +5462,7 @@ function addEquivalentTransforms(projections1, projections2, forwardTransform, i
 
 
 function clearAllProjections() {
-  projections.clear();
+  (0, _projections.clear)();
   (0, _transforms.clear)();
 }
 /**
@@ -5722,7 +5715,7 @@ function addCommon() {
 }
 
 addCommon();
-},{"./sphere.js":"../node_modules/ol/sphere.js","./extent.js":"../node_modules/ol/extent.js","./math.js":"../node_modules/ol/math.js","./proj/epsg3857.js":"../node_modules/ol/proj/epsg3857.js","./proj/epsg4326.js":"../node_modules/ol/proj/epsg4326.js","./proj/Projection.js":"../node_modules/ol/proj/Projection.js","./proj/Units.js":"../node_modules/ol/proj/Units.js","./proj/projections.js":"../node_modules/ol/proj/projections.js","./proj/transforms.js":"../node_modules/ol/proj/transforms.js"}],"../node_modules/ol/transform.js":[function(require,module,exports) {
+},{"./sphere.js":"../node_modules/ol/sphere.js","./extent.js":"../node_modules/ol/extent.js","./math.js":"../node_modules/ol/math.js","./proj/epsg3857.js":"../node_modules/ol/proj/epsg3857.js","./proj/epsg4326.js":"../node_modules/ol/proj/epsg4326.js","./proj/Projection.js":"../node_modules/ol/proj/Projection.js","./proj/Units.js":"../node_modules/ol/proj/Units.js","./proj/transforms.js":"../node_modules/ol/proj/transforms.js","./proj/projections.js":"../node_modules/ol/proj/projections.js"}],"../node_modules/ol/transform.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6239,9 +6232,8 @@ function (_super) {
   };
   /**
    * Create a simplified version of this geometry.  For linestrings, this uses
-   * the the {@link
-   * https://en.wikipedia.org/wiki/Ramer-Douglas-Peucker_algorithm
-   * Douglas Peucker} algorithm.  For polygons, a quantization-based
+   * the [Douglas Peucker](https://en.wikipedia.org/wiki/Ramer-Douglas-Peucker_algorithm)
+   * algorithm.  For polygons, a quantization-based
    * simplification is used to preserve topology.
    * @param {number} tolerance The tolerance distance for simplification.
    * @return {Geometry} A new, simplified version of the original geometry.
@@ -9207,445 +9199,7 @@ function makeRegular(polygon, center, radius, opt_angle) {
 
   polygon.changed();
 }
-},{"../array.js":"../node_modules/ol/array.js","../extent.js":"../node_modules/ol/extent.js","./GeometryLayout.js":"../node_modules/ol/geom/GeometryLayout.js","./GeometryType.js":"../node_modules/ol/geom/GeometryType.js","./LinearRing.js":"../node_modules/ol/geom/LinearRing.js","./Point.js":"../node_modules/ol/geom/Point.js","./SimpleGeometry.js":"../node_modules/ol/geom/SimpleGeometry.js","../sphere.js":"../node_modules/ol/sphere.js","./flat/area.js":"../node_modules/ol/geom/flat/area.js","./flat/closest.js":"../node_modules/ol/geom/flat/closest.js","./flat/contains.js":"../node_modules/ol/geom/flat/contains.js","./flat/deflate.js":"../node_modules/ol/geom/flat/deflate.js","./flat/inflate.js":"../node_modules/ol/geom/flat/inflate.js","./flat/interiorpoint.js":"../node_modules/ol/geom/flat/interiorpoint.js","./flat/intersectsextent.js":"../node_modules/ol/geom/flat/intersectsextent.js","./flat/orient.js":"../node_modules/ol/geom/flat/orient.js","./flat/simplify.js":"../node_modules/ol/geom/flat/simplify.js","../math.js":"../node_modules/ol/math.js"}],"../node_modules/ol/webgl.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.getContext = getContext;
-exports.EXTENSIONS = exports.MAX_TEXTURE_SIZE = exports.HAS = exports.DEBUG = exports.FRAMEBUFFER = exports.COMPILE_STATUS = exports.CLAMP_TO_EDGE = exports.TEXTURE0 = exports.TEXTURE_2D = exports.TEXTURE_WRAP_T = exports.TEXTURE_WRAP_S = exports.TEXTURE_MIN_FILTER = exports.TEXTURE_MAG_FILTER = exports.LINEAR = exports.LINK_STATUS = exports.VERTEX_SHADER = exports.FRAGMENT_SHADER = exports.RGBA = exports.FLOAT = exports.UNSIGNED_INT = exports.UNSIGNED_SHORT = exports.UNSIGNED_BYTE = exports.SCISSOR_TEST = exports.DEPTH_TEST = exports.STENCIL_TEST = exports.BLEND = exports.CULL_FACE = exports.DYNAMIC_DRAW = exports.STATIC_DRAW = exports.STREAM_DRAW = exports.ELEMENT_ARRAY_BUFFER = exports.ARRAY_BUFFER = exports.ONE_MINUS_SRC_ALPHA = exports.TRIANGLE_STRIP = exports.TRIANGLES = exports.COLOR_BUFFER_BIT = exports.COLOR_ATTACHMENT0 = exports.SRC_ALPHA = exports.ONE = void 0;
-
-/**
- * @module ol/webgl
- */
-
-/**
- * Constants taken from goog.webgl
- */
-
-/**
- * @const
- * @type {number}
- */
-var ONE = 1;
-/**
- * @const
- * @type {number}
- */
-
-exports.ONE = ONE;
-var SRC_ALPHA = 0x0302;
-/**
- * @const
- * @type {number}
- */
-
-exports.SRC_ALPHA = SRC_ALPHA;
-var COLOR_ATTACHMENT0 = 0x8CE0;
-/**
- * @const
- * @type {number}
- */
-
-exports.COLOR_ATTACHMENT0 = COLOR_ATTACHMENT0;
-var COLOR_BUFFER_BIT = 0x00004000;
-/**
- * @const
- * @type {number}
- */
-
-exports.COLOR_BUFFER_BIT = COLOR_BUFFER_BIT;
-var TRIANGLES = 0x0004;
-/**
- * @const
- * @type {number}
- */
-
-exports.TRIANGLES = TRIANGLES;
-var TRIANGLE_STRIP = 0x0005;
-/**
- * @const
- * @type {number}
- */
-
-exports.TRIANGLE_STRIP = TRIANGLE_STRIP;
-var ONE_MINUS_SRC_ALPHA = 0x0303;
-/**
- * @const
- * @type {number}
- */
-
-exports.ONE_MINUS_SRC_ALPHA = ONE_MINUS_SRC_ALPHA;
-var ARRAY_BUFFER = 0x8892;
-/**
- * @const
- * @type {number}
- */
-
-exports.ARRAY_BUFFER = ARRAY_BUFFER;
-var ELEMENT_ARRAY_BUFFER = 0x8893;
-/**
- * @const
- * @type {number}
- */
-
-exports.ELEMENT_ARRAY_BUFFER = ELEMENT_ARRAY_BUFFER;
-var STREAM_DRAW = 0x88E0;
-/**
- * @const
- * @type {number}
- */
-
-exports.STREAM_DRAW = STREAM_DRAW;
-var STATIC_DRAW = 0x88E4;
-/**
- * @const
- * @type {number}
- */
-
-exports.STATIC_DRAW = STATIC_DRAW;
-var DYNAMIC_DRAW = 0x88E8;
-/**
- * @const
- * @type {number}
- */
-
-exports.DYNAMIC_DRAW = DYNAMIC_DRAW;
-var CULL_FACE = 0x0B44;
-/**
- * @const
- * @type {number}
- */
-
-exports.CULL_FACE = CULL_FACE;
-var BLEND = 0x0BE2;
-/**
- * @const
- * @type {number}
- */
-
-exports.BLEND = BLEND;
-var STENCIL_TEST = 0x0B90;
-/**
- * @const
- * @type {number}
- */
-
-exports.STENCIL_TEST = STENCIL_TEST;
-var DEPTH_TEST = 0x0B71;
-/**
- * @const
- * @type {number}
- */
-
-exports.DEPTH_TEST = DEPTH_TEST;
-var SCISSOR_TEST = 0x0C11;
-/**
- * @const
- * @type {number}
- */
-
-exports.SCISSOR_TEST = SCISSOR_TEST;
-var UNSIGNED_BYTE = 0x1401;
-/**
- * @const
- * @type {number}
- */
-
-exports.UNSIGNED_BYTE = UNSIGNED_BYTE;
-var UNSIGNED_SHORT = 0x1403;
-/**
- * @const
- * @type {number}
- */
-
-exports.UNSIGNED_SHORT = UNSIGNED_SHORT;
-var UNSIGNED_INT = 0x1405;
-/**
- * @const
- * @type {number}
- */
-
-exports.UNSIGNED_INT = UNSIGNED_INT;
-var FLOAT = 0x1406;
-/**
- * @const
- * @type {number}
- */
-
-exports.FLOAT = FLOAT;
-var RGBA = 0x1908;
-/**
- * @const
- * @type {number}
- */
-
-exports.RGBA = RGBA;
-var FRAGMENT_SHADER = 0x8B30;
-/**
- * @const
- * @type {number}
- */
-
-exports.FRAGMENT_SHADER = FRAGMENT_SHADER;
-var VERTEX_SHADER = 0x8B31;
-/**
- * @const
- * @type {number}
- */
-
-exports.VERTEX_SHADER = VERTEX_SHADER;
-var LINK_STATUS = 0x8B82;
-/**
- * @const
- * @type {number}
- */
-
-exports.LINK_STATUS = LINK_STATUS;
-var LINEAR = 0x2601;
-/**
- * @const
- * @type {number}
- */
-
-exports.LINEAR = LINEAR;
-var TEXTURE_MAG_FILTER = 0x2800;
-/**
- * @const
- * @type {number}
- */
-
-exports.TEXTURE_MAG_FILTER = TEXTURE_MAG_FILTER;
-var TEXTURE_MIN_FILTER = 0x2801;
-/**
- * @const
- * @type {number}
- */
-
-exports.TEXTURE_MIN_FILTER = TEXTURE_MIN_FILTER;
-var TEXTURE_WRAP_S = 0x2802;
-/**
- * @const
- * @type {number}
- */
-
-exports.TEXTURE_WRAP_S = TEXTURE_WRAP_S;
-var TEXTURE_WRAP_T = 0x2803;
-/**
- * @const
- * @type {number}
- */
-
-exports.TEXTURE_WRAP_T = TEXTURE_WRAP_T;
-var TEXTURE_2D = 0x0DE1;
-/**
- * @const
- * @type {number}
- */
-
-exports.TEXTURE_2D = TEXTURE_2D;
-var TEXTURE0 = 0x84C0;
-/**
- * @const
- * @type {number}
- */
-
-exports.TEXTURE0 = TEXTURE0;
-var CLAMP_TO_EDGE = 0x812F;
-/**
- * @const
- * @type {number}
- */
-
-exports.CLAMP_TO_EDGE = CLAMP_TO_EDGE;
-var COMPILE_STATUS = 0x8B81;
-/**
- * @const
- * @type {number}
- */
-
-exports.COMPILE_STATUS = COMPILE_STATUS;
-var FRAMEBUFFER = 0x8D40;
-/** end of goog.webgl constants
- */
-
-/**
- * @const
- * @type {Array<string>}
- */
-
-exports.FRAMEBUFFER = FRAMEBUFFER;
-var CONTEXT_IDS = ['experimental-webgl', 'webgl', 'webkit-3d', 'moz-webgl'];
-/**
- * @param {HTMLCanvasElement} canvas Canvas.
- * @param {Object=} opt_attributes Attributes.
- * @return {WebGLRenderingContext} WebGL rendering context.
- */
-
-function getContext(canvas, opt_attributes) {
-  var ii = CONTEXT_IDS.length;
-
-  for (var i = 0; i < ii; ++i) {
-    try {
-      var context = canvas.getContext(CONTEXT_IDS[i], opt_attributes);
-
-      if (context) {
-        return (
-          /** @type {!WebGLRenderingContext} */
-          context
-        );
-      }
-    } catch (e) {// pass
-    }
-  }
-
-  return null;
-}
-/**
- * Include debuggable shader sources.  Default is `true`. This should be set to
- * `false` for production builds.
- * @type {boolean}
- */
-
-
-var DEBUG = true;
-/**
- * The maximum supported WebGL texture size in pixels. If WebGL is not
- * supported, the value is set to `undefined`.
- * @type {number|undefined}
- */
-
-exports.DEBUG = DEBUG;
-var MAX_TEXTURE_SIZE; // value is set below
-
-/**
- * List of supported WebGL extensions.
- * @type {Array<string>}
- */
-
-exports.MAX_TEXTURE_SIZE = MAX_TEXTURE_SIZE;
-var EXTENSIONS; // value is set below
-
-/**
- * True if both OpenLayers and browser support WebGL.
- * @type {boolean}
- * @api
- */
-
-exports.EXTENSIONS = EXTENSIONS;
-var HAS = false; //TODO Remove side effects
-
-exports.HAS = HAS;
-
-if (typeof window !== 'undefined' && 'WebGLRenderingContext' in window) {
-  try {
-    var canvas = document.createElement('canvas');
-    var gl = getContext(canvas);
-
-    if (gl) {
-      exports.HAS = HAS = true;
-      exports.MAX_TEXTURE_SIZE = MAX_TEXTURE_SIZE =
-      /** @type {number} */
-      gl.getParameter(gl.MAX_TEXTURE_SIZE);
-      exports.EXTENSIONS = EXTENSIONS = gl.getSupportedExtensions();
-    }
-  } catch (e) {// pass
-  }
-}
-},{}],"../node_modules/ol/has.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-Object.defineProperty(exports, "WEBGL", {
-  enumerable: true,
-  get: function () {
-    return _webgl.HAS;
-  }
-});
-exports.MSPOINTER = exports.POINTER = exports.TOUCH = exports.GEOLOCATION = exports.DEVICE_PIXEL_RATIO = exports.MAC = exports.WEBKIT = exports.SAFARI = exports.FIREFOX = void 0;
-
-var _webgl = require("./webgl.js");
-
-/**
- * @module ol/has
- */
-var ua = typeof navigator !== 'undefined' ? navigator.userAgent.toLowerCase() : '';
-/**
- * User agent string says we are dealing with Firefox as browser.
- * @type {boolean}
- */
-
-var FIREFOX = ua.indexOf('firefox') !== -1;
-/**
- * User agent string says we are dealing with Safari as browser.
- * @type {boolean}
- */
-
-exports.FIREFOX = FIREFOX;
-var SAFARI = ua.indexOf('safari') !== -1 && ua.indexOf('chrom') == -1;
-/**
- * User agent string says we are dealing with a WebKit engine.
- * @type {boolean}
- */
-
-exports.SAFARI = SAFARI;
-var WEBKIT = ua.indexOf('webkit') !== -1 && ua.indexOf('edge') == -1;
-/**
- * User agent string says we are dealing with a Mac as platform.
- * @type {boolean}
- */
-
-exports.WEBKIT = WEBKIT;
-var MAC = ua.indexOf('macintosh') !== -1;
-/**
- * The ratio between physical pixels and device-independent pixels
- * (dips) on the device (`window.devicePixelRatio`).
- * @const
- * @type {number}
- * @api
- */
-
-exports.MAC = MAC;
-var DEVICE_PIXEL_RATIO = window.devicePixelRatio || 1;
-/**
- * Is HTML5 geolocation supported in the current browser?
- * @const
- * @type {boolean}
- * @api
- */
-
-exports.DEVICE_PIXEL_RATIO = DEVICE_PIXEL_RATIO;
-var GEOLOCATION = 'geolocation' in navigator;
-/**
- * True if browser supports touch events.
- * @const
- * @type {boolean}
- * @api
- */
-
-exports.GEOLOCATION = GEOLOCATION;
-var TOUCH = 'ontouchstart' in window;
-/**
- * True if browser supports pointer events.
- * @const
- * @type {boolean}
- */
-
-exports.TOUCH = TOUCH;
-var POINTER = 'PointerEvent' in window;
-/**
- * True if browser supports ms pointer events (IE 10).
- * @const
- * @type {boolean}
- */
-
-exports.POINTER = POINTER;
-var MSPOINTER = !!navigator.msPointerEnabled;
-exports.MSPOINTER = MSPOINTER;
-},{"./webgl.js":"../node_modules/ol/webgl.js"}],"../node_modules/ol/Geolocation.js":[function(require,module,exports) {
+},{"../array.js":"../node_modules/ol/array.js","../extent.js":"../node_modules/ol/extent.js","./GeometryLayout.js":"../node_modules/ol/geom/GeometryLayout.js","./GeometryType.js":"../node_modules/ol/geom/GeometryType.js","./LinearRing.js":"../node_modules/ol/geom/LinearRing.js","./Point.js":"../node_modules/ol/geom/Point.js","./SimpleGeometry.js":"../node_modules/ol/geom/SimpleGeometry.js","../sphere.js":"../node_modules/ol/sphere.js","./flat/area.js":"../node_modules/ol/geom/flat/area.js","./flat/closest.js":"../node_modules/ol/geom/flat/closest.js","./flat/contains.js":"../node_modules/ol/geom/flat/contains.js","./flat/deflate.js":"../node_modules/ol/geom/flat/deflate.js","./flat/inflate.js":"../node_modules/ol/geom/flat/inflate.js","./flat/interiorpoint.js":"../node_modules/ol/geom/flat/interiorpoint.js","./flat/intersectsextent.js":"../node_modules/ol/geom/flat/intersectsextent.js","./flat/orient.js":"../node_modules/ol/geom/flat/orient.js","./flat/simplify.js":"../node_modules/ol/geom/flat/simplify.js","../math.js":"../node_modules/ol/math.js"}],"../node_modules/ol/Geolocation.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -9662,8 +9216,6 @@ var _Event = _interopRequireDefault(require("./events/Event.js"));
 var _EventType = _interopRequireDefault(require("./events/EventType.js"));
 
 var _Polygon = require("./geom/Polygon.js");
-
-var _has = require("./has.js");
 
 var _math = require("./math.js");
 
@@ -9778,7 +9330,7 @@ function (_super) {
  *       window.console.log(geolocation.getPosition());
  *     });
  *
- * @fires error
+ * @fires module:ol/events/Event~Event#event:error
  * @api
  */
 
@@ -9862,7 +9414,7 @@ function (_super) {
 
 
   Geolocation.prototype.handleTrackingChanged_ = function () {
-    if (_has.GEOLOCATION) {
+    if ('geolocation' in navigator) {
       var tracking = this.getTracking();
 
       if (tracking && this.watchId_ === undefined) {
@@ -9901,12 +9453,6 @@ function (_super) {
     this.set(Property.ACCURACY_GEOMETRY, geometry);
     this.changed();
   };
-  /**
-   * Triggered when the Geolocation returns an error.
-   * @event error
-   * @api
-   */
-
   /**
    * @private
    * @param {PositionError} error error object.
@@ -10111,7 +9657,7 @@ function (_super) {
 
 var _default = Geolocation;
 exports.default = _default;
-},{"./Object.js":"../node_modules/ol/Object.js","./events.js":"../node_modules/ol/events.js","./events/Event.js":"../node_modules/ol/events/Event.js","./events/EventType.js":"../node_modules/ol/events/EventType.js","./geom/Polygon.js":"../node_modules/ol/geom/Polygon.js","./has.js":"../node_modules/ol/has.js","./math.js":"../node_modules/ol/math.js","./proj.js":"../node_modules/ol/proj.js"}],"../node_modules/ol/layer/Property.js":[function(require,module,exports) {
+},{"./Object.js":"../node_modules/ol/Object.js","./events.js":"../node_modules/ol/events.js","./events/Event.js":"../node_modules/ol/events/Event.js","./events/EventType.js":"../node_modules/ol/events/EventType.js","./geom/Polygon.js":"../node_modules/ol/geom/Polygon.js","./math.js":"../node_modules/ol/math.js","./proj.js":"../node_modules/ol/proj.js"}],"../node_modules/ol/layer/Property.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -10260,23 +9806,28 @@ function (_super) {
     return this.className_;
   };
   /**
+   * This method is not meant to be called by layers or layer renderers because the state
+   * is incorrect if the layer is included in a layer group.
+   *
+   * @param {boolean=} opt_managed Layer is managed.
    * @return {import("./Layer.js").State} Layer state.
    */
 
 
-  BaseLayer.prototype.getLayerState = function () {
+  BaseLayer.prototype.getLayerState = function (opt_managed) {
     /** @type {import("./Layer.js").State} */
     var state = this.state_ ||
     /** @type {?} */
     {
       layer: this,
-      managed: true
+      managed: opt_managed === undefined ? true : opt_managed,
+      hasOverlay: false
     };
     state.opacity = (0, _math.clamp)(Math.round(this.getOpacity() * 100) / 100, 0, 1);
     state.sourceState = this.getSourceState();
     state.visible = this.getVisible();
     state.extent = this.getExtent();
-    state.zIndex = this.getZIndex() || 0;
+    state.zIndex = this.getZIndex() || (state.managed === false ? Infinity : 0);
     state.maxResolution = this.getMaxResolution();
     state.minResolution = Math.max(this.getMinResolution(), 0);
     this.state_ = state;
@@ -10605,6 +10156,10 @@ var __extends = void 0 && (void 0).__extends || function () {
 
 
 /**
+ * @typedef {function(import("../PluggableMap.js").FrameState):HTMLElement} RenderFunction
+ */
+
+/**
  * @typedef {Object} Options
  * @property {number} [opacity=1] Opacity (0, 1).
  * @property {boolean} [visible=true] Visibility.
@@ -10622,6 +10177,8 @@ var __extends = void 0 && (void 0).__extends || function () {
  * the source can be set by calling {@link module:ol/layer/Layer#setSource layer.setSource(source)} after
  * construction.
  * @property {import("../PluggableMap.js").default} [map] Map.
+ * @property {RenderFunction} [render] Render function. Takes the frame state as input and is expected to return an
+ * HTML element. Will overwrite the default rendering for the layer.
  */
 
 /**
@@ -10631,6 +10188,7 @@ var __extends = void 0 && (void 0).__extends || function () {
  * @property {SourceState} sourceState
  * @property {boolean} visible
  * @property {boolean} managed
+ * @property {boolean} hasOverlay Set by the renderer when an overlay for points and text is used.
  * @property {import("../extent.js").Extent} [extent]
  * @property {number} zIndex
  * @property {number} maxResolution
@@ -10639,8 +10197,10 @@ var __extends = void 0 && (void 0).__extends || function () {
 
 /**
  * @classdesc
- * Abstract base class; normally only used for creating subclasses and not
- * instantiated in apps.
+ * Base class from which all layer types are derived. This should only be instantiated
+ * in the case where a custom layer is be added to the map with a custom `render` function.
+ * Such a function can be specified in the `options` object, and is expected to return an HTML element.
+ *
  * A visual representation of raster or vector map data.
  * Layers group together those properties that pertain to how the data is to be
  * displayed, irrespective of the source of that data.
@@ -10656,6 +10216,7 @@ var __extends = void 0 && (void 0).__extends || function () {
  * @fires import("../render/Event.js").RenderEvent#postrender
  *
  * @template {import("../source/Source.js").default} SourceType
+ * @api
  */
 var Layer =
 /** @class */
@@ -10695,7 +10256,11 @@ function (_super) {
      * @type {import("../renderer/Layer.js").default}
      */
 
-    _this.renderer_ = null;
+    _this.renderer_ = null; // Overwrite default render method with a custom one
+
+    if (options.render) {
+      _this.render = options.render;
+    }
 
     if (options.map) {
       _this.setMap(options.map);
@@ -10784,16 +10349,17 @@ function (_super) {
    * In charge to manage the rendering of the layer. One layer type is
    * bounded with one layer renderer.
    * @param {?import("../PluggableMap.js").FrameState} frameState Frame state.
+   * @param {HTMLElement} target Target which the renderer may (but need not) use
+   * for rendering its content.
    * @return {HTMLElement} The rendered element.
    */
 
 
-  Layer.prototype.render = function (frameState) {
+  Layer.prototype.render = function (frameState, target) {
     var layerRenderer = this.getRenderer();
-    var layerState = this.getLayerState();
 
-    if (layerRenderer.prepareFrame(frameState, layerState)) {
-      return layerRenderer.renderFrame(frameState, layerState);
+    if (layerRenderer.prepareFrame(frameState)) {
+      return layerRenderer.renderFrame(frameState, target);
     }
   };
   /**
@@ -10830,14 +10396,7 @@ function (_super) {
         var renderEvent =
         /** @type {import("../render/Event.js").default} */
         evt;
-        var layerState = this.getLayerState();
-        layerState.managed = false;
-
-        if (this.getZIndex() === undefined) {
-          layerState.zIndex = Infinity;
-        }
-
-        renderEvent.frameState.layerStatesArray.push(layerState);
+        renderEvent.frameState.layerStatesArray.push(this.getLayerState(false));
       }, this);
       this.mapRenderKey_ = (0, _events.listen)(this, _EventType.default.CHANGE, map.render, map);
       this.changed();
@@ -10866,6 +10425,14 @@ function (_super) {
     }
 
     return this.renderer_;
+  };
+  /**
+   * @return {boolean} The layer has a renderer.
+   */
+
+
+  Layer.prototype.hasRenderer = function () {
+    return !!this.renderer_;
   };
   /**
    * Create a renderer for this layer.
@@ -12376,7 +11943,7 @@ function drawImage(context, transform, opacity, image, originX, originY, w, h, x
 
   context.drawImage(image, originX, originY, w, h, x, y, w * scale, h * scale);
 
-  if (alpha) {
+  if (opacity != 1) {
     context.globalAlpha = alpha;
   }
 
@@ -13302,9 +12869,7 @@ function (_super) {
   function CircleStyle(opt_options) {
     var _this = this;
 
-    var options = opt_options ||
-    /** @type {Options} */
-    {};
+    var options = opt_options ? opt_options : {};
     _this = _super.call(this, {
       points: Infinity,
       fill: options.fill,
@@ -14335,8 +13900,10 @@ var __extends = void 0 && (void 0).__extends || function () {
  * temporary layers. The standard way to add a layer to a map and have it managed by the map is to
  * use {@link module:ol/Map#addLayer}.
  * @property {boolean} [declutter=false] Declutter images and text. Decluttering is applied to all
- * image and text styles, and the priority is defined by the z-index of the style. Lower z-index
- * means higher priority.
+ * image and text styles of all Vector and VectorTile layers that have set this to `true`. The priority
+ * is defined by the z-index of the layer, the `zIndex` of the style and the render order of features.
+ * Higher z-index means higher priority. Within the same z-index, a feature rendered before another has
+ * higher priority.
  * @property {import("../style/Style.js").StyleLike} [style] Layer style. See
  * {@link module:ol/style} for default style which will be used if this is not defined.
  * @property {boolean} [updateWhileAnimating=false] When set to `true`, feature batches will
@@ -14378,9 +13945,7 @@ function (_super) {
   function BaseVectorLayer(opt_options) {
     var _this = this;
 
-    var options = opt_options ? opt_options :
-    /** @type {Options} */
-    {};
+    var options = opt_options ? opt_options : {};
     var baseOptions = (0, _obj.assign)({}, options);
     delete baseOptions.style;
     delete baseOptions.renderBuffer;
@@ -14550,638 +14115,7 @@ var _default = {
   INTERACTING: 1
 };
 exports.default = _default;
-},{}],"../node_modules/quickselect/quickselect.js":[function(require,module,exports) {
-var define;
-var global = arguments[3];
-(function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-	typeof define === 'function' && define.amd ? define(factory) :
-	(global.quickselect = factory());
-}(this, (function () { 'use strict';
-
-function quickselect(arr, k, left, right, compare) {
-    quickselectStep(arr, k, left || 0, right || (arr.length - 1), compare || defaultCompare);
-}
-
-function quickselectStep(arr, k, left, right, compare) {
-
-    while (right > left) {
-        if (right - left > 600) {
-            var n = right - left + 1;
-            var m = k - left + 1;
-            var z = Math.log(n);
-            var s = 0.5 * Math.exp(2 * z / 3);
-            var sd = 0.5 * Math.sqrt(z * s * (n - s) / n) * (m - n / 2 < 0 ? -1 : 1);
-            var newLeft = Math.max(left, Math.floor(k - m * s / n + sd));
-            var newRight = Math.min(right, Math.floor(k + (n - m) * s / n + sd));
-            quickselectStep(arr, k, newLeft, newRight, compare);
-        }
-
-        var t = arr[k];
-        var i = left;
-        var j = right;
-
-        swap(arr, left, k);
-        if (compare(arr[right], t) > 0) swap(arr, left, right);
-
-        while (i < j) {
-            swap(arr, i, j);
-            i++;
-            j--;
-            while (compare(arr[i], t) < 0) i++;
-            while (compare(arr[j], t) > 0) j--;
-        }
-
-        if (compare(arr[left], t) === 0) swap(arr, left, j);
-        else {
-            j++;
-            swap(arr, j, right);
-        }
-
-        if (j <= k) left = j + 1;
-        if (k <= j) right = j - 1;
-    }
-}
-
-function swap(arr, i, j) {
-    var tmp = arr[i];
-    arr[i] = arr[j];
-    arr[j] = tmp;
-}
-
-function defaultCompare(a, b) {
-    return a < b ? -1 : a > b ? 1 : 0;
-}
-
-return quickselect;
-
-})));
-
-},{}],"../node_modules/rbush/index.js":[function(require,module,exports) {
-'use strict';
-
-module.exports = rbush;
-module.exports.default = rbush;
-
-var quickselect = require('quickselect');
-
-function rbush(maxEntries, format) {
-    if (!(this instanceof rbush)) return new rbush(maxEntries, format);
-
-    // max entries in a node is 9 by default; min node fill is 40% for best performance
-    this._maxEntries = Math.max(4, maxEntries || 9);
-    this._minEntries = Math.max(2, Math.ceil(this._maxEntries * 0.4));
-
-    if (format) {
-        this._initFormat(format);
-    }
-
-    this.clear();
-}
-
-rbush.prototype = {
-
-    all: function () {
-        return this._all(this.data, []);
-    },
-
-    search: function (bbox) {
-
-        var node = this.data,
-            result = [],
-            toBBox = this.toBBox;
-
-        if (!intersects(bbox, node)) return result;
-
-        var nodesToSearch = [],
-            i, len, child, childBBox;
-
-        while (node) {
-            for (i = 0, len = node.children.length; i < len; i++) {
-
-                child = node.children[i];
-                childBBox = node.leaf ? toBBox(child) : child;
-
-                if (intersects(bbox, childBBox)) {
-                    if (node.leaf) result.push(child);
-                    else if (contains(bbox, childBBox)) this._all(child, result);
-                    else nodesToSearch.push(child);
-                }
-            }
-            node = nodesToSearch.pop();
-        }
-
-        return result;
-    },
-
-    collides: function (bbox) {
-
-        var node = this.data,
-            toBBox = this.toBBox;
-
-        if (!intersects(bbox, node)) return false;
-
-        var nodesToSearch = [],
-            i, len, child, childBBox;
-
-        while (node) {
-            for (i = 0, len = node.children.length; i < len; i++) {
-
-                child = node.children[i];
-                childBBox = node.leaf ? toBBox(child) : child;
-
-                if (intersects(bbox, childBBox)) {
-                    if (node.leaf || contains(bbox, childBBox)) return true;
-                    nodesToSearch.push(child);
-                }
-            }
-            node = nodesToSearch.pop();
-        }
-
-        return false;
-    },
-
-    load: function (data) {
-        if (!(data && data.length)) return this;
-
-        if (data.length < this._minEntries) {
-            for (var i = 0, len = data.length; i < len; i++) {
-                this.insert(data[i]);
-            }
-            return this;
-        }
-
-        // recursively build the tree with the given data from scratch using OMT algorithm
-        var node = this._build(data.slice(), 0, data.length - 1, 0);
-
-        if (!this.data.children.length) {
-            // save as is if tree is empty
-            this.data = node;
-
-        } else if (this.data.height === node.height) {
-            // split root if trees have the same height
-            this._splitRoot(this.data, node);
-
-        } else {
-            if (this.data.height < node.height) {
-                // swap trees if inserted one is bigger
-                var tmpNode = this.data;
-                this.data = node;
-                node = tmpNode;
-            }
-
-            // insert the small tree into the large tree at appropriate level
-            this._insert(node, this.data.height - node.height - 1, true);
-        }
-
-        return this;
-    },
-
-    insert: function (item) {
-        if (item) this._insert(item, this.data.height - 1);
-        return this;
-    },
-
-    clear: function () {
-        this.data = createNode([]);
-        return this;
-    },
-
-    remove: function (item, equalsFn) {
-        if (!item) return this;
-
-        var node = this.data,
-            bbox = this.toBBox(item),
-            path = [],
-            indexes = [],
-            i, parent, index, goingUp;
-
-        // depth-first iterative tree traversal
-        while (node || path.length) {
-
-            if (!node) { // go up
-                node = path.pop();
-                parent = path[path.length - 1];
-                i = indexes.pop();
-                goingUp = true;
-            }
-
-            if (node.leaf) { // check current node
-                index = findItem(item, node.children, equalsFn);
-
-                if (index !== -1) {
-                    // item found, remove the item and condense tree upwards
-                    node.children.splice(index, 1);
-                    path.push(node);
-                    this._condense(path);
-                    return this;
-                }
-            }
-
-            if (!goingUp && !node.leaf && contains(node, bbox)) { // go down
-                path.push(node);
-                indexes.push(i);
-                i = 0;
-                parent = node;
-                node = node.children[0];
-
-            } else if (parent) { // go right
-                i++;
-                node = parent.children[i];
-                goingUp = false;
-
-            } else node = null; // nothing found
-        }
-
-        return this;
-    },
-
-    toBBox: function (item) { return item; },
-
-    compareMinX: compareNodeMinX,
-    compareMinY: compareNodeMinY,
-
-    toJSON: function () { return this.data; },
-
-    fromJSON: function (data) {
-        this.data = data;
-        return this;
-    },
-
-    _all: function (node, result) {
-        var nodesToSearch = [];
-        while (node) {
-            if (node.leaf) result.push.apply(result, node.children);
-            else nodesToSearch.push.apply(nodesToSearch, node.children);
-
-            node = nodesToSearch.pop();
-        }
-        return result;
-    },
-
-    _build: function (items, left, right, height) {
-
-        var N = right - left + 1,
-            M = this._maxEntries,
-            node;
-
-        if (N <= M) {
-            // reached leaf level; return leaf
-            node = createNode(items.slice(left, right + 1));
-            calcBBox(node, this.toBBox);
-            return node;
-        }
-
-        if (!height) {
-            // target height of the bulk-loaded tree
-            height = Math.ceil(Math.log(N) / Math.log(M));
-
-            // target number of root entries to maximize storage utilization
-            M = Math.ceil(N / Math.pow(M, height - 1));
-        }
-
-        node = createNode([]);
-        node.leaf = false;
-        node.height = height;
-
-        // split the items into M mostly square tiles
-
-        var N2 = Math.ceil(N / M),
-            N1 = N2 * Math.ceil(Math.sqrt(M)),
-            i, j, right2, right3;
-
-        multiSelect(items, left, right, N1, this.compareMinX);
-
-        for (i = left; i <= right; i += N1) {
-
-            right2 = Math.min(i + N1 - 1, right);
-
-            multiSelect(items, i, right2, N2, this.compareMinY);
-
-            for (j = i; j <= right2; j += N2) {
-
-                right3 = Math.min(j + N2 - 1, right2);
-
-                // pack each entry recursively
-                node.children.push(this._build(items, j, right3, height - 1));
-            }
-        }
-
-        calcBBox(node, this.toBBox);
-
-        return node;
-    },
-
-    _chooseSubtree: function (bbox, node, level, path) {
-
-        var i, len, child, targetNode, area, enlargement, minArea, minEnlargement;
-
-        while (true) {
-            path.push(node);
-
-            if (node.leaf || path.length - 1 === level) break;
-
-            minArea = minEnlargement = Infinity;
-
-            for (i = 0, len = node.children.length; i < len; i++) {
-                child = node.children[i];
-                area = bboxArea(child);
-                enlargement = enlargedArea(bbox, child) - area;
-
-                // choose entry with the least area enlargement
-                if (enlargement < minEnlargement) {
-                    minEnlargement = enlargement;
-                    minArea = area < minArea ? area : minArea;
-                    targetNode = child;
-
-                } else if (enlargement === minEnlargement) {
-                    // otherwise choose one with the smallest area
-                    if (area < minArea) {
-                        minArea = area;
-                        targetNode = child;
-                    }
-                }
-            }
-
-            node = targetNode || node.children[0];
-        }
-
-        return node;
-    },
-
-    _insert: function (item, level, isNode) {
-
-        var toBBox = this.toBBox,
-            bbox = isNode ? item : toBBox(item),
-            insertPath = [];
-
-        // find the best node for accommodating the item, saving all nodes along the path too
-        var node = this._chooseSubtree(bbox, this.data, level, insertPath);
-
-        // put the item into the node
-        node.children.push(item);
-        extend(node, bbox);
-
-        // split on node overflow; propagate upwards if necessary
-        while (level >= 0) {
-            if (insertPath[level].children.length > this._maxEntries) {
-                this._split(insertPath, level);
-                level--;
-            } else break;
-        }
-
-        // adjust bboxes along the insertion path
-        this._adjustParentBBoxes(bbox, insertPath, level);
-    },
-
-    // split overflowed node into two
-    _split: function (insertPath, level) {
-
-        var node = insertPath[level],
-            M = node.children.length,
-            m = this._minEntries;
-
-        this._chooseSplitAxis(node, m, M);
-
-        var splitIndex = this._chooseSplitIndex(node, m, M);
-
-        var newNode = createNode(node.children.splice(splitIndex, node.children.length - splitIndex));
-        newNode.height = node.height;
-        newNode.leaf = node.leaf;
-
-        calcBBox(node, this.toBBox);
-        calcBBox(newNode, this.toBBox);
-
-        if (level) insertPath[level - 1].children.push(newNode);
-        else this._splitRoot(node, newNode);
-    },
-
-    _splitRoot: function (node, newNode) {
-        // split root node
-        this.data = createNode([node, newNode]);
-        this.data.height = node.height + 1;
-        this.data.leaf = false;
-        calcBBox(this.data, this.toBBox);
-    },
-
-    _chooseSplitIndex: function (node, m, M) {
-
-        var i, bbox1, bbox2, overlap, area, minOverlap, minArea, index;
-
-        minOverlap = minArea = Infinity;
-
-        for (i = m; i <= M - m; i++) {
-            bbox1 = distBBox(node, 0, i, this.toBBox);
-            bbox2 = distBBox(node, i, M, this.toBBox);
-
-            overlap = intersectionArea(bbox1, bbox2);
-            area = bboxArea(bbox1) + bboxArea(bbox2);
-
-            // choose distribution with minimum overlap
-            if (overlap < minOverlap) {
-                minOverlap = overlap;
-                index = i;
-
-                minArea = area < minArea ? area : minArea;
-
-            } else if (overlap === minOverlap) {
-                // otherwise choose distribution with minimum area
-                if (area < minArea) {
-                    minArea = area;
-                    index = i;
-                }
-            }
-        }
-
-        return index;
-    },
-
-    // sorts node children by the best axis for split
-    _chooseSplitAxis: function (node, m, M) {
-
-        var compareMinX = node.leaf ? this.compareMinX : compareNodeMinX,
-            compareMinY = node.leaf ? this.compareMinY : compareNodeMinY,
-            xMargin = this._allDistMargin(node, m, M, compareMinX),
-            yMargin = this._allDistMargin(node, m, M, compareMinY);
-
-        // if total distributions margin value is minimal for x, sort by minX,
-        // otherwise it's already sorted by minY
-        if (xMargin < yMargin) node.children.sort(compareMinX);
-    },
-
-    // total margin of all possible split distributions where each node is at least m full
-    _allDistMargin: function (node, m, M, compare) {
-
-        node.children.sort(compare);
-
-        var toBBox = this.toBBox,
-            leftBBox = distBBox(node, 0, m, toBBox),
-            rightBBox = distBBox(node, M - m, M, toBBox),
-            margin = bboxMargin(leftBBox) + bboxMargin(rightBBox),
-            i, child;
-
-        for (i = m; i < M - m; i++) {
-            child = node.children[i];
-            extend(leftBBox, node.leaf ? toBBox(child) : child);
-            margin += bboxMargin(leftBBox);
-        }
-
-        for (i = M - m - 1; i >= m; i--) {
-            child = node.children[i];
-            extend(rightBBox, node.leaf ? toBBox(child) : child);
-            margin += bboxMargin(rightBBox);
-        }
-
-        return margin;
-    },
-
-    _adjustParentBBoxes: function (bbox, path, level) {
-        // adjust bboxes along the given tree path
-        for (var i = level; i >= 0; i--) {
-            extend(path[i], bbox);
-        }
-    },
-
-    _condense: function (path) {
-        // go through the path, removing empty nodes and updating bboxes
-        for (var i = path.length - 1, siblings; i >= 0; i--) {
-            if (path[i].children.length === 0) {
-                if (i > 0) {
-                    siblings = path[i - 1].children;
-                    siblings.splice(siblings.indexOf(path[i]), 1);
-
-                } else this.clear();
-
-            } else calcBBox(path[i], this.toBBox);
-        }
-    },
-
-    _initFormat: function (format) {
-        // data format (minX, minY, maxX, maxY accessors)
-
-        // uses eval-type function compilation instead of just accepting a toBBox function
-        // because the algorithms are very sensitive to sorting functions performance,
-        // so they should be dead simple and without inner calls
-
-        var compareArr = ['return a', ' - b', ';'];
-
-        this.compareMinX = new Function('a', 'b', compareArr.join(format[0]));
-        this.compareMinY = new Function('a', 'b', compareArr.join(format[1]));
-
-        this.toBBox = new Function('a',
-            'return {minX: a' + format[0] +
-            ', minY: a' + format[1] +
-            ', maxX: a' + format[2] +
-            ', maxY: a' + format[3] + '};');
-    }
-};
-
-function findItem(item, items, equalsFn) {
-    if (!equalsFn) return items.indexOf(item);
-
-    for (var i = 0; i < items.length; i++) {
-        if (equalsFn(item, items[i])) return i;
-    }
-    return -1;
-}
-
-// calculate node's bbox from bboxes of its children
-function calcBBox(node, toBBox) {
-    distBBox(node, 0, node.children.length, toBBox, node);
-}
-
-// min bounding rectangle of node children from k to p-1
-function distBBox(node, k, p, toBBox, destNode) {
-    if (!destNode) destNode = createNode(null);
-    destNode.minX = Infinity;
-    destNode.minY = Infinity;
-    destNode.maxX = -Infinity;
-    destNode.maxY = -Infinity;
-
-    for (var i = k, child; i < p; i++) {
-        child = node.children[i];
-        extend(destNode, node.leaf ? toBBox(child) : child);
-    }
-
-    return destNode;
-}
-
-function extend(a, b) {
-    a.minX = Math.min(a.minX, b.minX);
-    a.minY = Math.min(a.minY, b.minY);
-    a.maxX = Math.max(a.maxX, b.maxX);
-    a.maxY = Math.max(a.maxY, b.maxY);
-    return a;
-}
-
-function compareNodeMinX(a, b) { return a.minX - b.minX; }
-function compareNodeMinY(a, b) { return a.minY - b.minY; }
-
-function bboxArea(a)   { return (a.maxX - a.minX) * (a.maxY - a.minY); }
-function bboxMargin(a) { return (a.maxX - a.minX) + (a.maxY - a.minY); }
-
-function enlargedArea(a, b) {
-    return (Math.max(b.maxX, a.maxX) - Math.min(b.minX, a.minX)) *
-           (Math.max(b.maxY, a.maxY) - Math.min(b.minY, a.minY));
-}
-
-function intersectionArea(a, b) {
-    var minX = Math.max(a.minX, b.minX),
-        minY = Math.max(a.minY, b.minY),
-        maxX = Math.min(a.maxX, b.maxX),
-        maxY = Math.min(a.maxY, b.maxY);
-
-    return Math.max(0, maxX - minX) *
-           Math.max(0, maxY - minY);
-}
-
-function contains(a, b) {
-    return a.minX <= b.minX &&
-           a.minY <= b.minY &&
-           b.maxX <= a.maxX &&
-           b.maxY <= a.maxY;
-}
-
-function intersects(a, b) {
-    return b.minX <= a.maxX &&
-           b.minY <= a.maxY &&
-           b.maxX >= a.minX &&
-           b.maxY >= a.minY;
-}
-
-function createNode(children) {
-    return {
-        children: children,
-        height: 1,
-        leaf: true,
-        minX: Infinity,
-        minY: Infinity,
-        maxX: -Infinity,
-        maxY: -Infinity
-    };
-}
-
-// sort an array so that items come in groups of n unsorted items, with groups sorted between each other;
-// combines selection algorithm with binary divide & conquer approach
-
-function multiSelect(arr, left, right, n, compare) {
-    var stack = [left, right],
-        mid;
-
-    while (stack.length) {
-        right = stack.pop();
-        left = stack.pop();
-
-        if (right - left <= n) continue;
-
-        mid = left + Math.ceil((right - left) / n / 2) * n;
-        quickselect(arr, mid, left, right, compare);
-
-        stack.push(left, mid, mid, right);
-    }
-}
-
-},{"quickselect":"../node_modules/quickselect/quickselect.js"}],"../node_modules/ol/render/VectorContext.js":[function(require,module,exports) {
+},{}],"../node_modules/ol/render/VectorContext.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -17490,8 +16424,8 @@ var _math = require("../../math.js");
  * @param {function(string, string, Object<string, number>):number} measureAndCacheTextWidth Measure and cache text width.
  * @param {string} font The font.
  * @param {Object<string, number>} cache A cache of measured widths.
- * @return {Array<Array<*>>} The result array of null if `maxAngle` was
- * exceeded. Entries of the array are x, y, anchorX, angle, chunk.
+ * @return {Array<Array<*>>} The result array (or null if `maxAngle` was
+ * exceeded). Entries of the array are x, y, anchorX, angle, chunk.
  */
 function drawTextOnPath(flatCoordinates, offset, end, stride, text, startM, maxAngle, scale, measureAndCacheTextWidth, font, cache) {
   var result = []; // Keep text upright
@@ -17505,16 +16439,13 @@ function drawTextOnPath(flatCoordinates, offset, end, stride, text, startM, maxA
   var y2 = flatCoordinates[offset + 1];
   var segmentM = 0;
   var segmentLength = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-  var chunk = '';
-  var chunkLength = 0;
-  var data, index, previousAngle;
+  var angleChanged = false;
+  var index, previousAngle;
 
   for (var i = 0; i < numChars; ++i) {
     index = reverse ? numChars - i - 1 : i;
-    var char = text.charAt(index);
-    chunk = reverse ? char + chunk : chunk + char;
-    var charLength = scale * measureAndCacheTextWidth(font, chunk, cache) - chunkLength;
-    chunkLength += charLength;
+    var char = text[index];
+    var charLength = scale * measureAndCacheTextWidth(font, char, cache);
     var charM = startM + charLength / 2;
 
     while (offset < end - stride && segmentM + segmentLength < charM) {
@@ -17536,6 +16467,7 @@ function drawTextOnPath(flatCoordinates, offset, end, stride, text, startM, maxA
 
     if (previousAngle !== undefined) {
       var delta = angle - previousAngle;
+      angleChanged = angleChanged || delta !== 0;
       delta += delta > Math.PI ? -2 * Math.PI : delta < -Math.PI ? 2 * Math.PI : 0;
 
       if (Math.abs(delta) > maxAngle) {
@@ -17543,38 +16475,21 @@ function drawTextOnPath(flatCoordinates, offset, end, stride, text, startM, maxA
       }
     }
 
+    previousAngle = angle;
     var interpolate = segmentPos / segmentLength;
     var x = (0, _math.lerp)(x1, x2, interpolate);
     var y = (0, _math.lerp)(y1, y2, interpolate);
-
-    if (previousAngle == angle) {
-      if (reverse) {
-        data[0] = x;
-        data[1] = y;
-        data[2] = charLength / 2;
-      }
-
-      data[4] = chunk;
-    } else {
-      chunk = char;
-      chunkLength = charLength;
-      data = [x, y, charLength / 2, angle, chunk];
-
-      if (reverse) {
-        result.unshift(data);
-      } else {
-        result.push(data);
-      }
-
-      previousAngle = angle;
-    }
-
+    result[index] = [x, y, charLength / 2, angle, char];
     startM += charLength;
   }
 
-  return result;
+  return angleChanged ? result : [[result[0][0], result[0][1], result[0][2], result[0][3], text]];
 }
-},{"../../math.js":"../node_modules/ol/math.js"}],"../node_modules/ol/render/canvas/Executor.js":[function(require,module,exports) {
+},{"../../math.js":"../node_modules/ol/math.js"}],"../node_modules/rbush/rbush.min.js":[function(require,module,exports) {
+var define;
+!function(t,i){"object"==typeof exports&&"undefined"!=typeof module?module.exports=i():"function"==typeof define&&define.amd?define(i):(t=t||self).RBush=i()}(this,function(){"use strict";function t(t,r,e,a,h){!function t(n,r,e,a,h){for(;a>e;){if(a-e>600){var o=a-e+1,s=r-e+1,l=Math.log(o),f=.5*Math.exp(2*l/3),u=.5*Math.sqrt(l*f*(o-f)/o)*(s-o/2<0?-1:1),m=Math.max(e,Math.floor(r-s*f/o+u)),c=Math.min(a,Math.floor(r+(o-s)*f/o+u));t(n,r,m,c,h)}var p=n[r],d=e,x=a;for(i(n,e,r),h(n[a],p)>0&&i(n,e,a);d<x;){for(i(n,d,x),d++,x--;h(n[d],p)<0;)d++;for(;h(n[x],p)>0;)x--}0===h(n[e],p)?i(n,e,x):i(n,++x,a),x<=r&&(e=x+1),r<=x&&(a=x-1)}}(t,r,e||0,a||t.length-1,h||n)}function i(t,i,n){var r=t[i];t[i]=t[n],t[n]=r}function n(t,i){return t<i?-1:t>i?1:0}var r=function(t){void 0===t&&(t=9),this._maxEntries=Math.max(4,t),this._minEntries=Math.max(2,Math.ceil(.4*this._maxEntries)),this.clear()};function e(t,i,n){if(!n)return i.indexOf(t);for(var r=0;r<i.length;r++)if(n(t,i[r]))return r;return-1}function a(t,i){h(t,0,t.children.length,i,t)}function h(t,i,n,r,e){e||(e=p(null)),e.minX=1/0,e.minY=1/0,e.maxX=-1/0,e.maxY=-1/0;for(var a=i;a<n;a++){var h=t.children[a];o(e,t.leaf?r(h):h)}return e}function o(t,i){return t.minX=Math.min(t.minX,i.minX),t.minY=Math.min(t.minY,i.minY),t.maxX=Math.max(t.maxX,i.maxX),t.maxY=Math.max(t.maxY,i.maxY),t}function s(t,i){return t.minX-i.minX}function l(t,i){return t.minY-i.minY}function f(t){return(t.maxX-t.minX)*(t.maxY-t.minY)}function u(t){return t.maxX-t.minX+(t.maxY-t.minY)}function m(t,i){return t.minX<=i.minX&&t.minY<=i.minY&&i.maxX<=t.maxX&&i.maxY<=t.maxY}function c(t,i){return i.minX<=t.maxX&&i.minY<=t.maxY&&i.maxX>=t.minX&&i.maxY>=t.minY}function p(t){return{children:t,height:1,leaf:!0,minX:1/0,minY:1/0,maxX:-1/0,maxY:-1/0}}function d(i,n,r,e,a){for(var h=[n,r];h.length;)if(!((r=h.pop())-(n=h.pop())<=e)){var o=n+Math.ceil((r-n)/e/2)*e;t(i,o,n,r,a),h.push(n,o,o,r)}}return r.prototype.all=function(){return this._all(this.data,[])},r.prototype.search=function(t){var i=this.data,n=[];if(!c(t,i))return n;for(var r=this.toBBox,e=[];i;){for(var a=0;a<i.children.length;a++){var h=i.children[a],o=i.leaf?r(h):h;c(t,o)&&(i.leaf?n.push(h):m(t,o)?this._all(h,n):e.push(h))}i=e.pop()}return n},r.prototype.collides=function(t){var i=this.data;if(!c(t,i))return!1;for(var n=[];i;){for(var r=0;r<i.children.length;r++){var e=i.children[r],a=i.leaf?this.toBBox(e):e;if(c(t,a)){if(i.leaf||m(t,a))return!0;n.push(e)}}i=n.pop()}return!1},r.prototype.load=function(t){if(!t||!t.length)return this;if(t.length<this._minEntries){for(var i=0;i<t.length;i++)this.insert(t[i]);return this}var n=this._build(t.slice(),0,t.length-1,0);if(this.data.children.length)if(this.data.height===n.height)this._splitRoot(this.data,n);else{if(this.data.height<n.height){var r=this.data;this.data=n,n=r}this._insert(n,this.data.height-n.height-1,!0)}else this.data=n;return this},r.prototype.insert=function(t){return t&&this._insert(t,this.data.height-1),this},r.prototype.clear=function(){return this.data=p([]),this},r.prototype.remove=function(t,i){if(!t)return this;for(var n,r,a,h=this.data,o=this.toBBox(t),s=[],l=[];h||s.length;){if(h||(h=s.pop(),r=s[s.length-1],n=l.pop(),a=!0),h.leaf){var f=e(t,h.children,i);if(-1!==f)return h.children.splice(f,1),s.push(h),this._condense(s),this}a||h.leaf||!m(h,o)?r?(n++,h=r.children[n],a=!1):h=null:(s.push(h),l.push(n),n=0,r=h,h=h.children[0])}return this},r.prototype.toBBox=function(t){return t},r.prototype.compareMinX=function(t,i){return t.minX-i.minX},r.prototype.compareMinY=function(t,i){return t.minY-i.minY},r.prototype.toJSON=function(){return this.data},r.prototype.fromJSON=function(t){return this.data=t,this},r.prototype._all=function(t,i){for(var n=[];t;)t.leaf?i.push.apply(i,t.children):n.push.apply(n,t.children),t=n.pop();return i},r.prototype._build=function(t,i,n,r){var e,h=n-i+1,o=this._maxEntries;if(h<=o)return a(e=p(t.slice(i,n+1)),this.toBBox),e;r||(r=Math.ceil(Math.log(h)/Math.log(o)),o=Math.ceil(h/Math.pow(o,r-1))),(e=p([])).leaf=!1,e.height=r;var s=Math.ceil(h/o),l=s*Math.ceil(Math.sqrt(o));d(t,i,n,l,this.compareMinX);for(var f=i;f<=n;f+=l){var u=Math.min(f+l-1,n);d(t,f,u,s,this.compareMinY);for(var m=f;m<=u;m+=s){var c=Math.min(m+s-1,u);e.children.push(this._build(t,m,c,r-1))}}return a(e,this.toBBox),e},r.prototype._chooseSubtree=function(t,i,n,r){for(;r.push(i),!i.leaf&&r.length-1!==n;){for(var e=1/0,a=1/0,h=void 0,o=0;o<i.children.length;o++){var s=i.children[o],l=f(s),u=(m=t,c=s,(Math.max(c.maxX,m.maxX)-Math.min(c.minX,m.minX))*(Math.max(c.maxY,m.maxY)-Math.min(c.minY,m.minY))-l);u<a?(a=u,e=l<e?l:e,h=s):u===a&&l<e&&(e=l,h=s)}i=h||i.children[0]}var m,c;return i},r.prototype._insert=function(t,i,n){var r=n?t:this.toBBox(t),e=[],a=this._chooseSubtree(r,this.data,i,e);for(a.children.push(t),o(a,r);i>=0&&e[i].children.length>this._maxEntries;)this._split(e,i),i--;this._adjustParentBBoxes(r,e,i)},r.prototype._split=function(t,i){var n=t[i],r=n.children.length,e=this._minEntries;this._chooseSplitAxis(n,e,r);var h=this._chooseSplitIndex(n,e,r),o=p(n.children.splice(h,n.children.length-h));o.height=n.height,o.leaf=n.leaf,a(n,this.toBBox),a(o,this.toBBox),i?t[i-1].children.push(o):this._splitRoot(n,o)},r.prototype._splitRoot=function(t,i){this.data=p([t,i]),this.data.height=t.height+1,this.data.leaf=!1,a(this.data,this.toBBox)},r.prototype._chooseSplitIndex=function(t,i,n){for(var r,e,a,o,s,l,u,m=1/0,c=1/0,p=i;p<=n-i;p++){var d=h(t,0,p,this.toBBox),x=h(t,p,n,this.toBBox),v=(e=d,a=x,o=void 0,s=void 0,l=void 0,u=void 0,o=Math.max(e.minX,a.minX),s=Math.max(e.minY,a.minY),l=Math.min(e.maxX,a.maxX),u=Math.min(e.maxY,a.maxY),Math.max(0,l-o)*Math.max(0,u-s)),M=f(d)+f(x);v<m?(m=v,r=p,c=M<c?M:c):v===m&&M<c&&(c=M,r=p)}return r},r.prototype._chooseSplitAxis=function(t,i,n){var r=t.leaf?this.compareMinX:s,e=t.leaf?this.compareMinY:l;this._allDistMargin(t,i,n,r)<this._allDistMargin(t,i,n,e)&&t.children.sort(r)},r.prototype._allDistMargin=function(t,i,n,r){t.children.sort(r);for(var e=this.toBBox,a=h(t,0,i,e),s=h(t,n-i,n,e),l=u(a)+u(s),f=i;f<n-i;f++){var m=t.children[f];o(a,t.leaf?e(m):m),l+=u(a)}for(var c=n-i-1;c>=i;c--){var p=t.children[c];o(s,t.leaf?e(p):p),l+=u(s)}return l},r.prototype._adjustParentBBoxes=function(t,i,n){for(var r=n;r>=0;r--)o(i[r],t)},r.prototype._condense=function(t){for(var i=t.length-1,n=void 0;i>=0;i--)0===t[i].children.length?i>0?(n=t[i-1].children).splice(n.indexOf(t[i]),1):this.clear():a(t[i],this.toBBox)},r});
+
+},{}],"../node_modules/ol/render/canvas/Executor.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -17607,6 +16522,8 @@ var _transform2 = require("../../transform.js");
 var _dom = require("../../dom.js");
 
 var _Disposable = _interopRequireDefault(require("../../Disposable.js"));
+
+var _rbush = _interopRequireDefault(require("rbush"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -17678,23 +16595,17 @@ function (_super) {
    * @param {number} resolution Resolution.
    * @param {number} pixelRatio Pixel ratio.
    * @param {boolean} overlaps The replay can have overlapping geometries.
-   * @param {?} declutterTree Declutter tree.
    * @param {SerializableInstructions} instructions The serializable instructions
    */
 
 
-  function Executor(resolution, pixelRatio, overlaps, declutterTree, instructions) {
+  function Executor(resolution, pixelRatio, overlaps, instructions) {
     var _this = _super.call(this) || this;
-    /**
-     * @type {?}
-     */
-
-
-    _this.declutterTree = declutterTree;
     /**
      * @protected
      * @type {boolean}
      */
+
 
     _this.overlaps = overlaps;
     /**
@@ -17716,6 +16627,11 @@ function (_super) {
      */
 
     _this.alignFill_;
+    /**
+     * @type {Array<*>}
+     */
+
+    _this.declutterItems = [];
     /**
      * @protected
      * @type {Array<*>}
@@ -17819,7 +16735,8 @@ function (_super) {
       var lineHeight = (0, _canvas.measureTextHeight)(textState.font);
       var height = lineHeight * numLines;
       var renderWidth = width + strokeWidth;
-      var context = (0, _dom.createCanvasContext2D)(Math.ceil(renderWidth * scale), Math.ceil((height + strokeWidth) * scale));
+      var context = (0, _dom.createCanvasContext2D)( // make canvas 2 pixels wider to account for italic text width measurement errors
+      Math.ceil((renderWidth + 2) * scale), Math.ceil((height + strokeWidth) * scale));
       label = context.canvas;
 
       _canvas.labelCache.set(key, label);
@@ -17854,7 +16771,7 @@ function (_super) {
       context.textBaseline = 'middle';
       context.textAlign = 'center';
       var leftRight = 0.5 - align;
-      var x = align * label.width / scale + leftRight * strokeWidth;
+      var x = align * renderWidth + leftRight * strokeWidth;
       var i = void 0;
 
       if (strokeKey) {
@@ -17979,11 +16896,13 @@ function (_super) {
       (0, _extent.extend)(declutterGroup, tmpExtent);
       var declutterArgs = intersects ? [context, transform ? transform.slice(0) : null, opacity, image, originX, originY, w, h, x, y, scale] : null;
 
-      if (declutterArgs && fillStroke) {
-        declutterArgs.push(fillInstruction, strokeInstruction, p1, p2, p3, p4);
-      }
+      if (declutterArgs) {
+        if (fillStroke) {
+          declutterArgs.push(fillInstruction, strokeInstruction, p1, p2, p3, p4);
+        }
 
-      declutterGroup.push(declutterArgs);
+        declutterGroup.push(declutterArgs);
+      }
     } else if (intersects) {
       if (fillStroke) {
         this.replayTextBackground_(context, p1, p2, p3, p4,
@@ -18053,10 +16972,13 @@ function (_super) {
   /**
    * @param {import("../canvas.js").DeclutterGroup} declutterGroup Declutter group.
    * @param {import("../../Feature.js").FeatureLike} feature Feature.
+   * @param {number} opacity Layer opacity.
+   * @param {?} declutterTree Declutter tree.
+   * @return {?} Declutter tree.
    */
 
 
-  Executor.prototype.renderDeclutter_ = function (declutterGroup, feature) {
+  Executor.prototype.renderDeclutter = function (declutterGroup, feature, opacity, declutterTree) {
     if (declutterGroup && declutterGroup.length > 5) {
       var groupCount = declutterGroup[4];
 
@@ -18078,20 +17000,32 @@ function (_super) {
           value: feature
         };
 
-        if (!this.declutterTree.collides(box)) {
-          this.declutterTree.insert(box);
+        if (!declutterTree) {
+          declutterTree = new _rbush.default(9);
+        }
+
+        if (!declutterTree.collides(box)) {
+          declutterTree.insert(box);
 
           for (var j = 5, jj = declutterGroup.length; j < jj; ++j) {
             var declutterData =
             /** @type {Array} */
             declutterGroup[j];
+            var context = declutterData[0];
+            var currentAlpha = context.globalAlpha;
 
-            if (declutterData) {
-              if (declutterData.length > 11) {
-                this.replayTextBackground_(declutterData[0], declutterData[13], declutterData[14], declutterData[15], declutterData[16], declutterData[11], declutterData[12]);
-              }
+            if (currentAlpha !== opacity) {
+              context.globalAlpha = opacity;
+            }
 
-              _canvas.drawImage.apply(undefined, declutterData);
+            if (declutterData.length > 11) {
+              this.replayTextBackground_(declutterData[0], declutterData[13], declutterData[14], declutterData[15], declutterData[16], declutterData[11], declutterData[12]);
+            }
+
+            _canvas.drawImage.apply(undefined, declutterData);
+
+            if (currentAlpha !== opacity) {
+              context.globalAlpha = currentAlpha;
             }
           }
         }
@@ -18100,6 +17034,8 @@ function (_super) {
         (0, _extent.createOrUpdateEmpty)(declutterGroup);
       }
     }
+
+    return declutterTree;
   };
   /**
    * @private
@@ -18118,8 +17054,10 @@ function (_super) {
     var pixelRatio = this.pixelRatio;
     var align = _TextBuilder.TEXT_ALIGN[textState.textAlign || _canvas.defaultTextAlign];
     var baseline = _TextBuilder.TEXT_ALIGN[textState.textBaseline || _canvas.defaultTextBaseline];
-    var strokeWidth = strokeState && strokeState.lineWidth ? strokeState.lineWidth : 0;
-    var anchorX = align * label.width / pixelRatio + 2 * (0.5 - align) * strokeWidth;
+    var strokeWidth = strokeState && strokeState.lineWidth ? strokeState.lineWidth : 0; // Remove the 2 pixels we added in getTextImage() for the anchor
+
+    var width = label.width / pixelRatio - 2 * textState.scale;
+    var anchorX = align * width + 2 * (0.5 - align) * strokeWidth;
     var anchorY = baseline * label.height / pixelRatio + 2 * (0.5 - baseline) * strokeWidth;
     return {
       label: label,
@@ -18144,7 +17082,9 @@ function (_super) {
 
 
   Executor.prototype.execute_ = function (context, transform, skippedFeaturesHash, instructions, snapToPixel, featureCallback, opt_hitExtent) {
+    this.declutterItems.length = 0;
     /** @type {Array<number>} */
+
     var pixelCoordinates;
 
     if (this.pixelCoordinates_ && (0, _array.equals)(transform, this.renderedTransform_)) {
@@ -18406,7 +17346,7 @@ function (_super) {
             lastStrokeInstruction : null);
           }
 
-          this.renderDeclutter_(declutterGroup, feature);
+          this.declutterItems.push(this, declutterGroup, feature);
           ++i;
           break;
 
@@ -18525,7 +17465,7 @@ function (_super) {
             }
           }
 
-          this.renderDeclutter_(declutterGroup, feature);
+          this.declutterItems.push(this, declutterGroup, feature);
           ++i;
           break;
 
@@ -18688,7 +17628,7 @@ function (_super) {
 
 var _default = Executor;
 exports.default = _default;
-},{"../../util.js":"../node_modules/ol/util.js","../../array.js":"../node_modules/ol/array.js","../../extent.js":"../node_modules/ol/extent.js","../../geom/flat/length.js":"../node_modules/ol/geom/flat/length.js","../../geom/flat/textpath.js":"../node_modules/ol/geom/flat/textpath.js","../../geom/flat/transform.js":"../node_modules/ol/geom/flat/transform.js","../../obj.js":"../node_modules/ol/obj.js","../canvas.js":"../node_modules/ol/render/canvas.js","./Instruction.js":"../node_modules/ol/render/canvas/Instruction.js","./TextBuilder.js":"../node_modules/ol/render/canvas/TextBuilder.js","../../transform.js":"../node_modules/ol/transform.js","../../dom.js":"../node_modules/ol/dom.js","../../Disposable.js":"../node_modules/ol/Disposable.js"}],"../node_modules/ol/render/canvas/ExecutorGroup.js":[function(require,module,exports) {
+},{"../../util.js":"../node_modules/ol/util.js","../../array.js":"../node_modules/ol/array.js","../../extent.js":"../node_modules/ol/extent.js","../../geom/flat/length.js":"../node_modules/ol/geom/flat/length.js","../../geom/flat/textpath.js":"../node_modules/ol/geom/flat/textpath.js","../../geom/flat/transform.js":"../node_modules/ol/geom/flat/transform.js","../../obj.js":"../node_modules/ol/obj.js","../canvas.js":"../node_modules/ol/render/canvas.js","./Instruction.js":"../node_modules/ol/render/canvas/Instruction.js","./TextBuilder.js":"../node_modules/ol/render/canvas/TextBuilder.js","../../transform.js":"../node_modules/ol/transform.js","../../dom.js":"../node_modules/ol/dom.js","../../Disposable.js":"../node_modules/ol/Disposable.js","rbush":"../node_modules/rbush/rbush.min.js"}],"../node_modules/ol/render/canvas/ExecutorGroup.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -18763,26 +17703,19 @@ function (_super) {
    * @param {number} resolution Resolution.
    * @param {number} pixelRatio Pixel ratio.
    * @param {boolean} overlaps The executor group can have overlapping geometries.
-   * @param {?} declutterTree Declutter tree for declutter processing in postrender.
    * @param {!Object<string, !Object<BuilderType, import("./Builder.js").SerializableInstructions>>} allInstructions
    * The serializable instructions.
    * @param {number=} opt_renderBuffer Optional rendering buffer.
    */
 
 
-  function ExecutorGroup(maxExtent, resolution, pixelRatio, overlaps, declutterTree, allInstructions, opt_renderBuffer) {
+  function ExecutorGroup(maxExtent, resolution, pixelRatio, overlaps, allInstructions, opt_renderBuffer) {
     var _this = _super.call(this) || this;
-    /**
-     * Declutter tree.
-     * @private
-     */
-
-
-    _this.declutterTree_ = declutterTree;
     /**
      * @private
      * @type {import("../../extent.js").Extent}
      */
+
 
     _this.maxExtent_ = maxExtent;
     /**
@@ -18820,7 +17753,7 @@ function (_super) {
      * @type {CanvasRenderingContext2D}
      */
 
-    _this.hitDetectionContext_ = (0, _dom.createCanvasContext2D)(1, 1);
+    _this.hitDetectionContext_ = null;
     /**
      * @private
      * @type {import("../../transform.js").Transform}
@@ -18866,7 +17799,7 @@ function (_super) {
 
       for (var builderType in instructionByZindex) {
         var instructions = instructionByZindex[builderType];
-        executors[builderType] = new _Executor.default(this.resolution_, this.pixelRatio_, this.overlaps_, this.declutterTree_, instructions);
+        executors[builderType] = new _Executor.default(this.resolution_, this.pixelRatio_, this.overlaps_, instructions);
       }
     }
   };
@@ -18884,8 +17817,10 @@ function (_super) {
       }
     }
 
-    var canvas = this.hitDetectionContext_.canvas;
-    canvas.width = canvas.height = 0;
+    if (this.hitDetectionContext_) {
+      var canvas = this.hitDetectionContext_.canvas;
+      canvas.width = canvas.height = 0;
+    }
 
     _super.prototype.disposeInternal.call(this);
   };
@@ -18915,16 +17850,21 @@ function (_super) {
    * @param {number} hitTolerance Hit tolerance in pixels.
    * @param {Object<string, boolean>} skippedFeaturesHash Ids of features to skip.
    * @param {function(import("../../Feature.js").FeatureLike): T} callback Feature callback.
-   * @param {Object<string, import("../canvas.js").DeclutterGroup>} declutterReplays Declutter replays.
+   * @param {Array<import("../../Feature.js").FeatureLike>} declutteredFeatures Decluttered features.
    * @return {T|undefined} Callback result.
    * @template T
    */
 
 
-  ExecutorGroup.prototype.forEachFeatureAtCoordinate = function (coordinate, resolution, rotation, hitTolerance, skippedFeaturesHash, callback, declutterReplays) {
+  ExecutorGroup.prototype.forEachFeatureAtCoordinate = function (coordinate, resolution, rotation, hitTolerance, skippedFeaturesHash, callback, declutteredFeatures) {
     hitTolerance = Math.round(hitTolerance);
     var contextSize = hitTolerance * 2 + 1;
     var transform = (0, _transform2.compose)(this.hitDetectionTransform_, hitTolerance + 0.5, hitTolerance + 0.5, 1 / resolution, -1 / resolution, -rotation, -coordinate[0], -coordinate[1]);
+
+    if (!this.hitDetectionContext_) {
+      this.hitDetectionContext_ = (0, _dom.createCanvasContext2D)(contextSize, contextSize);
+    }
+
     var context = this.hitDetectionContext_;
 
     if (context.canvas.width !== contextSize || context.canvas.height !== contextSize) {
@@ -18947,14 +17887,6 @@ function (_super) {
     }
 
     var mask = getCircleArray(hitTolerance);
-    var declutteredFeatures;
-
-    if (this.declutterTree_) {
-      declutteredFeatures = this.declutterTree_.all().map(function (entry) {
-        return entry.value;
-      });
-    }
-
     var builderType;
     /**
      * @param {import("../../Feature.js").FeatureLike} feature Feature.
@@ -19001,20 +17933,10 @@ function (_super) {
         executor = executors[builderType];
 
         if (executor !== undefined) {
-          if (declutterReplays && (builderType == _BuilderType.default.IMAGE || builderType == _BuilderType.default.TEXT)) {
-            var declutter = declutterReplays[zIndexKey];
+          result = executor.executeHitDetection(context, transform, rotation, skippedFeaturesHash, featureCallback, hitExtent);
 
-            if (!declutter) {
-              declutterReplays[zIndexKey] = [executor, transform.slice(0)];
-            } else {
-              declutter.push(executor, transform.slice(0));
-            }
-          } else {
-            result = executor.executeHitDetection(context, transform, rotation, skippedFeaturesHash, featureCallback, hitExtent);
-
-            if (result) {
-              return result;
-            }
+          if (result) {
+            return result;
           }
         }
       }
@@ -19191,19 +18113,31 @@ function getCircleArray(radius) {
  * @param {!Object<string, Array<*>>} declutterReplays Declutter replays.
  * @param {CanvasRenderingContext2D} context Context.
  * @param {number} rotation Rotation.
+ * @param {number} opacity Opacity.
  * @param {boolean} snapToPixel Snap point symbols and text to integer pixels.
+ * @param {Array<import("../../PluggableMap.js").DeclutterItems>} declutterItems Declutter items.
  */
 
 
-function replayDeclutter(declutterReplays, context, rotation, snapToPixel) {
+function replayDeclutter(declutterReplays, context, rotation, opacity, snapToPixel, declutterItems) {
   var zs = Object.keys(declutterReplays).map(Number).sort(_array.numberSafeCompareFunction);
   var skippedFeatureUids = {};
 
   for (var z = 0, zz = zs.length; z < zz; ++z) {
     var executorData = declutterReplays[zs[z].toString()];
+    var currentExecutor = void 0;
 
     for (var i = 0, ii = executorData.length; i < ii;) {
       var executor = executorData[i++];
+
+      if (executor !== currentExecutor) {
+        currentExecutor = executor;
+        declutterItems.push({
+          items: executor.declutterItems,
+          opacity: opacity
+        });
+      }
+
       var transform = executorData[i++];
       executor.execute(context, transform, rotation, skippedFeatureUids, snapToPixel);
     }
@@ -19261,11 +18195,10 @@ function (_super) {
    *     CSS pixels to rendered pixels.
    * @param {import("../PluggableMap.js").FrameState=} opt_frameState Frame state.
    * @param {?CanvasRenderingContext2D=} opt_context Context.
-   * @param {?import("../webgl/Helper.js").default=} opt_glContext WebGL Context.
    */
 
 
-  function RenderEvent(type, opt_inversePixelTransform, opt_frameState, opt_context, opt_glContext) {
+  function RenderEvent(type, opt_inversePixelTransform, opt_frameState, opt_context) {
     var _this = _super.call(this, type) || this;
     /**
      * Transform from CSS pixels (relative to the top-left corner of the map viewport)
@@ -19291,14 +18224,6 @@ function (_super) {
      */
 
     _this.context = opt_context;
-    /**
-     * WebGL context. Only available when a WebGL renderer is used, null
-     * otherwise.
-     * @type {import("../webgl/Helper.js").default|null|undefined}
-     * @api
-     */
-
-    _this.glContext = opt_glContext;
     return _this;
   }
 
@@ -19381,24 +18306,23 @@ function (_super) {
    * Determine whether render should be called.
    * @abstract
    * @param {import("../PluggableMap.js").FrameState} frameState Frame state.
-   * @param {import("../layer/Layer.js").State} layerState Layer state.
    * @return {boolean} Layer is ready to be rendered.
    */
 
 
-  LayerRenderer.prototype.prepareFrame = function (frameState, layerState) {
+  LayerRenderer.prototype.prepareFrame = function (frameState) {
     return (0, _util.abstract)();
   };
   /**
    * Render the layer.
    * @abstract
    * @param {import("../PluggableMap.js").FrameState} frameState Frame state.
-   * @param {import("../layer/Layer.js").State} layerState Layer state.
+   * @param {HTMLElement} target Target that may be used to render content to.
    * @return {HTMLElement} The rendered element.
    */
 
 
-  LayerRenderer.prototype.renderFrame = function (frameState, layerState) {
+  LayerRenderer.prototype.renderFrame = function (frameState, target) {
     return (0, _util.abstract)();
   };
   /**
@@ -19446,12 +18370,13 @@ function (_super) {
    * @param {import("../PluggableMap.js").FrameState} frameState Frame state.
    * @param {number} hitTolerance Hit tolerance in pixels.
    * @param {function(import("../Feature.js").FeatureLike, import("../layer/Layer.js").default): T} callback Feature callback.
+   * @param {Array<import("../Feature.js").FeatureLike>} declutteredFeatures Decluttered features.
    * @return {T|void} Callback result.
    * @template T
    */
 
 
-  LayerRenderer.prototype.forEachFeatureAtCoordinate = function (coordinate, frameState, hitTolerance, callback) {};
+  LayerRenderer.prototype.forEachFeatureAtCoordinate = function (coordinate, frameState, hitTolerance, callback, declutteredFeatures) {};
   /**
    * @abstract
    * @param {import("../pixel.js").Pixel} pixel Pixel.
@@ -19474,6 +18399,13 @@ function (_super) {
   LayerRenderer.prototype.getLayer = function () {
     return this.layer_;
   };
+  /**
+   * Perform action necessary to get the layer rendered after new fonts have loaded
+   * @abstract
+   */
+
+
+  LayerRenderer.prototype.handleFontsChanged = function () {};
   /**
    * Handle changes in image state.
    * @param {import("../events/Event.js").default} event Image change event.
@@ -19609,9 +18541,15 @@ function (_super) {
     var _this = _super.call(this, layer) || this;
     /**
      * @protected
-     * @type {number}
+     * @type {HTMLElement}
      */
 
+
+    _this.container = null;
+    /**
+     * @protected
+     * @type {number}
+     */
 
     _this.renderedResolution;
     /**
@@ -19625,40 +18563,80 @@ function (_super) {
     /**
      * The transform for rendered pixels to viewport CSS pixels.  This transform must
      * be set when rendering a frame and may be used by other functions after rendering.
-     * @private
+     * @protected
      * @type {import("../../transform.js").Transform}
      */
 
-    _this.pixelTransform_ = (0, _transform.create)();
+    _this.pixelTransform = (0, _transform.create)();
     /**
      * The transform for viewport CSS pixels to rendered pixels.  This transform must
      * be set when rendering a frame and may be used by other functions after rendering.
-     * @private
+     * @protected
      * @type {import("../../transform.js").Transform}
      */
 
-    _this.inversePixelTransform_ = (0, _transform.create)();
+    _this.inversePixelTransform = (0, _transform.create)();
     /**
      * @protected
      * @type {CanvasRenderingContext2D}
      */
 
-    _this.context = (0, _dom.createCanvasContext2D)();
-    var canvas = _this.context.canvas;
-    canvas.style.position = 'absolute';
-    canvas.style.transformOrigin = 'top left';
-    canvas.className = _this.getLayer().getClassName();
+    _this.context = null;
+    /**
+     * @type {boolean}
+     */
+
+    _this.containerReused = false;
     return _this;
   }
   /**
-   * @inheritDoc
+   * Get a rendering container from an existing target, if compatible.
+   * @param {HTMLElement} target Potential render target.
+   * @param {import("../../transform").Transform} transform Transform.
+   * @param {number} opacity Opacity.
    */
 
 
-  CanvasLayerRenderer.prototype.disposeInternal = function () {
-    this.context.canvas.width = this.context.canvas.height = 0;
+  CanvasLayerRenderer.prototype.useContainer = function (target, transform, opacity) {
+    var layerClassName = this.getLayer().getClassName();
+    var container, context;
 
-    _super.prototype.disposeInternal.call(this);
+    if (target && target.style.opacity === '' && target.className === layerClassName) {
+      var canvas = target.firstElementChild;
+
+      if (canvas instanceof HTMLCanvasElement) {
+        context = canvas.getContext('2d');
+      }
+    }
+
+    if (context && context.canvas.style.transform === (0, _transform.toString)(transform)) {
+      // Container of the previous layer renderer can be used.
+      this.container = target;
+      this.context = context;
+      this.containerReused = true;
+    } else if (this.containerReused) {
+      // Previously reused container cannot be used any more.
+      this.container = null;
+      this.context = null;
+      this.containerReused = false;
+    }
+
+    if (!this.container) {
+      container = document.createElement('div');
+      container.className = layerClassName;
+      var style = container.style;
+      style.position = 'absolute';
+      style.width = '100%';
+      style.height = '100%';
+      context = (0, _dom.createCanvasContext2D)();
+      var canvas = context.canvas;
+      container.appendChild(canvas);
+      style = canvas.style;
+      style.position = 'absolute';
+      style.transformOrigin = 'top left';
+      this.container = container;
+      this.context = context;
+    }
   };
   /**
    * @param {CanvasRenderingContext2D} context Context.
@@ -19708,7 +18686,7 @@ function (_super) {
     (0, _transform.apply)(frameState.coordinateToPixelTransform, topRight);
     (0, _transform.apply)(frameState.coordinateToPixelTransform, bottomRight);
     (0, _transform.apply)(frameState.coordinateToPixelTransform, bottomLeft);
-    var inverted = this.inversePixelTransform_;
+    var inverted = this.inversePixelTransform;
     (0, _transform.apply)(inverted, topLeft);
     (0, _transform.apply)(inverted, topRight);
     (0, _transform.apply)(inverted, bottomRight);
@@ -19733,7 +18711,7 @@ function (_super) {
     var layer = this.getLayer();
 
     if (layer.hasListener(type)) {
-      var event_1 = new _Event.default(type, this.inversePixelTransform_, frameState, context, null);
+      var event_1 = new _Event.default(type, this.inversePixelTransform, frameState, context);
       layer.dispatchEvent(event_1);
     }
   };
@@ -19790,7 +18768,7 @@ function (_super) {
 
 
   CanvasLayerRenderer.prototype.getDataAtPixel = function (pixel, frameState, hitTolerance) {
-    var renderPixel = (0, _transform.apply)(this.inversePixelTransform_, pixel.slice());
+    var renderPixel = (0, _transform.apply)(this.inversePixelTransform, pixel.slice());
     var context = this.context;
     var data;
 
@@ -20195,25 +19173,19 @@ var _util = require("../../util.js");
 
 var _ViewHint = _interopRequireDefault(require("../../ViewHint.js"));
 
-var _events = require("../../events.js");
-
-var _EventType = _interopRequireDefault(require("../../events/EventType.js"));
-
-var _rbush = _interopRequireDefault(require("rbush"));
-
 var _extent = require("../../extent.js");
-
-var _canvas = require("../../render/canvas.js");
 
 var _BuilderGroup = _interopRequireDefault(require("../../render/canvas/BuilderGroup.js"));
 
-var _ExecutorGroup = _interopRequireDefault(require("../../render/canvas/ExecutorGroup.js"));
+var _ExecutorGroup = _interopRequireWildcard(require("../../render/canvas/ExecutorGroup.js"));
 
 var _Layer = _interopRequireDefault(require("./Layer.js"));
 
 var _vector = require("../vector.js");
 
 var _transform = require("../../transform.js");
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -20262,16 +19234,10 @@ function (_super) {
   function CanvasVectorLayerRenderer(vectorLayer) {
     var _this = _super.call(this, vectorLayer) || this;
     /**
-     * Declutter tree.
-     * @private
-     */
-
-
-    _this.declutterTree_ = vectorLayer.getDeclutter() ? (0, _rbush.default)(9, undefined) : null;
-    /**
      * @private
      * @type {boolean}
      */
+
 
     _this.dirty_ = false;
     /**
@@ -20310,7 +19276,6 @@ function (_super) {
      */
 
     _this.replayGroupChanged = true;
-    (0, _events.listen)(_canvas.labelCache, _EventType.default.CLEAR, _this.handleFontsChanged_, _this);
     return _this;
   }
   /**
@@ -20318,33 +19283,37 @@ function (_super) {
    */
 
 
-  CanvasVectorLayerRenderer.prototype.disposeInternal = function () {
-    (0, _events.unlisten)(_canvas.labelCache, _EventType.default.CLEAR, this.handleFontsChanged_, this);
+  CanvasVectorLayerRenderer.prototype.useContainer = function (target, transform, opacity) {
+    if (opacity < 1) {
+      target = null;
+    }
 
-    _super.prototype.disposeInternal.call(this);
+    _super.prototype.useContainer.call(this, target, transform, opacity);
   };
   /**
    * @inheritDoc
    */
 
 
-  CanvasVectorLayerRenderer.prototype.renderFrame = function (frameState, layerState) {
+  CanvasVectorLayerRenderer.prototype.renderFrame = function (frameState, target) {
+    var pixelRatio = frameState.pixelRatio;
+    var layerState = frameState.layerStatesArray[frameState.layerIndex]; // set forward and inverse pixel transforms
+
+    (0, _transform.makeScale)(this.pixelTransform, 1 / pixelRatio, 1 / pixelRatio);
+    (0, _transform.makeInverse)(this.inversePixelTransform, this.pixelTransform);
+    this.useContainer(target, this.pixelTransform, layerState.opacity);
     var context = this.context;
     var canvas = context.canvas;
     var replayGroup = this.replayGroup_;
 
     if (!replayGroup || replayGroup.isEmpty()) {
-      if (canvas.width > 0) {
+      if (!this.containerReused && canvas.width > 0) {
         canvas.width = 0;
       }
 
-      return canvas;
-    }
+      return this.container;
+    } // resize and clear
 
-    var pixelRatio = frameState.pixelRatio; // set forward and inverse pixel transforms
-
-    (0, _transform.makeScale)(this.pixelTransform_, 1 / pixelRatio, 1 / pixelRatio);
-    (0, _transform.makeInverse)(this.inversePixelTransform_, this.pixelTransform_); // resize and clear
 
     var width = Math.round(frameState.size[0] * pixelRatio);
     var height = Math.round(frameState.size[1] * pixelRatio);
@@ -20352,12 +19321,12 @@ function (_super) {
     if (canvas.width != width || canvas.height != height) {
       canvas.width = width;
       canvas.height = height;
-      var canvasTransform = (0, _transform.toString)(this.pixelTransform_);
+      var canvasTransform = (0, _transform.toString)(this.pixelTransform);
 
       if (canvas.style.transform !== canvasTransform) {
         canvas.style.transform = canvasTransform;
       }
-    } else {
+    } else if (!this.containerReused) {
       context.clearRect(0, 0, width, height);
     }
 
@@ -20376,15 +19345,14 @@ function (_super) {
       this.clip(context, frameState, clipExtent);
     }
 
-    if (this.declutterTree_) {
-      this.declutterTree_.clear();
-    }
-
     var viewHints = frameState.viewHints;
     var snapToPixel = !(viewHints[_ViewHint.default.ANIMATING] || viewHints[_ViewHint.default.INTERACTING]);
     var transform = this.getRenderTransform(frameState, width, height, 0);
     var skippedFeatureUids = layerState.managed ? frameState.skippedFeatureUids : {};
-    replayGroup.execute(context, transform, rotation, skippedFeatureUids, snapToPixel);
+    var declutterReplays =
+    /** @type {import("../../layer/Vector.js").default} */
+    this.getLayer().getDeclutter() ? {} : null;
+    replayGroup.execute(context, transform, rotation, skippedFeatureUids, snapToPixel, undefined, declutterReplays);
 
     if (vectorSource.getWrapX() && projection.canWrapX() && !(0, _extent.containsExtent)(projectionExtent, extent)) {
       var startX = extent[0];
@@ -20396,7 +19364,7 @@ function (_super) {
         --world;
         offsetX = worldWidth * world;
         var transform_1 = this.getRenderTransform(frameState, width, height, offsetX);
-        replayGroup.execute(context, transform_1, rotation, skippedFeatureUids, snapToPixel);
+        replayGroup.execute(context, transform_1, rotation, skippedFeatureUids, snapToPixel, undefined, declutterReplays);
         startX += worldWidth;
       }
 
@@ -20407,9 +19375,15 @@ function (_super) {
         ++world;
         offsetX = worldWidth * world;
         var transform_2 = this.getRenderTransform(frameState, width, height, offsetX);
-        replayGroup.execute(context, transform_2, rotation, skippedFeatureUids, snapToPixel);
+        replayGroup.execute(context, transform_2, rotation, skippedFeatureUids, snapToPixel, undefined, declutterReplays);
         startX -= worldWidth;
       }
+    }
+
+    if (declutterReplays) {
+      var viewHints_1 = frameState.viewHints;
+      var hifi = !(viewHints_1[_ViewHint.default.ANIMATING] || viewHints_1[_ViewHint.default.INTERACTING]);
+      (0, _ExecutorGroup.replayDeclutter)(declutterReplays, context, rotation, 1, hifi, frameState.declutterItems);
     }
 
     if (clipped) {
@@ -20418,25 +19392,28 @@ function (_super) {
 
     this.postRender(context, frameState);
     var opacity = layerState.opacity;
+    var container = this.container;
 
-    if (opacity !== parseFloat(canvas.style.opacity)) {
-      canvas.style.opacity = opacity;
+    if (opacity !== parseFloat(container.style.opacity)) {
+      container.style.opacity = opacity === 1 ? '' : opacity;
     }
 
-    return canvas;
+    return this.container;
   };
   /**
    * @inheritDoc
    */
 
 
-  CanvasVectorLayerRenderer.prototype.forEachFeatureAtCoordinate = function (coordinate, frameState, hitTolerance, callback, thisArg) {
+  CanvasVectorLayerRenderer.prototype.forEachFeatureAtCoordinate = function (coordinate, frameState, hitTolerance, callback, declutteredFeatures) {
     if (!this.replayGroup_) {
       return undefined;
     } else {
       var resolution = frameState.viewState.resolution;
       var rotation = frameState.viewState.rotation;
-      var layer_1 = this.getLayer();
+      var layer_1 =
+      /** @type {import("../../layer/Vector").default} */
+      this.getLayer();
       /** @type {!Object<string, boolean>} */
 
       var features_1 = {};
@@ -20450,18 +19427,18 @@ function (_super) {
 
         if (!(key in features_1)) {
           features_1[key] = true;
-          return callback.call(thisArg, feature, layer_1);
+          return callback(feature, layer_1);
         }
-      }, null);
+      }, layer_1.getDeclutter() ? declutteredFeatures : null);
       return result;
     }
   };
   /**
-   * @param {import("../../events/Event.js").default} event Event.
+   * @inheritDoc
    */
 
 
-  CanvasVectorLayerRenderer.prototype.handleFontsChanged_ = function (event) {
+  CanvasVectorLayerRenderer.prototype.handleFontsChanged = function () {
     var layer = this.getLayer();
 
     if (layer.getVisible() && this.replayGroup_) {
@@ -20483,7 +19460,7 @@ function (_super) {
    */
 
 
-  CanvasVectorLayerRenderer.prototype.prepareFrame = function (frameState, layerState) {
+  CanvasVectorLayerRenderer.prototype.prepareFrame = function (frameState) {
     var vectorLayer =
     /** @type {import("../../layer/Vector.js").default} */
     this.getLayer();
@@ -20536,7 +19513,7 @@ function (_super) {
 
     this.replayGroup_ = null;
     this.dirty_ = false;
-    var replayGroup = new _BuilderGroup.default((0, _vector.getTolerance)(resolution, pixelRatio), extent, resolution, pixelRatio, !!this.declutterTree_);
+    var replayGroup = new _BuilderGroup.default((0, _vector.getTolerance)(resolution, pixelRatio), extent, resolution, pixelRatio, vectorLayer.getDeclutter());
     vectorSource.loadFeatures(extent, resolution, projection);
     /**
      * @param {import("../../Feature.js").default} feature Feature.
@@ -20577,7 +19554,7 @@ function (_super) {
     }
 
     var replayGroupInstructions = replayGroup.finish();
-    var executorGroup = new _ExecutorGroup.default(extent, resolution, pixelRatio, vectorSource.getOverlaps(), this.declutterTree_, replayGroupInstructions, vectorLayer.getRenderBuffer());
+    var executorGroup = new _ExecutorGroup.default(extent, resolution, pixelRatio, vectorSource.getOverlaps(), replayGroupInstructions, vectorLayer.getRenderBuffer());
     this.renderedResolution_ = resolution;
     this.renderedRevision_ = vectorLayerRevision;
     this.renderedRenderOrder_ = vectorLayerRenderOrder;
@@ -20619,7 +19596,7 @@ function (_super) {
 
 var _default = CanvasVectorLayerRenderer;
 exports.default = _default;
-},{"../../util.js":"../node_modules/ol/util.js","../../ViewHint.js":"../node_modules/ol/ViewHint.js","../../events.js":"../node_modules/ol/events.js","../../events/EventType.js":"../node_modules/ol/events/EventType.js","rbush":"../node_modules/rbush/index.js","../../extent.js":"../node_modules/ol/extent.js","../../render/canvas.js":"../node_modules/ol/render/canvas.js","../../render/canvas/BuilderGroup.js":"../node_modules/ol/render/canvas/BuilderGroup.js","../../render/canvas/ExecutorGroup.js":"../node_modules/ol/render/canvas/ExecutorGroup.js","./Layer.js":"../node_modules/ol/renderer/canvas/Layer.js","../vector.js":"../node_modules/ol/renderer/vector.js","../../transform.js":"../node_modules/ol/transform.js"}],"../node_modules/ol/layer/Vector.js":[function(require,module,exports) {
+},{"../../util.js":"../node_modules/ol/util.js","../../ViewHint.js":"../node_modules/ol/ViewHint.js","../../extent.js":"../node_modules/ol/extent.js","../../render/canvas/BuilderGroup.js":"../node_modules/ol/render/canvas/BuilderGroup.js","../../render/canvas/ExecutorGroup.js":"../node_modules/ol/render/canvas/ExecutorGroup.js","./Layer.js":"../node_modules/ol/renderer/canvas/Layer.js","../vector.js":"../node_modules/ol/renderer/vector.js","../../transform.js":"../node_modules/ol/transform.js"}],"../node_modules/ol/layer/Vector.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -20662,10 +19639,6 @@ var __extends = void 0 && (void 0).__extends || function () {
 
 
 /**
- * @typedef {import("./BaseVector.js").Options} Options
- */
-
-/**
  * @classdesc
  * Vector data that is rendered client-side.
  * Note that any property set in the options is set as a {@link module:ol/Object~BaseObject}
@@ -20680,7 +19653,7 @@ var VectorLayer =
 function (_super) {
   __extends(VectorLayer, _super);
   /**
-   * @param {Options=} opt_options Options.
+   * @param {import("./BaseVector.js").Options=} opt_options Options.
    */
 
 
@@ -22848,7 +21821,7 @@ function () {
     /**
      * @private
      */
-    this.rbush_ = (0, _rbush.default)(opt_maxEntries, undefined);
+    this.rbush_ = new _rbush.default(opt_maxEntries);
     /**
      * A mapping between the objects added to this rbush wrapper
      * and the objects that are actually added to the internal rbush.
@@ -23057,7 +22030,7 @@ function () {
 
 var _default = RBush;
 exports.default = _default;
-},{"../util.js":"../node_modules/ol/util.js","rbush":"../node_modules/rbush/index.js","../extent.js":"../node_modules/ol/extent.js","../obj.js":"../node_modules/ol/obj.js"}],"../node_modules/ol/source/Vector.js":[function(require,module,exports) {
+},{"../util.js":"../node_modules/ol/util.js","rbush":"../node_modules/rbush/rbush.min.js","../extent.js":"../node_modules/ol/extent.js","../obj.js":"../node_modules/ol/obj.js"}],"../node_modules/ol/source/Vector.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -23143,6 +22116,7 @@ var __extends = void 0 && (void 0).__extends || function () {
  * @classdesc
  * Events emitted by {@link module:ol/source/Vector} instances are instances of this
  * type.
+ * @template {import("../geom/Geometry.js").default} Geometry
  */
 var VectorSourceEvent =
 /** @class */
@@ -23150,7 +22124,7 @@ function (_super) {
   __extends(VectorSourceEvent, _super);
   /**
    * @param {string} type Type.
-   * @param {import("../Feature.js").default=} opt_feature Feature.
+   * @param {import("../Feature.js").default<Geometry>=} opt_feature Feature.
    */
 
 
@@ -23158,7 +22132,7 @@ function (_super) {
     var _this = _super.call(this, type) || this;
     /**
      * The feature being added or removed.
-     * @type {import("../Feature.js").default|undefined}
+     * @type {import("../Feature.js").default<Geometry>|undefined}
      * @api
      */
 
@@ -23267,8 +22241,9 @@ exports.VectorSourceEvent = VectorSourceEvent;
  * by this source are suitable for editing. See {@link module:ol/source/VectorTile~VectorTile} for
  * vector data that is optimized for rendering.
  *
- * @fires VectorSourceEvent
+ * @fires VectorSourceEvent<Geometry>
  * @api
+ * @template {import("../geom/Geometry.js").default} Geometry
  */
 var VectorSource =
 /** @class */
@@ -23334,7 +22309,7 @@ function (_super) {
     var useSpatialIndex = options.useSpatialIndex !== undefined ? options.useSpatialIndex : true;
     /**
      * @private
-     * @type {RBush<import("../Feature.js").default>}
+     * @type {RBush<import("../Feature.js").default<Geometry>>}
      */
 
     _this.featuresRtree_ = useSpatialIndex ? new _RBush.default() : null;
@@ -23346,21 +22321,21 @@ function (_super) {
     _this.loadedExtentsRtree_ = new _RBush.default();
     /**
      * @private
-     * @type {!Object<string, import("../Feature.js").default>}
+     * @type {!Object<string, import("../Feature.js").default<Geometry>>}
      */
 
     _this.nullGeometryFeatures_ = {};
     /**
      * A lookup of features by id (the return from feature.getId()).
      * @private
-     * @type {!Object<string, import("../Feature.js").default>}
+     * @type {!Object<string, import("../Feature.js").default<Geometry>>}
      */
 
     _this.idIndex_ = {};
     /**
      * A lookup of features without id (keyed by getUid(feature)).
      * @private
-     * @type {!Object<string, import("../Feature.js").default>}
+     * @type {!Object<string, import("../Feature.js").default<Geometry>>}
      */
 
     _this.undefIdIndex_ = {};
@@ -23372,7 +22347,7 @@ function (_super) {
     _this.featureChangeKeys_ = {};
     /**
      * @private
-     * @type {Collection<import("../Feature.js").default>}
+     * @type {Collection<import("../Feature.js").default<Geometry>>}
      */
 
     _this.featuresCollection_ = null;
@@ -23405,7 +22380,10 @@ function (_super) {
    * instead. A feature will not be added to the source if feature with
    * the same id is already there. The reason for this behavior is to avoid
    * feature duplication when using bbox or tile loading strategies.
-   * @param {import("../Feature.js").default} feature Feature to add.
+   * Note: this also applies if an {@link module:ol/Collection} is used for features,
+   * meaning that if a feature with a duplicate id is added in the collection, it will
+   * be removed from it right away.
+   * @param {import("../Feature.js").default<Geometry>} feature Feature to add.
    * @api
    */
 
@@ -23416,7 +22394,7 @@ function (_super) {
   };
   /**
    * Add a feature without firing a `change` event.
-   * @param {import("../Feature.js").default} feature Feature.
+   * @param {import("../Feature.js").default<Geometry>} feature Feature.
    * @protected
    */
 
@@ -23425,6 +22403,10 @@ function (_super) {
     var featureKey = (0, _util.getUid)(feature);
 
     if (!this.addToIndex_(featureKey, feature)) {
+      if (this.featuresCollection_) {
+        this.featuresCollection_.remove(feature);
+      }
+
       return;
     }
 
@@ -23445,7 +22427,7 @@ function (_super) {
   };
   /**
    * @param {string} featureKey Unique identifier for the feature.
-   * @param {import("../Feature.js").default} feature The feature.
+   * @param {import("../Feature.js").default<Geometry>} feature The feature.
    * @private
    */
 
@@ -23455,7 +22437,7 @@ function (_super) {
   };
   /**
    * @param {string} featureKey Unique identifier for the feature.
-   * @param {import("../Feature.js").default} feature The feature.
+   * @param {import("../Feature.js").default<Geometry>} feature The feature.
    * @return {boolean} The feature is "valid", in the sense that it is also a
    *     candidate for insertion into the Rtree.
    * @private
@@ -23482,7 +22464,7 @@ function (_super) {
   };
   /**
    * Add a batch of features to the source.
-   * @param {Array<import("../Feature.js").default>} features Features to add.
+   * @param {Array<import("../Feature.js").default<Geometry>>} features Features to add.
    * @api
    */
 
@@ -23493,7 +22475,7 @@ function (_super) {
   };
   /**
    * Add features without firing a `change` event.
-   * @param {Array<import("../Feature.js").default>} features Features.
+   * @param {Array<import("../Feature.js").default<Geometry>>} features Features.
    * @protected
    */
 
@@ -23536,7 +22518,7 @@ function (_super) {
     }
   };
   /**
-   * @param {!Collection<import("../Feature.js").default>} collection Collection.
+   * @param {!Collection<import("../Feature.js").default<Geometry>>} collection Collection.
    * @private
    */
 
@@ -23545,7 +22527,7 @@ function (_super) {
     var modifyingCollection = false;
     (0, _events.listen)(this, _VectorEventType.default.ADDFEATURE,
     /**
-     * @param {VectorSourceEvent} evt The vector source event
+     * @param {VectorSourceEvent<Geometry>} evt The vector source event
      */
     function (evt) {
       if (!modifyingCollection) {
@@ -23556,7 +22538,7 @@ function (_super) {
     });
     (0, _events.listen)(this, _VectorEventType.default.REMOVEFEATURE,
     /**
-     * @param {VectorSourceEvent} evt The vector source event
+     * @param {VectorSourceEvent<Geometry>} evt The vector source event
      */
     function (evt) {
       if (!modifyingCollection) {
@@ -23573,7 +22555,7 @@ function (_super) {
       if (!modifyingCollection) {
         modifyingCollection = true;
         this.addFeature(
-        /** @type {import("../Feature.js").default} */
+        /** @type {import("../Feature.js").default<Geometry>} */
         evt.element);
         modifyingCollection = false;
       }
@@ -23586,7 +22568,7 @@ function (_super) {
       if (!modifyingCollection) {
         modifyingCollection = true;
         this.removeFeature(
-        /** @type {import("../Feature.js").default} */
+        /** @type {import("../Feature.js").default<Geometry>} */
         evt.element);
         modifyingCollection = false;
       }
@@ -23641,7 +22623,7 @@ function (_super) {
    * stop and the function will return the same value.
    * Note: this function only iterate through the feature that have a defined geometry.
    *
-   * @param {function(import("../Feature.js").default): T} callback Called with each feature
+   * @param {function(import("../Feature.js").default<Geometry>): T} callback Called with each feature
    *     on the source.  Return a truthy value to stop iteration.
    * @return {T|undefined} The return value from the last call to the callback.
    * @template T
@@ -23663,7 +22645,7 @@ function (_super) {
    * value.
    *
    * @param {import("../coordinate.js").Coordinate} coordinate Coordinate.
-   * @param {function(import("../Feature.js").default): T} callback Called with each feature
+   * @param {function(import("../Feature.js").default<Geometry>): T} callback Called with each feature
    *     whose goemetry contains the provided coordinate.
    * @return {T|undefined} The return value from the last call to the callback.
    * @template T
@@ -23695,7 +22677,7 @@ function (_super) {
    * features, equivalent to {@link module:ol/source/Vector~VectorSource#forEachFeature #forEachFeature()}.
    *
    * @param {import("../extent.js").Extent} extent Extent.
-   * @param {function(import("../Feature.js").default): T} callback Called with each feature
+   * @param {function(import("../Feature.js").default<Geometry>): T} callback Called with each feature
    *     whose bounding box intersects the provided extent.
    * @return {T|undefined} The return value from the last call to the callback.
    * @template T
@@ -23719,7 +22701,7 @@ function (_super) {
    * {@link module:ol/source/Vector~VectorSource#forEachFeatureInExtent #forEachFeatureInExtent()} method instead.
    *
    * @param {import("../extent.js").Extent} extent Extent.
-   * @param {function(import("../Feature.js").default): T} callback Called with each feature
+   * @param {function(import("../Feature.js").default<Geometry>): T} callback Called with each feature
    *     whose geometry intersects the provided extent.
    * @return {T|undefined} The return value from the last call to the callback.
    * @template T
@@ -23730,7 +22712,7 @@ function (_super) {
   VectorSource.prototype.forEachFeatureIntersectingExtent = function (extent, callback) {
     return this.forEachFeatureInExtent(extent,
     /**
-     * @param {import("../Feature.js").default} feature Feature.
+     * @param {import("../Feature.js").default<Geometry>} feature Feature.
      * @return {T|undefined} The return value from the last call to the callback.
      */
     function (feature) {
@@ -23749,7 +22731,7 @@ function (_super) {
    * Get the features collection associated with this source. Will be `null`
    * unless the source was configured with `useSpatialIndex` set to `false`, or
    * with an {@link module:ol/Collection} as `features`.
-   * @return {Collection<import("../Feature.js").default>} The collection of features.
+   * @return {Collection<import("../Feature.js").default<Geometry>>} The collection of features.
    * @api
    */
 
@@ -23759,7 +22741,7 @@ function (_super) {
   };
   /**
    * Get all features on the source in random order.
-   * @return {Array<import("../Feature.js").default>} Features.
+   * @return {Array<import("../Feature.js").default<Geometry>>} Features.
    * @api
    */
 
@@ -23778,14 +22760,14 @@ function (_super) {
     }
 
     return (
-      /** @type {Array<import("../Feature.js").default>} */
+      /** @type {Array<import("../Feature.js").default<Geometry>>} */
       features
     );
   };
   /**
    * Get all features whose geometry intersects the provided coordinate.
    * @param {import("../coordinate.js").Coordinate} coordinate Coordinate.
-   * @return {Array<import("../Feature.js").default>} Features.
+   * @return {Array<import("../Feature.js").default<Geometry>>} Features.
    * @api
    */
 
@@ -23798,14 +22780,14 @@ function (_super) {
     return features;
   };
   /**
-   * Get all features in the provided extent.  Note that this returns an array of
+   * Get all features whose bounding box intersects the provided extent.  Note that this returns an array of
    * all features intersecting the given extent in random order (so it may include
    * features whose geometries do not intersect the extent).
    *
    * This method is not available when the source is configured with
    * `useSpatialIndex` set to `false`.
    * @param {import("../extent.js").Extent} extent Extent.
-   * @return {Array<import("../Feature.js").default>} Features.
+   * @return {Array<import("../Feature.js").default<Geometry>>} Features.
    * @api
    */
 
@@ -23819,10 +22801,10 @@ function (_super) {
    * This method is not available when the source is configured with
    * `useSpatialIndex` set to `false`.
    * @param {import("../coordinate.js").Coordinate} coordinate Coordinate.
-   * @param {function(import("../Feature.js").default):boolean=} opt_filter Feature filter function.
+   * @param {function(import("../Feature.js").default<Geometry>):boolean=} opt_filter Feature filter function.
    *     The filter function will receive one argument, the {@link module:ol/Feature feature}
    *     and it should return a boolean value. By default, no filtering is made.
-   * @return {import("../Feature.js").default} Closest feature.
+   * @return {import("../Feature.js").default<Geometry>} Closest feature.
    * @api
    */
 
@@ -23844,7 +22826,7 @@ function (_super) {
     var filter = opt_filter ? opt_filter : _functions.TRUE;
     this.featuresRtree_.forEachInExtent(extent,
     /**
-     * @param {import("../Feature.js").default} feature Feature.
+     * @param {import("../Feature.js").default<Geometry>} feature Feature.
      */
     function (feature) {
       if (filter(feature)) {
@@ -23889,7 +22871,7 @@ function (_super) {
    * `source.getFeatureById(2)` will return a feature with id `'2'` or `2`.
    *
    * @param {string|number} id Feature identifier.
-   * @return {import("../Feature.js").default} The feature (or `null` if not found).
+   * @return {import("../Feature.js").default<Geometry>} The feature (or `null` if not found).
    * @api
    */
 
@@ -23936,7 +22918,7 @@ function (_super) {
 
   VectorSource.prototype.handleFeatureChange_ = function (event) {
     var feature =
-    /** @type {import("../Feature.js").default} */
+    /** @type {import("../Feature.js").default<Geometry>} */
     event.target;
     var featureKey = (0, _util.getUid)(feature);
     var geometry = feature.getGeometry();
@@ -23991,7 +22973,7 @@ function (_super) {
   };
   /**
    * Returns true if the feature is contained within the source.
-   * @param {import("../Feature.js").default} feature Feature.
+   * @param {import("../Feature.js").default<Geometry>} feature Feature.
    * @return {boolean} Has feature.
    * @api
    */
@@ -24088,7 +23070,7 @@ function (_super) {
    * Remove a single feature from the source.  If you want to remove all features
    * at once, use the {@link module:ol/source/Vector~VectorSource#clear #clear()} method
    * instead.
-   * @param {import("../Feature.js").default} feature Feature to remove.
+   * @param {import("../Feature.js").default<Geometry>} feature Feature to remove.
    * @api
    */
 
@@ -24109,7 +23091,7 @@ function (_super) {
   };
   /**
    * Remove feature without firing a `change` event.
-   * @param {import("../Feature.js").default} feature Feature.
+   * @param {import("../Feature.js").default<Geometry>} feature Feature.
    * @protected
    */
 
@@ -24131,7 +23113,7 @@ function (_super) {
   /**
    * Remove a feature from the id index.  Called internally when the feature id
    * may have changed.
-   * @param {import("../Feature.js").default} feature The feature.
+   * @param {import("../Feature.js").default<Geometry>} feature The feature.
    * @return {boolean} Removed the feature from the index.
    * @private
    */
@@ -24367,37 +23349,37 @@ var _Vector = _interopRequireDefault(require("./Vector.js"));
 
 var _obj = require("../obj.js");
 
-var _coordinate = require("../coordinate");
+var _coordinate = require("../coordinate.js");
 
-var _Text = _interopRequireDefault(require("../style/Text"));
+var _Text = _interopRequireDefault(require("../style/Text.js"));
 
-var _Fill = _interopRequireDefault(require("../style/Fill"));
+var _Fill = _interopRequireDefault(require("../style/Fill.js"));
 
-var _Stroke = _interopRequireDefault(require("../style/Stroke"));
+var _Stroke = _interopRequireDefault(require("../style/Stroke.js"));
 
 var _LineString = _interopRequireDefault(require("../geom/LineString.js"));
 
-var _Vector2 = _interopRequireDefault(require("../source/Vector"));
+var _Vector2 = _interopRequireDefault(require("../source/Vector.js"));
 
-var _proj = require("../proj");
+var _proj = require("../proj.js");
 
-var _extent = require("../extent");
+var _extent = require("../extent.js");
 
-var _math = require("../math");
+var _math = require("../math.js");
 
-var _Style = _interopRequireDefault(require("../style/Style"));
+var _Style = _interopRequireDefault(require("../style/Style.js"));
 
-var _Feature = _interopRequireDefault(require("../Feature"));
+var _Feature = _interopRequireDefault(require("../Feature.js"));
 
-var _loadingstrategy = require("../loadingstrategy");
+var _loadingstrategy = require("../loadingstrategy.js");
 
-var _geodesic = require("../geom/flat/geodesic");
+var _geodesic = require("../geom/flat/geodesic.js");
 
-var _GeometryLayout = _interopRequireDefault(require("../geom/GeometryLayout"));
+var _GeometryLayout = _interopRequireDefault(require("../geom/GeometryLayout.js"));
 
-var _Point = _interopRequireDefault(require("../geom/Point"));
+var _Point = _interopRequireDefault(require("../geom/Point.js"));
 
-var _Collection = _interopRequireDefault(require("../Collection"));
+var _Collection = _interopRequireDefault(require("../Collection.js"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -25262,7 +24244,7 @@ function (_super) {
 
 var _default = Graticule;
 exports.default = _default;
-},{"./Vector.js":"../node_modules/ol/layer/Vector.js","../obj.js":"../node_modules/ol/obj.js","../coordinate":"../node_modules/ol/coordinate.js","../style/Text":"../node_modules/ol/style/Text.js","../style/Fill":"../node_modules/ol/style/Fill.js","../style/Stroke":"../node_modules/ol/style/Stroke.js","../geom/LineString.js":"../node_modules/ol/geom/LineString.js","../source/Vector":"../node_modules/ol/source/Vector.js","../proj":"../node_modules/ol/proj.js","../extent":"../node_modules/ol/extent.js","../math":"../node_modules/ol/math.js","../style/Style":"../node_modules/ol/style/Style.js","../Feature":"../node_modules/ol/Feature.js","../loadingstrategy":"../node_modules/ol/loadingstrategy.js","../geom/flat/geodesic":"../node_modules/ol/geom/flat/geodesic.js","../geom/GeometryLayout":"../node_modules/ol/geom/GeometryLayout.js","../geom/Point":"../node_modules/ol/geom/Point.js","../Collection":"../node_modules/ol/Collection.js"}],"../node_modules/ol/ImageBase.js":[function(require,module,exports) {
+},{"./Vector.js":"../node_modules/ol/layer/Vector.js","../obj.js":"../node_modules/ol/obj.js","../coordinate.js":"../node_modules/ol/coordinate.js","../style/Text.js":"../node_modules/ol/style/Text.js","../style/Fill.js":"../node_modules/ol/style/Fill.js","../style/Stroke.js":"../node_modules/ol/style/Stroke.js","../geom/LineString.js":"../node_modules/ol/geom/LineString.js","../source/Vector.js":"../node_modules/ol/source/Vector.js","../proj.js":"../node_modules/ol/proj.js","../extent.js":"../node_modules/ol/extent.js","../math.js":"../node_modules/ol/math.js","../style/Style.js":"../node_modules/ol/style/Style.js","../Feature.js":"../node_modules/ol/Feature.js","../loadingstrategy.js":"../node_modules/ol/loadingstrategy.js","../geom/flat/geodesic.js":"../node_modules/ol/geom/flat/geodesic.js","../geom/GeometryLayout.js":"../node_modules/ol/geom/GeometryLayout.js","../geom/Point.js":"../node_modules/ol/geom/Point.js","../Collection.js":"../node_modules/ol/Collection.js"}],"../node_modules/ol/ImageBase.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -25417,12 +24399,70 @@ function (_super) {
 
 var _default = ImageBase;
 exports.default = _default;
-},{"./util.js":"../node_modules/ol/util.js","./events/Target.js":"../node_modules/ol/events/Target.js","./events/EventType.js":"../node_modules/ol/events/EventType.js"}],"../node_modules/ol/Image.js":[function(require,module,exports) {
+},{"./util.js":"../node_modules/ol/util.js","./events/Target.js":"../node_modules/ol/events/Target.js","./events/EventType.js":"../node_modules/ol/events/EventType.js"}],"../node_modules/ol/has.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.IMAGE_DECODE = exports.DEVICE_PIXEL_RATIO = exports.MAC = exports.WEBKIT = exports.SAFARI = exports.FIREFOX = void 0;
+
+/**
+ * @module ol/has
+ */
+var ua = typeof navigator !== 'undefined' ? navigator.userAgent.toLowerCase() : '';
+/**
+ * User agent string says we are dealing with Firefox as browser.
+ * @type {boolean}
+ */
+
+var FIREFOX = ua.indexOf('firefox') !== -1;
+/**
+ * User agent string says we are dealing with Safari as browser.
+ * @type {boolean}
+ */
+
+exports.FIREFOX = FIREFOX;
+var SAFARI = ua.indexOf('safari') !== -1 && ua.indexOf('chrom') == -1;
+/**
+ * User agent string says we are dealing with a WebKit engine.
+ * @type {boolean}
+ */
+
+exports.SAFARI = SAFARI;
+var WEBKIT = ua.indexOf('webkit') !== -1 && ua.indexOf('edge') == -1;
+/**
+ * User agent string says we are dealing with a Mac as platform.
+ * @type {boolean}
+ */
+
+exports.WEBKIT = WEBKIT;
+var MAC = ua.indexOf('macintosh') !== -1;
+/**
+ * The ratio between physical pixels and device-independent pixels
+ * (dips) on the device (`window.devicePixelRatio`).
+ * @const
+ * @type {number}
+ * @api
+ */
+
+exports.MAC = MAC;
+var DEVICE_PIXEL_RATIO = window.devicePixelRatio || 1;
+/**
+ * Image.prototype.decode() is supported.
+ * @type {boolean}
+ */
+
+exports.DEVICE_PIXEL_RATIO = DEVICE_PIXEL_RATIO;
+var IMAGE_DECODE = typeof Image !== 'undefined' && Image.prototype.decode;
+exports.IMAGE_DECODE = IMAGE_DECODE;
+},{}],"../node_modules/ol/Image.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.listenImage = listenImage;
 exports.default = void 0;
 
 var _ImageBase = _interopRequireDefault(require("./ImageBase.js"));
@@ -25434,6 +24474,8 @@ var _events = require("./events.js");
 var _EventType = _interopRequireDefault(require("./events/EventType.js"));
 
 var _extent = require("./extent.js");
+
+var _has = require("./has.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -25517,11 +24559,11 @@ function (_super) {
     }
     /**
      * @private
-     * @type {Array<import("./events.js").EventsKey>}
+     * @type {function():void}
      */
 
 
-    _this.imageListenerKeys_ = null;
+    _this.unlisten_ = null;
     /**
      * @protected
      * @type {ImageState}
@@ -25586,8 +24628,8 @@ function (_super) {
     if (this.state == _ImageState.default.IDLE || this.state == _ImageState.default.ERROR) {
       this.state = _ImageState.default.LOADING;
       this.changed();
-      this.imageListenerKeys_ = [(0, _events.listenOnce)(this.image_, _EventType.default.ERROR, this.handleImageError_, this), (0, _events.listenOnce)(this.image_, _EventType.default.LOAD, this.handleImageLoad_, this)];
       this.imageLoadFunction_(this, this.src_);
+      this.unlisten_ = listenImage(this.image_, this.handleImageLoad_.bind(this), this.handleImageError_.bind(this));
     }
   };
   /**
@@ -25606,16 +24648,62 @@ function (_super) {
 
 
   ImageWrapper.prototype.unlistenImage_ = function () {
-    this.imageListenerKeys_.forEach(_events.unlistenByKey);
-    this.imageListenerKeys_ = null;
+    if (this.unlisten_) {
+      this.unlisten_();
+      this.unlisten_ = null;
+    }
   };
 
   return ImageWrapper;
 }(_ImageBase.default);
+/**
+ * @param {HTMLCanvasElement|HTMLImageElement|HTMLVideoElement} image Image element.
+ * @param {function():any} loadHandler Load callback function.
+ * @param {function():any} errorHandler Error callback function.
+ * @return {function():void} Callback to stop listening.
+ */
+
+
+function listenImage(image, loadHandler, errorHandler) {
+  var img =
+  /** @type {HTMLImageElement} */
+  image;
+
+  if (_has.IMAGE_DECODE) {
+    var promise = img.decode();
+    var listening_1 = true;
+
+    var unlisten = function () {
+      listening_1 = false;
+    };
+
+    promise.then(function () {
+      if (listening_1) {
+        loadHandler();
+      }
+    }).catch(function (error) {
+      if (listening_1) {
+        // FIXME: Unconditionally call errorHandler() when this bug is fixed upstream:
+        //        https://bugs.webkit.org/show_bug.cgi?id=198527
+        if (error.name === 'EncodingError' && error.message === 'Invalid image type.') {
+          loadHandler();
+        } else {
+          errorHandler();
+        }
+      }
+    });
+    return unlisten;
+  }
+
+  var listenerKeys = [(0, _events.listenOnce)(img, _EventType.default.LOAD, loadHandler), (0, _events.listenOnce)(img, _EventType.default.ERROR, errorHandler)];
+  return function unlisten() {
+    listenerKeys.forEach(_events.unlistenByKey);
+  };
+}
 
 var _default = ImageWrapper;
 exports.default = _default;
-},{"./ImageBase.js":"../node_modules/ol/ImageBase.js","./ImageState.js":"../node_modules/ol/ImageState.js","./events.js":"../node_modules/ol/events.js","./events/EventType.js":"../node_modules/ol/events/EventType.js","./extent.js":"../node_modules/ol/extent.js"}],"../node_modules/ol/ImageCanvas.js":[function(require,module,exports) {
+},{"./ImageBase.js":"../node_modules/ol/ImageBase.js","./ImageState.js":"../node_modules/ol/ImageState.js","./events.js":"../node_modules/ol/events.js","./events/EventType.js":"../node_modules/ol/events/EventType.js","./extent.js":"../node_modules/ol/extent.js","./has.js":"../node_modules/ol/has.js"}],"../node_modules/ol/ImageCanvas.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -26247,9 +25335,7 @@ var _TileState = _interopRequireDefault(require("./TileState.js"));
 
 var _dom = require("./dom.js");
 
-var _events = require("./events.js");
-
-var _EventType = _interopRequireDefault(require("./events/EventType.js"));
+var _Image = require("./Image.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -26324,11 +25410,11 @@ function (_super) {
     }
     /**
      * @private
-     * @type {Array<import("./events.js").EventsKey>}
+     * @type {function():void}
      */
 
 
-    _this.imageListenerKeys_ = null;
+    _this.unlisten_ = null;
     /**
      * @private
      * @type {import("./Tile.js").LoadFunction}
@@ -26428,8 +25514,8 @@ function (_super) {
     if (this.state == _TileState.default.IDLE) {
       this.state = _TileState.default.LOADING;
       this.changed();
-      this.imageListenerKeys_ = [(0, _events.listenOnce)(this.image_, _EventType.default.ERROR, this.handleImageError_, this), (0, _events.listenOnce)(this.image_, _EventType.default.LOAD, this.handleImageLoad_, this)];
       this.tileLoadFunction_(this, this.src_);
+      this.unlisten_ = (0, _Image.listenImage)(this.image_, this.handleImageLoad_.bind(this), this.handleImageError_.bind(this));
     }
   };
   /**
@@ -26440,8 +25526,10 @@ function (_super) {
 
 
   ImageTile.prototype.unlistenImage_ = function () {
-    this.imageListenerKeys_.forEach(_events.unlistenByKey);
-    this.imageListenerKeys_ = null;
+    if (this.unlisten_) {
+      this.unlisten_();
+      this.unlisten_ = null;
+    }
   };
 
   return ImageTile;
@@ -26461,7 +25549,7 @@ function getBlankImage() {
 
 var _default = ImageTile;
 exports.default = _default;
-},{"./Tile.js":"../node_modules/ol/Tile.js","./TileState.js":"../node_modules/ol/TileState.js","./dom.js":"../node_modules/ol/dom.js","./events.js":"../node_modules/ol/events.js","./events/EventType.js":"../node_modules/ol/events/EventType.js"}],"../node_modules/ol/Kinetic.js":[function(require,module,exports) {
+},{"./Tile.js":"../node_modules/ol/Tile.js","./TileState.js":"../node_modules/ol/TileState.js","./dom.js":"../node_modules/ol/dom.js","./Image.js":"../node_modules/ol/Image.js"}],"../node_modules/ol/Kinetic.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -28588,8 +27676,6 @@ var _events = require("../events.js");
 
 var _Target = _interopRequireDefault(require("../events/Target.js"));
 
-var _has = require("../has.js");
-
 var _EventType = _interopRequireDefault(require("./EventType.js"));
 
 var _MouseSource = _interopRequireWildcard(require("./MouseSource.js"));
@@ -28720,15 +27806,15 @@ function (_super) {
 
 
   PointerEventHandler.prototype.registerSources = function () {
-    if (_has.POINTER) {
+    if ('PointerEvent' in window) {
       this.registerSource('native', new _NativeSource.default(this));
-    } else if (_has.MSPOINTER) {
+    } else if (window.navigator.msPointerEnabled) {
       this.registerSource('ms', new _MsSource.default(this));
     } else {
       var mouseSource = new _MouseSource.default(this);
       this.registerSource('mouse', mouseSource);
 
-      if (_has.TOUCH) {
+      if ('ontouchstart' in window) {
         this.registerSource('touch', new _TouchSource.default(this, mouseSource));
       }
     } // register events on the viewport element
@@ -29043,7 +28129,7 @@ function (_super) {
 
 var _default = PointerEventHandler;
 exports.default = _default;
-},{"../events.js":"../node_modules/ol/events.js","../events/Target.js":"../node_modules/ol/events/Target.js","../has.js":"../node_modules/ol/has.js","./EventType.js":"../node_modules/ol/pointer/EventType.js","./MouseSource.js":"../node_modules/ol/pointer/MouseSource.js","./MsSource.js":"../node_modules/ol/pointer/MsSource.js","./NativeSource.js":"../node_modules/ol/pointer/NativeSource.js","./PointerEvent.js":"../node_modules/ol/pointer/PointerEvent.js","./TouchSource.js":"../node_modules/ol/pointer/TouchSource.js"}],"../node_modules/ol/MapBrowserEventHandler.js":[function(require,module,exports) {
+},{"../events.js":"../node_modules/ol/events.js","../events/Target.js":"../node_modules/ol/events/Target.js","./EventType.js":"../node_modules/ol/pointer/EventType.js","./MouseSource.js":"../node_modules/ol/pointer/MouseSource.js","./MsSource.js":"../node_modules/ol/pointer/MsSource.js","./NativeSource.js":"../node_modules/ol/pointer/NativeSource.js","./PointerEvent.js":"../node_modules/ol/pointer/PointerEvent.js","./TouchSource.js":"../node_modules/ol/pointer/TouchSource.js"}],"../node_modules/ol/MapBrowserEventHandler.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -29332,13 +28418,7 @@ function (_super) {
       this.dragging_ = true;
       var newEvent = new _MapBrowserPointerEvent.default(_MapBrowserEventType.default.POINTERDRAG, this.map_, pointerEvent, this.dragging_);
       this.dispatchEvent(newEvent);
-    } // Some native android browser triggers mousemove events during small period
-    // of time. See: https://code.google.com/p/android/issues/detail?id=5491 or
-    // https://code.google.com/p/android/issues/detail?id=19827
-    // ex: Galaxy Tab P3110 + Android 4.1.1
-
-
-    pointerEvent.preventDefault();
+    }
   };
   /**
    * Wrap and relay a pointer event.  Note that this requires that the type
@@ -30061,9 +29141,9 @@ exports.createMinMaxResolution = createMinMaxResolution;
 
 var _array = require("./array.js");
 
-var _extent = require("./extent");
+var _extent = require("./extent.js");
 
-var _math = require("./math");
+var _math = require("./math.js");
 
 /**
  * @module ol/resolutionconstraint
@@ -30233,7 +29313,7 @@ function createMinMaxResolution(maxResolution, minResolution, opt_smooth, opt_ma
     }
   );
 }
-},{"./array.js":"../node_modules/ol/array.js","./extent":"../node_modules/ol/extent.js","./math":"../node_modules/ol/math.js"}],"../node_modules/ol/rotationconstraint.js":[function(require,module,exports) {
+},{"./array.js":"../node_modules/ol/array.js","./extent.js":"../node_modules/ol/extent.js","./math.js":"../node_modules/ol/math.js"}],"../node_modules/ol/rotationconstraint.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -30409,12 +29489,6 @@ var _obj = require("./obj.js");
 var _proj = require("./proj.js");
 
 var _Units = _interopRequireDefault(require("./proj/Units.js"));
-
-var _coordinate2 = require("./coordinate");
-
-var _easing2 = require("./easing");
-
-var _resolutionconstraint2 = require("./resolutionconstraint");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -30603,6 +29677,11 @@ var DEFAULT_MIN_ZOOM = 0;
  * This is the object to act upon to change the center, resolution,
  * and rotation of the map.
  *
+ * A View has a `projection`. The projection determines the
+ * coordinate system of the center, and its units determine the units of the
+ * resolution (projection units per pixel). The default projection is
+ * Spherical Mercator (EPSG:3857).
+ *
  * ### The view states
  *
  * An View is determined by three states: `center`, `resolution`,
@@ -30613,11 +29692,6 @@ var DEFAULT_MIN_ZOOM = 0;
  * internally use the `resolution` state. Still, the `setZoom` and `getZoom`
  * methods are available, as well as `getResolutionForZoom` and
  * `getZoomForResolution` to switch from one system to the other.
- *
- * A View has a `projection`. The projection determines the
- * coordinate system of the center, and its units determine the units of the
- * resolution (projection units per pixel). The default projection is
- * Spherical Mercator (EPSG:3857).
  *
  * ### The constraints
  *
@@ -30630,7 +29704,7 @@ var DEFAULT_MIN_ZOOM = 0;
  *
  * The *resolution constraint* typically restricts min/max values and
  * snaps to specific resolutions. It is determined by the following
- * options: `resolutions`, `maxResolution`, `maxZoom`, and `zoomFactor`.
+ * options: `resolutions`, `maxResolution`, `maxZoom` and `zoomFactor`.
  * If `resolutions` is set, the other three options are ignored. See
  * documentation for each option for more information. By default, the view
  * only has a min/max restriction and allow intermediary zoom levels when
@@ -30638,7 +29712,7 @@ var DEFAULT_MIN_ZOOM = 0;
  *
  * The *rotation constraint* snaps to specific angles. It is determined
  * by the following options: `enableRotation` and `constrainRotation`.
- * By default the rotation value is snapped to zero when approaching the
+ * By default rotation is allowed and its value is snapped to zero when approaching the
  * horizontal.
  *
  * The *center constraint* is determined by the `extent` option. By
@@ -31810,7 +30884,7 @@ function (_super) {
       this.set(_ViewProperty.default.RESOLUTION, newResolution);
     }
 
-    if (!this.get(_ViewProperty.default.CENTER) || !(0, _coordinate2.equals)(this.get(_ViewProperty.default.CENTER), newCenter)) {
+    if (!this.get(_ViewProperty.default.CENTER) || !(0, _coordinate.equals)(this.get(_ViewProperty.default.CENTER), newCenter)) {
       this.set(_ViewProperty.default.CENTER, newCenter);
     }
 
@@ -31845,7 +30919,7 @@ function (_super) {
       return;
     }
 
-    if (this.getResolution() !== newResolution || this.getRotation() !== newRotation || !this.getCenter() || !(0, _coordinate2.equals)(this.getCenter(), newCenter)) {
+    if (this.getResolution() !== newResolution || this.getRotation() !== newRotation || !this.getCenter() || !(0, _coordinate.equals)(this.getCenter(), newCenter)) {
       if (this.getAnimating()) {
         this.cancelAnimations();
       }
@@ -31855,7 +30929,7 @@ function (_super) {
         center: newCenter,
         resolution: newResolution,
         duration: duration,
-        easing: _easing2.easeOut,
+        easing: _easing.easeOut,
         anchor: opt_anchor
       });
     }
@@ -31950,10 +31024,20 @@ function animationCallback(callback, returnValue) {
 
 function createCenterConstraint(options) {
   if (options.extent !== undefined) {
-    return (0, _centerconstraint.createExtent)(options.extent, options.constrainOnlyCenter, options.smoothExtentConstraint !== undefined ? options.smoothExtentConstraint : true);
-  } else {
-    return _centerconstraint.none;
+    var smooth = options.smoothExtentConstraint !== undefined ? options.smoothExtentConstraint : true;
+    return (0, _centerconstraint.createExtent)(options.extent, options.constrainOnlyCenter, smooth);
   }
+
+  var projection = (0, _proj.createProjection)(options.projection, 'EPSG:3857');
+
+  if (options.multiWorld !== true && projection.isGlobal()) {
+    var extent = projection.getExtent().slice();
+    extent[0] = -Infinity;
+    extent[2] = Infinity;
+    return (0, _centerconstraint.createExtent)(extent, false, false);
+  }
+
+  return _centerconstraint.none;
 }
 /**
  * @param {ViewOptions} options View options.
@@ -31984,7 +31068,7 @@ function createResolutionConstraint(options) {
     if (options.constrainResolution) {
       resolutionConstraint = (0, _resolutionconstraint.createSnapToResolutions)(resolutions, smooth, !options.constrainOnlyCenter && options.extent);
     } else {
-      resolutionConstraint = (0, _resolutionconstraint2.createMinMaxResolution)(maxResolution, minResolution, smooth, !options.constrainOnlyCenter && options.extent);
+      resolutionConstraint = (0, _resolutionconstraint.createMinMaxResolution)(maxResolution, minResolution, smooth, !options.constrainOnlyCenter && options.extent);
     }
   } else {
     // calculate the default min and max resolution
@@ -32033,7 +31117,7 @@ function createResolutionConstraint(options) {
         extent_1 = projection.getExtent();
       }
 
-      resolutionConstraint = (0, _resolutionconstraint2.createMinMaxResolution)(maxResolution, minResolution, smooth, !constrainOnlyCenter && extent_1);
+      resolutionConstraint = (0, _resolutionconstraint.createMinMaxResolution)(maxResolution, minResolution, smooth, !constrainOnlyCenter && extent_1);
     }
   }
 
@@ -32097,7 +31181,7 @@ function isNoopAnimation(animation) {
 
 var _default = View;
 exports.default = _default;
-},{"./tilegrid/common.js":"../node_modules/ol/tilegrid/common.js","./util.js":"../node_modules/ol/util.js","./functions.js":"../node_modules/ol/functions.js","./centerconstraint.js":"../node_modules/ol/centerconstraint.js","./Object.js":"../node_modules/ol/Object.js","./resolutionconstraint.js":"../node_modules/ol/resolutionconstraint.js","./rotationconstraint.js":"../node_modules/ol/rotationconstraint.js","./ViewHint.js":"../node_modules/ol/ViewHint.js","./ViewProperty.js":"../node_modules/ol/ViewProperty.js","./array.js":"../node_modules/ol/array.js","./asserts.js":"../node_modules/ol/asserts.js","./coordinate.js":"../node_modules/ol/coordinate.js","./easing.js":"../node_modules/ol/easing.js","./extent.js":"../node_modules/ol/extent.js","./geom/GeometryType.js":"../node_modules/ol/geom/GeometryType.js","./geom/Polygon.js":"../node_modules/ol/geom/Polygon.js","./math.js":"../node_modules/ol/math.js","./obj.js":"../node_modules/ol/obj.js","./proj.js":"../node_modules/ol/proj.js","./proj/Units.js":"../node_modules/ol/proj/Units.js","./coordinate":"../node_modules/ol/coordinate.js","./easing":"../node_modules/ol/easing.js","./resolutionconstraint":"../node_modules/ol/resolutionconstraint.js"}],"../node_modules/ol/layer/Group.js":[function(require,module,exports) {
+},{"./tilegrid/common.js":"../node_modules/ol/tilegrid/common.js","./util.js":"../node_modules/ol/util.js","./functions.js":"../node_modules/ol/functions.js","./centerconstraint.js":"../node_modules/ol/centerconstraint.js","./Object.js":"../node_modules/ol/Object.js","./resolutionconstraint.js":"../node_modules/ol/resolutionconstraint.js","./rotationconstraint.js":"../node_modules/ol/rotationconstraint.js","./ViewHint.js":"../node_modules/ol/ViewHint.js","./ViewProperty.js":"../node_modules/ol/ViewProperty.js","./array.js":"../node_modules/ol/array.js","./asserts.js":"../node_modules/ol/asserts.js","./coordinate.js":"../node_modules/ol/coordinate.js","./easing.js":"../node_modules/ol/easing.js","./extent.js":"../node_modules/ol/extent.js","./geom/GeometryType.js":"../node_modules/ol/geom/GeometryType.js","./geom/Polygon.js":"../node_modules/ol/geom/Polygon.js","./math.js":"../node_modules/ol/math.js","./obj.js":"../node_modules/ol/obj.js","./proj.js":"../node_modules/ol/proj.js","./proj/Units.js":"../node_modules/ol/proj/Units.js"}],"../node_modules/ol/layer/Group.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -32585,9 +31669,11 @@ var __extends = void 0 && (void 0).__extends || function () {
  * @property {boolean} animate
  * @property {import("./transform.js").Transform} coordinateToPixelTransform
  * @property {null|import("./extent.js").Extent} extent
+ * @property {Array<DeclutterItems>} declutterItems
  * @property {import("./coordinate.js").Coordinate} focus
  * @property {number} index
  * @property {Array<import("./layer/Layer.js").State>} layerStatesArray
+ * @property {number} layerIndex
  * @property {import("./transform.js").Transform} pixelToCoordinateTransform
  * @property {Array<PostRenderFunction>} postRenderFunctions
  * @property {import("./size.js").Size} size
@@ -32596,6 +31682,12 @@ var __extends = void 0 && (void 0).__extends || function () {
  * @property {!Object<string, Object<string, boolean>>} usedTiles
  * @property {Array<number>} viewHints
  * @property {!Object<string, Object<string, boolean>>} wantedTiles
+ */
+
+/**
+ * @typedef {Object} DeclutterItems
+ * @property {Array<*>} items Declutter items of an executor.
+ * @property {number} opacity Layer opacity.
  */
 
 /**
@@ -32765,7 +31857,7 @@ function (_super) {
      */
 
     _this.viewport_ = document.createElement('div');
-    _this.viewport_.className = 'ol-viewport' + (_has.TOUCH ? ' ol-touch' : '');
+    _this.viewport_.className = 'ol-viewport' + ('ontouchstart' in window ? ' ol-touch' : '');
     _this.viewport_.style.position = 'relative';
     _this.viewport_.style.overflow = 'hidden';
     _this.viewport_.style.width = '100%';
@@ -32840,6 +31932,16 @@ function (_super) {
 
     _this.interactions = optionsInternal.interactions || new _Collection.default();
     /**
+     * @type {import("./events/Target.js").default}
+     */
+
+    _this.labelCache_ = null;
+    /**
+     * @type {import("./events.js").EventsKey}
+     */
+
+    _this.labelCacheListenerKey_;
+    /**
      * @type {Collection<import("./Overlay.js").default>}
      * @private
      */
@@ -32857,7 +31959,7 @@ function (_super) {
      * @private
      */
 
-    _this.renderer_ = _this.createRenderer();
+    _this.renderer_ = null;
     /**
      * @type {function(Event): void|undefined}
      * @private
@@ -33061,11 +32163,6 @@ function (_super) {
     if (this.handleResize_ !== undefined) {
       removeEventListener(_EventType2.default.RESIZE, this.handleResize_, false);
       this.handleResize_ = undefined;
-    }
-
-    if (this.animationDelayKey_) {
-      cancelAnimationFrame(this.animationDelayKey_);
-      this.animationDelayKey_ = undefined;
     }
 
     this.setTarget(null);
@@ -33337,6 +32434,27 @@ function (_super) {
     return layers;
   };
   /**
+   * @return {boolean} Layers have sources that are still loading.
+   */
+
+
+  PluggableMap.prototype.getLoading = function () {
+    var layerStatesArray = this.getLayerGroup().getLayerStatesArray();
+
+    for (var i = 0, ii = layerStatesArray.length; i < ii; ++i) {
+      var layer = layerStatesArray[i].layer;
+      var source =
+      /** @type {import("./layer/Layer.js").default} */
+      layer.getSource();
+
+      if (source && source.loading) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+  /**
    * Get the pixel for a coordinate.  This takes a coordinate in the map view
    * projection and returns the corresponding pixel.
    * @param {import("./coordinate.js").Coordinate} coordinate A map coordinate.
@@ -33537,7 +32655,7 @@ function (_super) {
         var hints = frameState.viewHints;
 
         if (hints[_ViewHint.default.ANIMATING] || hints[_ViewHint.default.INTERACTING]) {
-          var lowOnFrameBudget = Date.now() - frameState.time > 8;
+          var lowOnFrameBudget = !_has.IMAGE_DECODE && Date.now() - frameState.time > 8;
           maxTotalLoading = lowOnFrameBudget ? 0 : 8;
           maxNewLoads = lowOnFrameBudget ? 0 : 2;
         }
@@ -33550,7 +32668,7 @@ function (_super) {
       }
     }
 
-    if (frameState && this.hasListener(_EventType.default.RENDERCOMPLETE) && !frameState.animate && !this.tileQueue_.getTilesLoading() && !getLoading(this.getLayers().getArray())) {
+    if (frameState && this.hasListener(_EventType.default.RENDERCOMPLETE) && !frameState.animate && !this.tileQueue_.getTilesLoading() && !this.getLoading()) {
       this.renderer_.dispatchRenderEvent(_EventType.default.RENDERCOMPLETE, frameState);
     }
 
@@ -33599,7 +32717,16 @@ function (_super) {
     }
 
     if (!targetElement) {
-      this.renderer_.removeLayerRenderers();
+      if (this.renderer_) {
+        this.renderer_.dispose();
+        this.renderer_ = null;
+      }
+
+      if (this.animationDelayKey_) {
+        cancelAnimationFrame(this.animationDelayKey_);
+        this.animationDelayKey_ = undefined;
+      }
+
       (0, _dom.removeNode)(this.viewport_);
 
       if (this.handleResize_ !== undefined) {
@@ -33608,12 +32735,17 @@ function (_super) {
       }
     } else {
       targetElement.appendChild(this.viewport_);
+
+      if (!this.renderer_) {
+        this.renderer_ = this.createRenderer();
+      }
+
       var keyboardEventTarget = !this.keyboardEventTarget_ ? targetElement : this.keyboardEventTarget_;
       this.keyHandlerKeys_ = [(0, _events.listen)(keyboardEventTarget, _EventType2.default.KEYDOWN, this.handleBrowserEvent, this), (0, _events.listen)(keyboardEventTarget, _EventType2.default.KEYPRESS, this.handleBrowserEvent, this)];
 
       if (!this.handleResize_) {
         this.handleResize_ = this.updateSize.bind(this);
-        addEventListener(_EventType2.default.RESIZE, this.handleResize_, false);
+        window.addEventListener(_EventType2.default.RESIZE, this.handleResize_, false);
       }
     }
 
@@ -33704,13 +32836,29 @@ function (_super) {
     this.animationDelay_();
   };
   /**
+   * Redraws all text after new fonts have loaded
+   */
+
+
+  PluggableMap.prototype.redrawText = function () {
+    var layerStates = this.getLayerGroup().getLayerStatesArray();
+
+    for (var i = 0, ii = layerStates.length; i < ii; ++i) {
+      var layer = layerStates[i].layer;
+
+      if (layer.hasRenderer()) {
+        layer.getRenderer().handleFontsChanged();
+      }
+    }
+  };
+  /**
    * Request a map rendering (at the next animation frame).
    * @api
    */
 
 
   PluggableMap.prototype.render = function () {
-    if (this.animationDelayKey_ === undefined) {
+    if (this.renderer_ && this.animationDelayKey_ === undefined) {
       this.animationDelayKey_ = requestAnimationFrame(this.animationDelay_);
     }
   };
@@ -33782,14 +32930,14 @@ function (_super) {
     if (size !== undefined && (0, _size.hasArea)(size) && view && view.isDef()) {
       var viewHints = view.getHints(this.frameState_ ? this.frameState_.viewHints : undefined);
       viewState = view.getState(this.pixelRatio_);
-      frameState =
-      /** @type {FrameState} */
-      {
+      frameState = {
         animate: false,
         coordinateToPixelTransform: this.coordinateToPixelTransform_,
+        declutterItems: previousFrameState ? previousFrameState.declutterItems : [],
         extent: extent,
         focus: this.focus_ ? this.focus_ : viewState.center,
         index: this.frameIndex_++,
+        layerIndex: 0,
         layerStatesArray: this.getLayerGroup().getLayerStatesArray(),
         pixelRatio: this.pixelRatio_,
         pixelToCoordinateTransform: this.pixelToCoordinateTransform_,
@@ -34013,36 +33161,7 @@ function createOptionsInternal(options) {
 }
 
 var _default = PluggableMap;
-/**
- * @param  {Array<import("./layer/Base.js").default>} layers Layers.
- * @return {boolean} Layers have sources that are still loading.
- */
-
 exports.default = _default;
-
-function getLoading(layers) {
-  for (var i = 0, ii = layers.length; i < ii; ++i) {
-    var layer = layers[i];
-
-    if (typeof
-    /** @type {?} */
-    layer.getLayers === 'function') {
-      return getLoading(
-      /** @type {LayerGroup} */
-      layer.getLayers().getArray());
-    } else {
-      var source =
-      /** @type {import("./layer/Layer.js").default} */
-      layer.getSource();
-
-      if (source && source.loading) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
 },{"./util.js":"../node_modules/ol/util.js","./Collection.js":"../node_modules/ol/Collection.js","./CollectionEventType.js":"../node_modules/ol/CollectionEventType.js","./MapBrowserEvent.js":"../node_modules/ol/MapBrowserEvent.js","./MapBrowserEventHandler.js":"../node_modules/ol/MapBrowserEventHandler.js","./MapBrowserEventType.js":"../node_modules/ol/MapBrowserEventType.js","./MapEvent.js":"../node_modules/ol/MapEvent.js","./MapEventType.js":"../node_modules/ol/MapEventType.js","./MapProperty.js":"../node_modules/ol/MapProperty.js","./render/EventType.js":"../node_modules/ol/render/EventType.js","./Object.js":"../node_modules/ol/Object.js","./ObjectEventType.js":"../node_modules/ol/ObjectEventType.js","./TileQueue.js":"../node_modules/ol/TileQueue.js","./View.js":"../node_modules/ol/View.js","./ViewHint.js":"../node_modules/ol/ViewHint.js","./asserts.js":"../node_modules/ol/asserts.js","./dom.js":"../node_modules/ol/dom.js","./events.js":"../node_modules/ol/events.js","./events/EventType.js":"../node_modules/ol/events/EventType.js","./extent.js":"../node_modules/ol/extent.js","./functions.js":"../node_modules/ol/functions.js","./has.js":"../node_modules/ol/has.js","./layer/Group.js":"../node_modules/ol/layer/Group.js","./size.js":"../node_modules/ol/size.js","./structs/PriorityQueue.js":"../node_modules/ol/structs/PriorityQueue.js","./transform.js":"../node_modules/ol/transform.js"}],"../node_modules/ol/control/Control.js":[function(require,module,exports) {
 "use strict";
 
@@ -35043,40 +34162,4945 @@ function (_super) {
 
 var _default = Zoom;
 exports.default = _default;
-},{"../events.js":"../node_modules/ol/events.js","../events/EventType.js":"../node_modules/ol/events/EventType.js","./Control.js":"../node_modules/ol/control/Control.js","../css.js":"../node_modules/ol/css.js","../easing.js":"../node_modules/ol/easing.js"}],"../node_modules/ol/control/util.js":[function(require,module,exports) {
+},{"../events.js":"../node_modules/ol/events.js","../events/EventType.js":"../node_modules/ol/events/EventType.js","./Control.js":"../node_modules/ol/control/Control.js","../css.js":"../node_modules/ol/css.js","../easing.js":"../node_modules/ol/easing.js"}],"../node_modules/ol/control/FullScreen.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _Control = _interopRequireDefault(require("./Control.js"));
+
+var _css = require("../css.js");
+
+var _dom = require("../dom.js");
+
+var _events = require("../events.js");
+
+var _EventType = _interopRequireDefault(require("../events/EventType.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+/**
+ * @module ol/control/FullScreen
+ */
+
+
+var events = ['fullscreenchange', 'webkitfullscreenchange', 'MSFullscreenChange'];
+/**
+ * @typedef {Object} Options
+ * @property {string} [className='ol-full-screen'] CSS class name.
+ * @property {string|Text} [label='\u2922'] Text label to use for the button.
+ * Instead of text, also an element (e.g. a `span` element) can be used.
+ * @property {string|Text} [labelActive='\u00d7'] Text label to use for the
+ * button when full-screen is active.
+ * Instead of text, also an element (e.g. a `span` element) can be used.
+ * @property {string} [tipLabel='Toggle full-screen'] Text label to use for the button tip.
+ * @property {boolean} [keys=false] Full keyboard access.
+ * @property {HTMLElement|string} [target] Specify a target if you want the
+ * control to be rendered outside of the map's viewport.
+ * @property {HTMLElement|string} [source] The element to be displayed
+ * fullscreen. When not provided, the element containing the map viewport will
+ * be displayed fullscreen.
+ */
+
+/**
+ * @classdesc
+ * Provides a button that when clicked fills up the full screen with the map.
+ * The full screen source element is by default the element containing the map viewport unless
+ * overridden by providing the `source` option. In which case, the dom
+ * element introduced using this parameter will be displayed in full screen.
+ *
+ * When in full screen mode, a close button is shown to exit full screen mode.
+ * The [Fullscreen API](http://www.w3.org/TR/fullscreen/) is used to
+ * toggle the map in full screen mode.
+ *
+ * @api
+ */
+
+var FullScreen =
+/** @class */
+function (_super) {
+  __extends(FullScreen, _super);
+  /**
+   * @param {Options=} opt_options Options.
+   */
+
+
+  function FullScreen(opt_options) {
+    var _this = this;
+
+    var options = opt_options ? opt_options : {};
+    _this = _super.call(this, {
+      element: document.createElement('div'),
+      target: options.target
+    }) || this;
+    /**
+     * @private
+     * @type {string}
+     */
+
+    _this.cssClassName_ = options.className !== undefined ? options.className : 'ol-full-screen';
+    var label = options.label !== undefined ? options.label : '\u2922';
+    /**
+     * @private
+     * @type {Text}
+     */
+
+    _this.labelNode_ = typeof label === 'string' ? document.createTextNode(label) : label;
+    var labelActive = options.labelActive !== undefined ? options.labelActive : '\u00d7';
+    /**
+     * @private
+     * @type {Text}
+     */
+
+    _this.labelActiveNode_ = typeof labelActive === 'string' ? document.createTextNode(labelActive) : labelActive;
+    /**
+     * @private
+     * @type {HTMLElement}
+     */
+
+    _this.button_ = document.createElement('button');
+    var tipLabel = options.tipLabel ? options.tipLabel : 'Toggle full-screen';
+
+    _this.setClassName_(_this.button_, isFullScreen());
+
+    _this.button_.setAttribute('type', 'button');
+
+    _this.button_.title = tipLabel;
+
+    _this.button_.appendChild(_this.labelNode_);
+
+    (0, _events.listen)(_this.button_, _EventType.default.CLICK, _this.handleClick_, _this);
+    var cssClasses = _this.cssClassName_ + ' ' + _css.CLASS_UNSELECTABLE + ' ' + _css.CLASS_CONTROL + ' ' + (!isFullScreenSupported() ? _css.CLASS_UNSUPPORTED : '');
+    var element = _this.element;
+    element.className = cssClasses;
+    element.appendChild(_this.button_);
+    /**
+     * @private
+     * @type {boolean}
+     */
+
+    _this.keys_ = options.keys !== undefined ? options.keys : false;
+    /**
+     * @private
+     * @type {HTMLElement|string|undefined}
+     */
+
+    _this.source_ = options.source;
+    return _this;
+  }
+  /**
+   * @param {MouseEvent} event The event to handle
+   * @private
+   */
+
+
+  FullScreen.prototype.handleClick_ = function (event) {
+    event.preventDefault();
+    this.handleFullScreen_();
+  };
+  /**
+   * @private
+   */
+
+
+  FullScreen.prototype.handleFullScreen_ = function () {
+    if (!isFullScreenSupported()) {
+      return;
+    }
+
+    var map = this.getMap();
+
+    if (!map) {
+      return;
+    }
+
+    if (isFullScreen()) {
+      exitFullScreen();
+    } else {
+      var element = void 0;
+
+      if (this.source_) {
+        element = typeof this.source_ === 'string' ? document.getElementById(this.source_) : this.source_;
+      } else {
+        element = map.getTargetElement();
+      }
+
+      if (this.keys_) {
+        requestFullScreenWithKeys(element);
+      } else {
+        requestFullScreen(element);
+      }
+    }
+  };
+  /**
+   * @private
+   */
+
+
+  FullScreen.prototype.handleFullScreenChange_ = function () {
+    var map = this.getMap();
+
+    if (isFullScreen()) {
+      this.setClassName_(this.button_, true);
+      (0, _dom.replaceNode)(this.labelActiveNode_, this.labelNode_);
+    } else {
+      this.setClassName_(this.button_, false);
+      (0, _dom.replaceNode)(this.labelNode_, this.labelActiveNode_);
+    }
+
+    if (map) {
+      map.updateSize();
+    }
+  };
+  /**
+   * @param {HTMLElement} element Target element
+   * @param {boolean} fullscreen True if fullscreen class name should be active
+   * @private
+   */
+
+
+  FullScreen.prototype.setClassName_ = function (element, fullscreen) {
+    var activeClassName = this.cssClassName_ + '-true';
+    var inactiveClassName = this.cssClassName_ + '-false';
+    var nextClassName = fullscreen ? activeClassName : inactiveClassName;
+    element.classList.remove(activeClassName);
+    element.classList.remove(inactiveClassName);
+    element.classList.add(nextClassName);
+  };
+  /**
+   * @inheritDoc
+   * @api
+   */
+
+
+  FullScreen.prototype.setMap = function (map) {
+    _super.prototype.setMap.call(this, map);
+
+    if (map) {
+      for (var i = 0, ii = events.length; i < ii; ++i) {
+        this.listenerKeys.push((0, _events.listen)(document, events[i], this.handleFullScreenChange_, this));
+      }
+    }
+  };
+
+  return FullScreen;
+}(_Control.default);
+/**
+ * @return {boolean} Fullscreen is supported by the current platform.
+ */
+
+
+function isFullScreenSupported() {
+  var body = document.body;
+  return !!(body.webkitRequestFullscreen || body.msRequestFullscreen && document.msFullscreenEnabled || body.requestFullscreen && document.fullscreenEnabled);
+}
+/**
+ * @return {boolean} Element is currently in fullscreen.
+ */
+
+
+function isFullScreen() {
+  return !!(document.webkitIsFullScreen || document.msFullscreenElement || document.fullscreenElement);
+}
+/**
+ * Request to fullscreen an element.
+ * @param {HTMLElement} element Element to request fullscreen
+ */
+
+
+function requestFullScreen(element) {
+  if (element.requestFullscreen) {
+    element.requestFullscreen();
+  } else if (element.msRequestFullscreen) {
+    element.msRequestFullscreen();
+  } else if (element.webkitRequestFullscreen) {
+    element.webkitRequestFullscreen();
+  }
+}
+/**
+ * Request to fullscreen an element with keyboard input.
+ * @param {HTMLElement} element Element to request fullscreen
+ */
+
+
+function requestFullScreenWithKeys(element) {
+  if (element.webkitRequestFullscreen) {
+    element.webkitRequestFullscreen();
+  } else {
+    requestFullScreen(element);
+  }
+}
+/**
+ * Exit fullscreen.
+ */
+
+
+function exitFullScreen() {
+  if (document.exitFullscreen) {
+    document.exitFullscreen();
+  } else if (document.msExitFullscreen) {
+    document.msExitFullscreen();
+  } else if (document.webkitExitFullscreen) {
+    document.webkitExitFullscreen();
+  }
+}
+
+var _default = FullScreen;
+exports.default = _default;
+},{"./Control.js":"../node_modules/ol/control/Control.js","../css.js":"../node_modules/ol/css.js","../dom.js":"../node_modules/ol/dom.js","../events.js":"../node_modules/ol/events.js","../events/EventType.js":"../node_modules/ol/events/EventType.js"}],"../node_modules/ol/control/MousePosition.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.render = render;
+exports.default = void 0;
+
+var _events = require("../events.js");
+
+var _EventType = _interopRequireDefault(require("../events/EventType.js"));
+
+var _Object = require("../Object.js");
+
+var _Control = _interopRequireDefault(require("./Control.js"));
+
+var _proj = require("../proj.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+/**
+ * @module ol/control/MousePosition
+ */
+
+
+/**
+ * @type {string}
+ */
+var PROJECTION = 'projection';
+/**
+ * @type {string}
+ */
+
+var COORDINATE_FORMAT = 'coordinateFormat';
+/**
+ * @typedef {Object} Options
+ * @property {string} [className='ol-mouse-position'] CSS class name.
+ * @property {import("../coordinate.js").CoordinateFormat} [coordinateFormat] Coordinate format.
+ * @property {import("../proj.js").ProjectionLike} [projection] Projection. Default is the view projection.
+ * @property {function(import("../MapEvent.js").default)} [render] Function called when the
+ * control should be re-rendered. This is called in a `requestAnimationFrame`
+ * callback.
+ * @property {HTMLElement|string} [target] Specify a target if you want the
+ * control to be rendered outside of the map's viewport.
+ * @property {string} [undefinedHTML='&#160;'] Markup to show when coordinates are not
+ * available (e.g. when the pointer leaves the map viewport).  By default, the last position
+ * will be replaced with `'&#160;'` (`&nbsp;`) when the pointer leaves the viewport.  To
+ * retain the last rendered position, set this option to something falsey (like an empty
+ * string `''`).
+ */
+
+/**
+ * @classdesc
+ * A control to show the 2D coordinates of the mouse cursor. By default, these
+ * are in the view projection, but can be in any supported projection.
+ * By default the control is shown in the top right corner of the map, but this
+ * can be changed by using the css selector `.ol-mouse-position`.
+ *
+ * On touch devices, which usually do not have a mouse cursor, the coordinates
+ * of the currently touched position are shown.
+ *
+ * @api
+ */
+
+var MousePosition =
+/** @class */
+function (_super) {
+  __extends(MousePosition, _super);
+  /**
+   * @param {Options=} opt_options Mouse position options.
+   */
+
+
+  function MousePosition(opt_options) {
+    var _this = this;
+
+    var options = opt_options ? opt_options : {};
+    var element = document.createElement('div');
+    element.className = options.className !== undefined ? options.className : 'ol-mouse-position';
+    _this = _super.call(this, {
+      element: element,
+      render: options.render || render,
+      target: options.target
+    }) || this;
+    (0, _events.listen)(_this, (0, _Object.getChangeEventType)(PROJECTION), _this.handleProjectionChanged_, _this);
+
+    if (options.coordinateFormat) {
+      _this.setCoordinateFormat(options.coordinateFormat);
+    }
+
+    if (options.projection) {
+      _this.setProjection(options.projection);
+    }
+    /**
+     * @private
+     * @type {string}
+     */
+
+
+    _this.undefinedHTML_ = options.undefinedHTML !== undefined ? options.undefinedHTML : '&#160;';
+    /**
+     * @private
+     * @type {boolean}
+     */
+
+    _this.renderOnMouseOut_ = !!_this.undefinedHTML_;
+    /**
+     * @private
+     * @type {string}
+     */
+
+    _this.renderedHTML_ = element.innerHTML;
+    /**
+     * @private
+     * @type {import("../proj/Projection.js").default}
+     */
+
+    _this.mapProjection_ = null;
+    /**
+     * @private
+     * @type {?import("../proj.js").TransformFunction}
+     */
+
+    _this.transform_ = null;
+    /**
+     * @private
+     * @type {import("../pixel.js").Pixel}
+     */
+
+    _this.lastMouseMovePixel_ = null;
+    return _this;
+  }
+  /**
+   * @private
+   */
+
+
+  MousePosition.prototype.handleProjectionChanged_ = function () {
+    this.transform_ = null;
+  };
+  /**
+   * Return the coordinate format type used to render the current position or
+   * undefined.
+   * @return {import("../coordinate.js").CoordinateFormat|undefined} The format to render the current
+   *     position in.
+   * @observable
+   * @api
+   */
+
+
+  MousePosition.prototype.getCoordinateFormat = function () {
+    return (
+      /** @type {import("../coordinate.js").CoordinateFormat|undefined} */
+      this.get(COORDINATE_FORMAT)
+    );
+  };
+  /**
+   * Return the projection that is used to report the mouse position.
+   * @return {import("../proj/Projection.js").default|undefined} The projection to report mouse
+   *     position in.
+   * @observable
+   * @api
+   */
+
+
+  MousePosition.prototype.getProjection = function () {
+    return (
+      /** @type {import("../proj/Projection.js").default|undefined} */
+      this.get(PROJECTION)
+    );
+  };
+  /**
+   * @param {Event} event Browser event.
+   * @protected
+   */
+
+
+  MousePosition.prototype.handleMouseMove = function (event) {
+    var map = this.getMap();
+    this.lastMouseMovePixel_ = map.getEventPixel(event);
+    this.updateHTML_(this.lastMouseMovePixel_);
+  };
+  /**
+   * @param {Event} event Browser event.
+   * @protected
+   */
+
+
+  MousePosition.prototype.handleMouseOut = function (event) {
+    this.updateHTML_(null);
+    this.lastMouseMovePixel_ = null;
+  };
+  /**
+   * @inheritDoc
+   * @api
+   */
+
+
+  MousePosition.prototype.setMap = function (map) {
+    _super.prototype.setMap.call(this, map);
+
+    if (map) {
+      var viewport = map.getViewport();
+      this.listenerKeys.push((0, _events.listen)(viewport, _EventType.default.MOUSEMOVE, this.handleMouseMove, this), (0, _events.listen)(viewport, _EventType.default.TOUCHSTART, this.handleMouseMove, this));
+
+      if (this.renderOnMouseOut_) {
+        this.listenerKeys.push((0, _events.listen)(viewport, _EventType.default.MOUSEOUT, this.handleMouseOut, this), (0, _events.listen)(viewport, _EventType.default.TOUCHEND, this.handleMouseOut, this));
+      }
+    }
+  };
+  /**
+   * Set the coordinate format type used to render the current position.
+   * @param {import("../coordinate.js").CoordinateFormat} format The format to render the current
+   *     position in.
+   * @observable
+   * @api
+   */
+
+
+  MousePosition.prototype.setCoordinateFormat = function (format) {
+    this.set(COORDINATE_FORMAT, format);
+  };
+  /**
+   * Set the projection that is used to report the mouse position.
+   * @param {import("../proj.js").ProjectionLike} projection The projection to report mouse
+   *     position in.
+   * @observable
+   * @api
+   */
+
+
+  MousePosition.prototype.setProjection = function (projection) {
+    this.set(PROJECTION, (0, _proj.get)(projection));
+  };
+  /**
+   * @param {?import("../pixel.js").Pixel} pixel Pixel.
+   * @private
+   */
+
+
+  MousePosition.prototype.updateHTML_ = function (pixel) {
+    var html = this.undefinedHTML_;
+
+    if (pixel && this.mapProjection_) {
+      if (!this.transform_) {
+        var projection = this.getProjection();
+
+        if (projection) {
+          this.transform_ = (0, _proj.getTransformFromProjections)(this.mapProjection_, projection);
+        } else {
+          this.transform_ = _proj.identityTransform;
+        }
+      }
+
+      var map = this.getMap();
+      var coordinate = map.getCoordinateFromPixel(pixel);
+
+      if (coordinate) {
+        this.transform_(coordinate, coordinate);
+        var coordinateFormat = this.getCoordinateFormat();
+
+        if (coordinateFormat) {
+          html = coordinateFormat(coordinate);
+        } else {
+          html = coordinate.toString();
+        }
+      }
+    }
+
+    if (!this.renderedHTML_ || html !== this.renderedHTML_) {
+      this.element.innerHTML = html;
+      this.renderedHTML_ = html;
+    }
+  };
+
+  return MousePosition;
+}(_Control.default);
+/**
+ * Update the projection. Rendering of the coordinates is done in
+ * `handleMouseMove` and `handleMouseUp`.
+ * @param {import("../MapEvent.js").default} mapEvent Map event.
+ * @this {MousePosition}
+ * @api
+ */
+
+
+function render(mapEvent) {
+  var frameState = mapEvent.frameState;
+
+  if (!frameState) {
+    this.mapProjection_ = null;
+  } else {
+    if (this.mapProjection_ != frameState.viewState.projection) {
+      this.mapProjection_ = frameState.viewState.projection;
+      this.transform_ = null;
+    }
+  }
+}
+
+var _default = MousePosition;
+exports.default = _default;
+},{"../events.js":"../node_modules/ol/events.js","../events/EventType.js":"../node_modules/ol/events/EventType.js","../Object.js":"../node_modules/ol/Object.js","./Control.js":"../node_modules/ol/control/Control.js","../proj.js":"../node_modules/ol/proj.js"}],"../node_modules/ol/style/IconImageCache.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.shared = exports.default = void 0;
+
+var _color = require("../color.js");
+
+/**
+ * @module ol/style/IconImageCache
+ */
+
+/**
+ * @classdesc
+ * Singleton class. Available through {@link module:ol/style/IconImageCache~shared}.
+ */
+var IconImageCache =
+/** @class */
+function () {
+  function IconImageCache() {
+    /**
+    * @type {!Object<string, import("./IconImage.js").default>}
+    * @private
+    */
+    this.cache_ = {};
+    /**
+    * @type {number}
+    * @private
+    */
+
+    this.cacheSize_ = 0;
+    /**
+    * @type {number}
+    * @private
+    */
+
+    this.maxCacheSize_ = 32;
+  }
+  /**
+  * FIXME empty description for jsdoc
+  */
+
+
+  IconImageCache.prototype.clear = function () {
+    this.cache_ = {};
+    this.cacheSize_ = 0;
+  };
+  /**
+   * @return {boolean} Can expire cache.
+   */
+
+
+  IconImageCache.prototype.canExpireCache = function () {
+    return this.cacheSize_ > this.maxCacheSize_;
+  };
+  /**
+  * FIXME empty description for jsdoc
+  */
+
+
+  IconImageCache.prototype.expire = function () {
+    if (this.canExpireCache()) {
+      var i = 0;
+
+      for (var key in this.cache_) {
+        var iconImage = this.cache_[key];
+
+        if ((i++ & 3) === 0 && !iconImage.hasListener()) {
+          delete this.cache_[key];
+          --this.cacheSize_;
+        }
+      }
+    }
+  };
+  /**
+  * @param {string} src Src.
+  * @param {?string} crossOrigin Cross origin.
+  * @param {import("../color.js").Color} color Color.
+  * @return {import("./IconImage.js").default} Icon image.
+  */
+
+
+  IconImageCache.prototype.get = function (src, crossOrigin, color) {
+    var key = getKey(src, crossOrigin, color);
+    return key in this.cache_ ? this.cache_[key] : null;
+  };
+  /**
+  * @param {string} src Src.
+  * @param {?string} crossOrigin Cross origin.
+  * @param {import("../color.js").Color} color Color.
+  * @param {import("./IconImage.js").default} iconImage Icon image.
+  */
+
+
+  IconImageCache.prototype.set = function (src, crossOrigin, color, iconImage) {
+    var key = getKey(src, crossOrigin, color);
+    this.cache_[key] = iconImage;
+    ++this.cacheSize_;
+  };
+  /**
+  * Set the cache size of the icon cache. Default is `32`. Change this value when
+  * your map uses more than 32 different icon images and you are not caching icon
+  * styles on the application level.
+  * @param {number} maxCacheSize Cache max size.
+  * @api
+  */
+
+
+  IconImageCache.prototype.setSize = function (maxCacheSize) {
+    this.maxCacheSize_ = maxCacheSize;
+    this.expire();
+  };
+
+  return IconImageCache;
+}();
+/**
+ * @param {string} src Src.
+ * @param {?string} crossOrigin Cross origin.
+ * @param {import("../color.js").Color} color Color.
+ * @return {string} Cache key.
+ */
+
+
+function getKey(src, crossOrigin, color) {
+  var colorString = color ? (0, _color.asString)(color) : 'null';
+  return crossOrigin + ':' + src + ':' + colorString;
+}
+
+var _default = IconImageCache;
+/**
+ * The {@link module:ol/style/IconImageCache~IconImageCache} for
+ * {@link module:ol/style/Icon~Icon} images.
+ * @api
+ */
+
+exports.default = _default;
+var shared = new IconImageCache();
+exports.shared = shared;
+},{"../color.js":"../node_modules/ol/color.js"}],"../node_modules/ol/render/canvas/Immediate.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _array = require("../../array.js");
+
+var _colorlike = require("../../colorlike.js");
+
+var _extent = require("../../extent.js");
+
+var _GeometryType = _interopRequireDefault(require("../../geom/GeometryType.js"));
+
+var _SimpleGeometry = require("../../geom/SimpleGeometry.js");
+
+var _transform = require("../../geom/flat/transform.js");
+
+var _VectorContext = _interopRequireDefault(require("../VectorContext.js"));
+
+var _canvas = require("../canvas.js");
+
+var _transform2 = require("../../transform.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * @module ol/render/canvas/Immediate
+ */
+// FIXME test, especially polygons with holes and multipolygons
+// FIXME need to handle large thick features (where pixel size matters)
+// FIXME add offset and end to ol/geom/flat/transform~transform2D?
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+
+/**
+ * @classdesc
+ * A concrete subclass of {@link module:ol/render/VectorContext} that implements
+ * direct rendering of features and geometries to an HTML5 Canvas context.
+ * Instances of this class are created internally by the library and
+ * provided to application code as vectorContext member of the
+ * {@link module:ol/render/Event~RenderEvent} object associated with postcompose, precompose and
+ * render events emitted by layers and maps.
+ */
+var CanvasImmediateRenderer =
+/** @class */
+function (_super) {
+  __extends(CanvasImmediateRenderer, _super);
+  /**
+   * @param {CanvasRenderingContext2D} context Context.
+   * @param {number} pixelRatio Pixel ratio.
+   * @param {import("../../extent.js").Extent} extent Extent.
+   * @param {import("../../transform.js").Transform} transform Transform.
+   * @param {number} viewRotation View rotation.
+   */
+
+
+  function CanvasImmediateRenderer(context, pixelRatio, extent, transform, viewRotation) {
+    var _this = _super.call(this) || this;
+    /**
+     * @private
+     * @type {CanvasRenderingContext2D}
+     */
+
+
+    _this.context_ = context;
+    /**
+     * @private
+     * @type {number}
+     */
+
+    _this.pixelRatio_ = pixelRatio;
+    /**
+     * @private
+     * @type {import("../../extent.js").Extent}
+     */
+
+    _this.extent_ = extent;
+    /**
+     * @private
+     * @type {import("../../transform.js").Transform}
+     */
+
+    _this.transform_ = transform;
+    /**
+     * @private
+     * @type {number}
+     */
+
+    _this.viewRotation_ = viewRotation;
+    /**
+     * @private
+     * @type {?import("../canvas.js").FillState}
+     */
+
+    _this.contextFillState_ = null;
+    /**
+     * @private
+     * @type {?import("../canvas.js").StrokeState}
+     */
+
+    _this.contextStrokeState_ = null;
+    /**
+     * @private
+     * @type {?import("../canvas.js").TextState}
+     */
+
+    _this.contextTextState_ = null;
+    /**
+     * @private
+     * @type {?import("../canvas.js").FillState}
+     */
+
+    _this.fillState_ = null;
+    /**
+     * @private
+     * @type {?import("../canvas.js").StrokeState}
+     */
+
+    _this.strokeState_ = null;
+    /**
+     * @private
+     * @type {HTMLCanvasElement|HTMLVideoElement|HTMLImageElement}
+     */
+
+    _this.image_ = null;
+    /**
+     * @private
+     * @type {number}
+     */
+
+    _this.imageAnchorX_ = 0;
+    /**
+     * @private
+     * @type {number}
+     */
+
+    _this.imageAnchorY_ = 0;
+    /**
+     * @private
+     * @type {number}
+     */
+
+    _this.imageHeight_ = 0;
+    /**
+     * @private
+     * @type {number}
+     */
+
+    _this.imageOpacity_ = 0;
+    /**
+     * @private
+     * @type {number}
+     */
+
+    _this.imageOriginX_ = 0;
+    /**
+     * @private
+     * @type {number}
+     */
+
+    _this.imageOriginY_ = 0;
+    /**
+     * @private
+     * @type {boolean}
+     */
+
+    _this.imageRotateWithView_ = false;
+    /**
+     * @private
+     * @type {number}
+     */
+
+    _this.imageRotation_ = 0;
+    /**
+     * @private
+     * @type {number}
+     */
+
+    _this.imageScale_ = 0;
+    /**
+     * @private
+     * @type {number}
+     */
+
+    _this.imageWidth_ = 0;
+    /**
+     * @private
+     * @type {string}
+     */
+
+    _this.text_ = '';
+    /**
+     * @private
+     * @type {number}
+     */
+
+    _this.textOffsetX_ = 0;
+    /**
+     * @private
+     * @type {number}
+     */
+
+    _this.textOffsetY_ = 0;
+    /**
+     * @private
+     * @type {boolean}
+     */
+
+    _this.textRotateWithView_ = false;
+    /**
+     * @private
+     * @type {number}
+     */
+
+    _this.textRotation_ = 0;
+    /**
+     * @private
+     * @type {number}
+     */
+
+    _this.textScale_ = 0;
+    /**
+     * @private
+     * @type {?import("../canvas.js").FillState}
+     */
+
+    _this.textFillState_ = null;
+    /**
+     * @private
+     * @type {?import("../canvas.js").StrokeState}
+     */
+
+    _this.textStrokeState_ = null;
+    /**
+     * @private
+     * @type {?import("../canvas.js").TextState}
+     */
+
+    _this.textState_ = null;
+    /**
+     * @private
+     * @type {Array<number>}
+     */
+
+    _this.pixelCoordinates_ = [];
+    /**
+     * @private
+     * @type {import("../../transform.js").Transform}
+     */
+
+    _this.tmpLocalTransform_ = (0, _transform2.create)();
+    return _this;
+  }
+  /**
+   * @param {Array<number>} flatCoordinates Flat coordinates.
+   * @param {number} offset Offset.
+   * @param {number} end End.
+   * @param {number} stride Stride.
+   * @private
+   */
+
+
+  CanvasImmediateRenderer.prototype.drawImages_ = function (flatCoordinates, offset, end, stride) {
+    if (!this.image_) {
+      return;
+    }
+
+    var pixelCoordinates = (0, _transform.transform2D)(flatCoordinates, offset, end, 2, this.transform_, this.pixelCoordinates_);
+    var context = this.context_;
+    var localTransform = this.tmpLocalTransform_;
+    var alpha = context.globalAlpha;
+
+    if (this.imageOpacity_ != 1) {
+      context.globalAlpha = alpha * this.imageOpacity_;
+    }
+
+    var rotation = this.imageRotation_;
+
+    if (this.imageRotateWithView_) {
+      rotation += this.viewRotation_;
+    }
+
+    for (var i = 0, ii = pixelCoordinates.length; i < ii; i += 2) {
+      var x = pixelCoordinates[i] - this.imageAnchorX_;
+      var y = pixelCoordinates[i + 1] - this.imageAnchorY_;
+
+      if (rotation !== 0 || this.imageScale_ != 1) {
+        var centerX = x + this.imageAnchorX_;
+        var centerY = y + this.imageAnchorY_;
+        (0, _transform2.compose)(localTransform, centerX, centerY, this.imageScale_, this.imageScale_, rotation, -centerX, -centerY);
+        context.setTransform.apply(context, localTransform);
+      }
+
+      context.drawImage(this.image_, this.imageOriginX_, this.imageOriginY_, this.imageWidth_, this.imageHeight_, x, y, this.imageWidth_, this.imageHeight_);
+    }
+
+    if (rotation !== 0 || this.imageScale_ != 1) {
+      context.setTransform(1, 0, 0, 1, 0, 0);
+    }
+
+    if (this.imageOpacity_ != 1) {
+      context.globalAlpha = alpha;
+    }
+  };
+  /**
+   * @param {Array<number>} flatCoordinates Flat coordinates.
+   * @param {number} offset Offset.
+   * @param {number} end End.
+   * @param {number} stride Stride.
+   * @private
+   */
+
+
+  CanvasImmediateRenderer.prototype.drawText_ = function (flatCoordinates, offset, end, stride) {
+    if (!this.textState_ || this.text_ === '') {
+      return;
+    }
+
+    if (this.textFillState_) {
+      this.setContextFillState_(this.textFillState_);
+    }
+
+    if (this.textStrokeState_) {
+      this.setContextStrokeState_(this.textStrokeState_);
+    }
+
+    this.setContextTextState_(this.textState_);
+    var pixelCoordinates = (0, _transform.transform2D)(flatCoordinates, offset, end, stride, this.transform_, this.pixelCoordinates_);
+    var context = this.context_;
+    var rotation = this.textRotation_;
+
+    if (this.textRotateWithView_) {
+      rotation += this.viewRotation_;
+    }
+
+    for (; offset < end; offset += stride) {
+      var x = pixelCoordinates[offset] + this.textOffsetX_;
+      var y = pixelCoordinates[offset + 1] + this.textOffsetY_;
+
+      if (rotation !== 0 || this.textScale_ != 1) {
+        var localTransform = (0, _transform2.compose)(this.tmpLocalTransform_, x, y, this.textScale_, this.textScale_, rotation, -x, -y);
+        context.setTransform.apply(context, localTransform);
+      }
+
+      if (this.textStrokeState_) {
+        context.strokeText(this.text_, x, y);
+      }
+
+      if (this.textFillState_) {
+        context.fillText(this.text_, x, y);
+      }
+    }
+
+    if (rotation !== 0 || this.textScale_ != 1) {
+      context.setTransform(1, 0, 0, 1, 0, 0);
+    }
+  };
+  /**
+   * @param {Array<number>} flatCoordinates Flat coordinates.
+   * @param {number} offset Offset.
+   * @param {number} end End.
+   * @param {number} stride Stride.
+   * @param {boolean} close Close.
+   * @private
+   * @return {number} end End.
+   */
+
+
+  CanvasImmediateRenderer.prototype.moveToLineTo_ = function (flatCoordinates, offset, end, stride, close) {
+    var context = this.context_;
+    var pixelCoordinates = (0, _transform.transform2D)(flatCoordinates, offset, end, stride, this.transform_, this.pixelCoordinates_);
+    context.moveTo(pixelCoordinates[0], pixelCoordinates[1]);
+    var length = pixelCoordinates.length;
+
+    if (close) {
+      length -= 2;
+    }
+
+    for (var i = 2; i < length; i += 2) {
+      context.lineTo(pixelCoordinates[i], pixelCoordinates[i + 1]);
+    }
+
+    if (close) {
+      context.closePath();
+    }
+
+    return end;
+  };
+  /**
+   * @param {Array<number>} flatCoordinates Flat coordinates.
+   * @param {number} offset Offset.
+   * @param {Array<number>} ends Ends.
+   * @param {number} stride Stride.
+   * @private
+   * @return {number} End.
+   */
+
+
+  CanvasImmediateRenderer.prototype.drawRings_ = function (flatCoordinates, offset, ends, stride) {
+    for (var i = 0, ii = ends.length; i < ii; ++i) {
+      offset = this.moveToLineTo_(flatCoordinates, offset, ends[i], stride, true);
+    }
+
+    return offset;
+  };
+  /**
+   * Render a circle geometry into the canvas.  Rendering is immediate and uses
+   * the current fill and stroke styles.
+   *
+   * @param {import("../../geom/Circle.js").default} geometry Circle geometry.
+   * @override
+   * @api
+   */
+
+
+  CanvasImmediateRenderer.prototype.drawCircle = function (geometry) {
+    if (!(0, _extent.intersects)(this.extent_, geometry.getExtent())) {
+      return;
+    }
+
+    if (this.fillState_ || this.strokeState_) {
+      if (this.fillState_) {
+        this.setContextFillState_(this.fillState_);
+      }
+
+      if (this.strokeState_) {
+        this.setContextStrokeState_(this.strokeState_);
+      }
+
+      var pixelCoordinates = (0, _SimpleGeometry.transformGeom2D)(geometry, this.transform_, this.pixelCoordinates_);
+      var dx = pixelCoordinates[2] - pixelCoordinates[0];
+      var dy = pixelCoordinates[3] - pixelCoordinates[1];
+      var radius = Math.sqrt(dx * dx + dy * dy);
+      var context = this.context_;
+      context.beginPath();
+      context.arc(pixelCoordinates[0], pixelCoordinates[1], radius, 0, 2 * Math.PI);
+
+      if (this.fillState_) {
+        context.fill();
+      }
+
+      if (this.strokeState_) {
+        context.stroke();
+      }
+    }
+
+    if (this.text_ !== '') {
+      this.drawText_(geometry.getCenter(), 0, 2, 2);
+    }
+  };
+  /**
+   * Set the rendering style.  Note that since this is an immediate rendering API,
+   * any `zIndex` on the provided style will be ignored.
+   *
+   * @param {import("../../style/Style.js").default} style The rendering style.
+   * @override
+   * @api
+   */
+
+
+  CanvasImmediateRenderer.prototype.setStyle = function (style) {
+    this.setFillStrokeStyle(style.getFill(), style.getStroke());
+    this.setImageStyle(style.getImage());
+    this.setTextStyle(style.getText());
+  };
+  /**
+   * Render a geometry into the canvas.  Call
+   * {@link module:ol/render/canvas/Immediate#setStyle} first to set the rendering style.
+   *
+   * @param {import("../../geom/Geometry.js").default|import("../Feature.js").default} geometry The geometry to render.
+   * @override
+   * @api
+   */
+
+
+  CanvasImmediateRenderer.prototype.drawGeometry = function (geometry) {
+    var type = geometry.getType();
+
+    switch (type) {
+      case _GeometryType.default.POINT:
+        this.drawPoint(
+        /** @type {import("../../geom/Point.js").default} */
+        geometry);
+        break;
+
+      case _GeometryType.default.LINE_STRING:
+        this.drawLineString(
+        /** @type {import("../../geom/LineString.js").default} */
+        geometry);
+        break;
+
+      case _GeometryType.default.POLYGON:
+        this.drawPolygon(
+        /** @type {import("../../geom/Polygon.js").default} */
+        geometry);
+        break;
+
+      case _GeometryType.default.MULTI_POINT:
+        this.drawMultiPoint(
+        /** @type {import("../../geom/MultiPoint.js").default} */
+        geometry);
+        break;
+
+      case _GeometryType.default.MULTI_LINE_STRING:
+        this.drawMultiLineString(
+        /** @type {import("../../geom/MultiLineString.js").default} */
+        geometry);
+        break;
+
+      case _GeometryType.default.MULTI_POLYGON:
+        this.drawMultiPolygon(
+        /** @type {import("../../geom/MultiPolygon.js").default} */
+        geometry);
+        break;
+
+      case _GeometryType.default.GEOMETRY_COLLECTION:
+        this.drawGeometryCollection(
+        /** @type {import("../../geom/GeometryCollection.js").default} */
+        geometry);
+        break;
+
+      case _GeometryType.default.CIRCLE:
+        this.drawCircle(
+        /** @type {import("../../geom/Circle.js").default} */
+        geometry);
+        break;
+
+      default:
+    }
+  };
+  /**
+   * Render a feature into the canvas.  Note that any `zIndex` on the provided
+   * style will be ignored - features are rendered immediately in the order that
+   * this method is called.  If you need `zIndex` support, you should be using an
+   * {@link module:ol/layer/Vector~VectorLayer} instead.
+   *
+   * @param {import("../../Feature.js").default} feature Feature.
+   * @param {import("../../style/Style.js").default} style Style.
+   * @override
+   * @api
+   */
+
+
+  CanvasImmediateRenderer.prototype.drawFeature = function (feature, style) {
+    var geometry = style.getGeometryFunction()(feature);
+
+    if (!geometry || !(0, _extent.intersects)(this.extent_, geometry.getExtent())) {
+      return;
+    }
+
+    this.setStyle(style);
+    this.drawGeometry(geometry);
+  };
+  /**
+   * Render a GeometryCollection to the canvas.  Rendering is immediate and
+   * uses the current styles appropriate for each geometry in the collection.
+   *
+   * @param {import("../../geom/GeometryCollection.js").default} geometry Geometry collection.
+   * @override
+   */
+
+
+  CanvasImmediateRenderer.prototype.drawGeometryCollection = function (geometry) {
+    var geometries = geometry.getGeometriesArray();
+
+    for (var i = 0, ii = geometries.length; i < ii; ++i) {
+      this.drawGeometry(geometries[i]);
+    }
+  };
+  /**
+   * Render a Point geometry into the canvas.  Rendering is immediate and uses
+   * the current style.
+   *
+   * @param {import("../../geom/Point.js").default|import("../Feature.js").default} geometry Point geometry.
+   * @override
+   */
+
+
+  CanvasImmediateRenderer.prototype.drawPoint = function (geometry) {
+    var flatCoordinates = geometry.getFlatCoordinates();
+    var stride = geometry.getStride();
+
+    if (this.image_) {
+      this.drawImages_(flatCoordinates, 0, flatCoordinates.length, stride);
+    }
+
+    if (this.text_ !== '') {
+      this.drawText_(flatCoordinates, 0, flatCoordinates.length, stride);
+    }
+  };
+  /**
+   * Render a MultiPoint geometry  into the canvas.  Rendering is immediate and
+   * uses the current style.
+   *
+   * @param {import("../../geom/MultiPoint.js").default|import("../Feature.js").default} geometry MultiPoint geometry.
+   * @override
+   */
+
+
+  CanvasImmediateRenderer.prototype.drawMultiPoint = function (geometry) {
+    var flatCoordinates = geometry.getFlatCoordinates();
+    var stride = geometry.getStride();
+
+    if (this.image_) {
+      this.drawImages_(flatCoordinates, 0, flatCoordinates.length, stride);
+    }
+
+    if (this.text_ !== '') {
+      this.drawText_(flatCoordinates, 0, flatCoordinates.length, stride);
+    }
+  };
+  /**
+   * Render a LineString into the canvas.  Rendering is immediate and uses
+   * the current style.
+   *
+   * @param {import("../../geom/LineString.js").default|import("../Feature.js").default} geometry LineString geometry.
+   * @override
+   */
+
+
+  CanvasImmediateRenderer.prototype.drawLineString = function (geometry) {
+    if (!(0, _extent.intersects)(this.extent_, geometry.getExtent())) {
+      return;
+    }
+
+    if (this.strokeState_) {
+      this.setContextStrokeState_(this.strokeState_);
+      var context = this.context_;
+      var flatCoordinates = geometry.getFlatCoordinates();
+      context.beginPath();
+      this.moveToLineTo_(flatCoordinates, 0, flatCoordinates.length, geometry.getStride(), false);
+      context.stroke();
+    }
+
+    if (this.text_ !== '') {
+      var flatMidpoint = geometry.getFlatMidpoint();
+      this.drawText_(flatMidpoint, 0, 2, 2);
+    }
+  };
+  /**
+   * Render a MultiLineString geometry into the canvas.  Rendering is immediate
+   * and uses the current style.
+   *
+   * @param {import("../../geom/MultiLineString.js").default|import("../Feature.js").default} geometry MultiLineString geometry.
+   * @override
+   */
+
+
+  CanvasImmediateRenderer.prototype.drawMultiLineString = function (geometry) {
+    var geometryExtent = geometry.getExtent();
+
+    if (!(0, _extent.intersects)(this.extent_, geometryExtent)) {
+      return;
+    }
+
+    if (this.strokeState_) {
+      this.setContextStrokeState_(this.strokeState_);
+      var context = this.context_;
+      var flatCoordinates = geometry.getFlatCoordinates();
+      var offset = 0;
+      var ends =
+      /** @type {Array<number>} */
+      geometry.getEnds();
+      var stride = geometry.getStride();
+      context.beginPath();
+
+      for (var i = 0, ii = ends.length; i < ii; ++i) {
+        offset = this.moveToLineTo_(flatCoordinates, offset, ends[i], stride, false);
+      }
+
+      context.stroke();
+    }
+
+    if (this.text_ !== '') {
+      var flatMidpoints = geometry.getFlatMidpoints();
+      this.drawText_(flatMidpoints, 0, flatMidpoints.length, 2);
+    }
+  };
+  /**
+   * Render a Polygon geometry into the canvas.  Rendering is immediate and uses
+   * the current style.
+   *
+   * @param {import("../../geom/Polygon.js").default|import("../Feature.js").default} geometry Polygon geometry.
+   * @override
+   */
+
+
+  CanvasImmediateRenderer.prototype.drawPolygon = function (geometry) {
+    if (!(0, _extent.intersects)(this.extent_, geometry.getExtent())) {
+      return;
+    }
+
+    if (this.strokeState_ || this.fillState_) {
+      if (this.fillState_) {
+        this.setContextFillState_(this.fillState_);
+      }
+
+      if (this.strokeState_) {
+        this.setContextStrokeState_(this.strokeState_);
+      }
+
+      var context = this.context_;
+      context.beginPath();
+      this.drawRings_(geometry.getOrientedFlatCoordinates(), 0,
+      /** @type {Array<number>} */
+      geometry.getEnds(), geometry.getStride());
+
+      if (this.fillState_) {
+        context.fill();
+      }
+
+      if (this.strokeState_) {
+        context.stroke();
+      }
+    }
+
+    if (this.text_ !== '') {
+      var flatInteriorPoint = geometry.getFlatInteriorPoint();
+      this.drawText_(flatInteriorPoint, 0, 2, 2);
+    }
+  };
+  /**
+   * Render MultiPolygon geometry into the canvas.  Rendering is immediate and
+   * uses the current style.
+   * @param {import("../../geom/MultiPolygon.js").default} geometry MultiPolygon geometry.
+   * @override
+   */
+
+
+  CanvasImmediateRenderer.prototype.drawMultiPolygon = function (geometry) {
+    if (!(0, _extent.intersects)(this.extent_, geometry.getExtent())) {
+      return;
+    }
+
+    if (this.strokeState_ || this.fillState_) {
+      if (this.fillState_) {
+        this.setContextFillState_(this.fillState_);
+      }
+
+      if (this.strokeState_) {
+        this.setContextStrokeState_(this.strokeState_);
+      }
+
+      var context = this.context_;
+      var flatCoordinates = geometry.getOrientedFlatCoordinates();
+      var offset = 0;
+      var endss = geometry.getEndss();
+      var stride = geometry.getStride();
+      context.beginPath();
+
+      for (var i = 0, ii = endss.length; i < ii; ++i) {
+        var ends = endss[i];
+        offset = this.drawRings_(flatCoordinates, offset, ends, stride);
+      }
+
+      if (this.fillState_) {
+        context.fill();
+      }
+
+      if (this.strokeState_) {
+        context.stroke();
+      }
+    }
+
+    if (this.text_ !== '') {
+      var flatInteriorPoints = geometry.getFlatInteriorPoints();
+      this.drawText_(flatInteriorPoints, 0, flatInteriorPoints.length, 2);
+    }
+  };
+  /**
+   * @param {import("../canvas.js").FillState} fillState Fill state.
+   * @private
+   */
+
+
+  CanvasImmediateRenderer.prototype.setContextFillState_ = function (fillState) {
+    var context = this.context_;
+    var contextFillState = this.contextFillState_;
+
+    if (!contextFillState) {
+      context.fillStyle = fillState.fillStyle;
+      this.contextFillState_ = {
+        fillStyle: fillState.fillStyle
+      };
+    } else {
+      if (contextFillState.fillStyle != fillState.fillStyle) {
+        contextFillState.fillStyle = context.fillStyle = fillState.fillStyle;
+      }
+    }
+  };
+  /**
+   * @param {import("../canvas.js").StrokeState} strokeState Stroke state.
+   * @private
+   */
+
+
+  CanvasImmediateRenderer.prototype.setContextStrokeState_ = function (strokeState) {
+    var context = this.context_;
+    var contextStrokeState = this.contextStrokeState_;
+
+    if (!contextStrokeState) {
+      context.lineCap =
+      /** @type {CanvasLineCap} */
+      strokeState.lineCap;
+
+      if (context.setLineDash) {
+        context.setLineDash(strokeState.lineDash);
+        context.lineDashOffset = strokeState.lineDashOffset;
+      }
+
+      context.lineJoin =
+      /** @type {CanvasLineJoin} */
+      strokeState.lineJoin;
+      context.lineWidth = strokeState.lineWidth;
+      context.miterLimit = strokeState.miterLimit;
+      context.strokeStyle = strokeState.strokeStyle;
+      this.contextStrokeState_ = {
+        lineCap: strokeState.lineCap,
+        lineDash: strokeState.lineDash,
+        lineDashOffset: strokeState.lineDashOffset,
+        lineJoin: strokeState.lineJoin,
+        lineWidth: strokeState.lineWidth,
+        miterLimit: strokeState.miterLimit,
+        strokeStyle: strokeState.strokeStyle
+      };
+    } else {
+      if (contextStrokeState.lineCap != strokeState.lineCap) {
+        contextStrokeState.lineCap = context.lineCap =
+        /** @type {CanvasLineCap} */
+        strokeState.lineCap;
+      }
+
+      if (context.setLineDash) {
+        if (!(0, _array.equals)(contextStrokeState.lineDash, strokeState.lineDash)) {
+          context.setLineDash(contextStrokeState.lineDash = strokeState.lineDash);
+        }
+
+        if (contextStrokeState.lineDashOffset != strokeState.lineDashOffset) {
+          contextStrokeState.lineDashOffset = context.lineDashOffset = strokeState.lineDashOffset;
+        }
+      }
+
+      if (contextStrokeState.lineJoin != strokeState.lineJoin) {
+        contextStrokeState.lineJoin = context.lineJoin =
+        /** @type {CanvasLineJoin} */
+        strokeState.lineJoin;
+      }
+
+      if (contextStrokeState.lineWidth != strokeState.lineWidth) {
+        contextStrokeState.lineWidth = context.lineWidth = strokeState.lineWidth;
+      }
+
+      if (contextStrokeState.miterLimit != strokeState.miterLimit) {
+        contextStrokeState.miterLimit = context.miterLimit = strokeState.miterLimit;
+      }
+
+      if (contextStrokeState.strokeStyle != strokeState.strokeStyle) {
+        contextStrokeState.strokeStyle = context.strokeStyle = strokeState.strokeStyle;
+      }
+    }
+  };
+  /**
+   * @param {import("../canvas.js").TextState} textState Text state.
+   * @private
+   */
+
+
+  CanvasImmediateRenderer.prototype.setContextTextState_ = function (textState) {
+    var context = this.context_;
+    var contextTextState = this.contextTextState_;
+    var textAlign = textState.textAlign ? textState.textAlign : _canvas.defaultTextAlign;
+
+    if (!contextTextState) {
+      context.font = textState.font;
+      context.textAlign =
+      /** @type {CanvasTextAlign} */
+      textAlign;
+      context.textBaseline =
+      /** @type {CanvasTextBaseline} */
+      textState.textBaseline;
+      this.contextTextState_ = {
+        font: textState.font,
+        textAlign: textAlign,
+        textBaseline: textState.textBaseline
+      };
+    } else {
+      if (contextTextState.font != textState.font) {
+        contextTextState.font = context.font = textState.font;
+      }
+
+      if (contextTextState.textAlign != textAlign) {
+        contextTextState.textAlign = context.textAlign =
+        /** @type {CanvasTextAlign} */
+        textAlign;
+      }
+
+      if (contextTextState.textBaseline != textState.textBaseline) {
+        contextTextState.textBaseline = context.textBaseline =
+        /** @type {CanvasTextBaseline} */
+        textState.textBaseline;
+      }
+    }
+  };
+  /**
+   * Set the fill and stroke style for subsequent draw operations.  To clear
+   * either fill or stroke styles, pass null for the appropriate parameter.
+   *
+   * @param {import("../../style/Fill.js").default} fillStyle Fill style.
+   * @param {import("../../style/Stroke.js").default} strokeStyle Stroke style.
+   * @override
+   */
+
+
+  CanvasImmediateRenderer.prototype.setFillStrokeStyle = function (fillStyle, strokeStyle) {
+    if (!fillStyle) {
+      this.fillState_ = null;
+    } else {
+      var fillStyleColor = fillStyle.getColor();
+      this.fillState_ = {
+        fillStyle: (0, _colorlike.asColorLike)(fillStyleColor ? fillStyleColor : _canvas.defaultFillStyle)
+      };
+    }
+
+    if (!strokeStyle) {
+      this.strokeState_ = null;
+    } else {
+      var strokeStyleColor = strokeStyle.getColor();
+      var strokeStyleLineCap = strokeStyle.getLineCap();
+      var strokeStyleLineDash = strokeStyle.getLineDash();
+      var strokeStyleLineDashOffset = strokeStyle.getLineDashOffset();
+      var strokeStyleLineJoin = strokeStyle.getLineJoin();
+      var strokeStyleWidth = strokeStyle.getWidth();
+      var strokeStyleMiterLimit = strokeStyle.getMiterLimit();
+      this.strokeState_ = {
+        lineCap: strokeStyleLineCap !== undefined ? strokeStyleLineCap : _canvas.defaultLineCap,
+        lineDash: strokeStyleLineDash ? strokeStyleLineDash : _canvas.defaultLineDash,
+        lineDashOffset: strokeStyleLineDashOffset ? strokeStyleLineDashOffset : _canvas.defaultLineDashOffset,
+        lineJoin: strokeStyleLineJoin !== undefined ? strokeStyleLineJoin : _canvas.defaultLineJoin,
+        lineWidth: this.pixelRatio_ * (strokeStyleWidth !== undefined ? strokeStyleWidth : _canvas.defaultLineWidth),
+        miterLimit: strokeStyleMiterLimit !== undefined ? strokeStyleMiterLimit : _canvas.defaultMiterLimit,
+        strokeStyle: (0, _colorlike.asColorLike)(strokeStyleColor ? strokeStyleColor : _canvas.defaultStrokeStyle)
+      };
+    }
+  };
+  /**
+   * Set the image style for subsequent draw operations.  Pass null to remove
+   * the image style.
+   *
+   * @param {import("../../style/Image.js").default} imageStyle Image style.
+   * @override
+   */
+
+
+  CanvasImmediateRenderer.prototype.setImageStyle = function (imageStyle) {
+    if (!imageStyle) {
+      this.image_ = null;
+    } else {
+      var imageAnchor = imageStyle.getAnchor(); // FIXME pixel ratio
+
+      var imageImage = imageStyle.getImage(1);
+      var imageOrigin = imageStyle.getOrigin();
+      var imageSize = imageStyle.getSize();
+      this.imageAnchorX_ = imageAnchor[0];
+      this.imageAnchorY_ = imageAnchor[1];
+      this.imageHeight_ = imageSize[1];
+      this.image_ = imageImage;
+      this.imageOpacity_ = imageStyle.getOpacity();
+      this.imageOriginX_ = imageOrigin[0];
+      this.imageOriginY_ = imageOrigin[1];
+      this.imageRotateWithView_ = imageStyle.getRotateWithView();
+      this.imageRotation_ = imageStyle.getRotation();
+      this.imageScale_ = imageStyle.getScale() * this.pixelRatio_;
+      this.imageWidth_ = imageSize[0];
+    }
+  };
+  /**
+   * Set the text style for subsequent draw operations.  Pass null to
+   * remove the text style.
+   *
+   * @param {import("../../style/Text.js").default} textStyle Text style.
+   * @override
+   */
+
+
+  CanvasImmediateRenderer.prototype.setTextStyle = function (textStyle) {
+    if (!textStyle) {
+      this.text_ = '';
+    } else {
+      var textFillStyle = textStyle.getFill();
+
+      if (!textFillStyle) {
+        this.textFillState_ = null;
+      } else {
+        var textFillStyleColor = textFillStyle.getColor();
+        this.textFillState_ = {
+          fillStyle: (0, _colorlike.asColorLike)(textFillStyleColor ? textFillStyleColor : _canvas.defaultFillStyle)
+        };
+      }
+
+      var textStrokeStyle = textStyle.getStroke();
+
+      if (!textStrokeStyle) {
+        this.textStrokeState_ = null;
+      } else {
+        var textStrokeStyleColor = textStrokeStyle.getColor();
+        var textStrokeStyleLineCap = textStrokeStyle.getLineCap();
+        var textStrokeStyleLineDash = textStrokeStyle.getLineDash();
+        var textStrokeStyleLineDashOffset = textStrokeStyle.getLineDashOffset();
+        var textStrokeStyleLineJoin = textStrokeStyle.getLineJoin();
+        var textStrokeStyleWidth = textStrokeStyle.getWidth();
+        var textStrokeStyleMiterLimit = textStrokeStyle.getMiterLimit();
+        this.textStrokeState_ = {
+          lineCap: textStrokeStyleLineCap !== undefined ? textStrokeStyleLineCap : _canvas.defaultLineCap,
+          lineDash: textStrokeStyleLineDash ? textStrokeStyleLineDash : _canvas.defaultLineDash,
+          lineDashOffset: textStrokeStyleLineDashOffset ? textStrokeStyleLineDashOffset : _canvas.defaultLineDashOffset,
+          lineJoin: textStrokeStyleLineJoin !== undefined ? textStrokeStyleLineJoin : _canvas.defaultLineJoin,
+          lineWidth: textStrokeStyleWidth !== undefined ? textStrokeStyleWidth : _canvas.defaultLineWidth,
+          miterLimit: textStrokeStyleMiterLimit !== undefined ? textStrokeStyleMiterLimit : _canvas.defaultMiterLimit,
+          strokeStyle: (0, _colorlike.asColorLike)(textStrokeStyleColor ? textStrokeStyleColor : _canvas.defaultStrokeStyle)
+        };
+      }
+
+      var textFont = textStyle.getFont();
+      var textOffsetX = textStyle.getOffsetX();
+      var textOffsetY = textStyle.getOffsetY();
+      var textRotateWithView = textStyle.getRotateWithView();
+      var textRotation = textStyle.getRotation();
+      var textScale = textStyle.getScale();
+      var textText = textStyle.getText();
+      var textTextAlign = textStyle.getTextAlign();
+      var textTextBaseline = textStyle.getTextBaseline();
+      this.textState_ = {
+        font: textFont !== undefined ? textFont : _canvas.defaultFont,
+        textAlign: textTextAlign !== undefined ? textTextAlign : _canvas.defaultTextAlign,
+        textBaseline: textTextBaseline !== undefined ? textTextBaseline : _canvas.defaultTextBaseline
+      };
+      this.text_ = textText !== undefined ? textText : '';
+      this.textOffsetX_ = textOffsetX !== undefined ? this.pixelRatio_ * textOffsetX : 0;
+      this.textOffsetY_ = textOffsetY !== undefined ? this.pixelRatio_ * textOffsetY : 0;
+      this.textRotateWithView_ = textRotateWithView !== undefined ? textRotateWithView : false;
+      this.textRotation_ = textRotation !== undefined ? textRotation : 0;
+      this.textScale_ = this.pixelRatio_ * (textScale !== undefined ? textScale : 1);
+    }
+  };
+
+  return CanvasImmediateRenderer;
+}(_VectorContext.default);
+
+var _default = CanvasImmediateRenderer;
+exports.default = _default;
+},{"../../array.js":"../node_modules/ol/array.js","../../colorlike.js":"../node_modules/ol/colorlike.js","../../extent.js":"../node_modules/ol/extent.js","../../geom/GeometryType.js":"../node_modules/ol/geom/GeometryType.js","../../geom/SimpleGeometry.js":"../node_modules/ol/geom/SimpleGeometry.js","../../geom/flat/transform.js":"../node_modules/ol/geom/flat/transform.js","../VectorContext.js":"../node_modules/ol/render/VectorContext.js","../canvas.js":"../node_modules/ol/render/canvas.js","../../transform.js":"../node_modules/ol/transform.js"}],"../node_modules/ol/render.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.toContext = toContext;
+exports.getVectorContext = getVectorContext;
+exports.getRenderPixel = getRenderPixel;
+exports.renderDeclutterItems = renderDeclutterItems;
+
+var _has = require("./has.js");
+
+var _transform = require("./transform.js");
+
+var _Immediate = _interopRequireDefault(require("./render/canvas/Immediate.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * @module ol/render
+ */
+
+/**
+ * @typedef {Object} State
+ * @property {CanvasRenderingContext2D} context Canvas context that the layer is being rendered to.
+ * @property {import("./Feature.js").FeatureLike} feature
+ * @property {import("./geom/SimpleGeometry.js").default} geometry
+ * @property {number} pixelRatio Pixel ratio used by the layer renderer.
+ * @property {number} resolution Resolution that the render batch was created and optimized for.
+ * This is not the view's resolution that is being rendered.
+ * @property {number} rotation Rotation of the rendered layer in radians.
+ */
+
+/**
+ * A function to be used when sorting features before rendering.
+ * It takes two instances of {@link module:ol/Feature} or
+ * {@link module:ol/render/Feature} and returns a `{number}`.
+ *
+ * @typedef {function(import("./Feature.js").FeatureLike, import("./Feature.js").FeatureLike):number} OrderFunction
+ */
+
+/**
+ * @typedef {Object} ToContextOptions
+ * @property {import("./size.js").Size} [size] Desired size of the canvas in css
+ * pixels. When provided, both canvas and css size will be set according to the
+ * `pixelRatio`. If not provided, the current canvas and css sizes will not be
+ * altered.
+ * @property {number} [pixelRatio=window.devicePixelRatio] Pixel ratio (canvas
+ * pixel to css pixel ratio) for the canvas.
+ */
+
+/**
+ * Binds a Canvas Immediate API to a canvas context, to allow drawing geometries
+ * to the context's canvas.
+ *
+ * The units for geometry coordinates are css pixels relative to the top left
+ * corner of the canvas element.
+ * ```js
+ * import {toContext} from 'ol/render';
+ * import Fill from 'ol/style/Fill';
+ * import Polygon from 'ol/geom/Polygon';
+ *
+ * var canvas = document.createElement('canvas');
+ * var render = toContext(canvas.getContext('2d'),
+ *     { size: [100, 100] });
+ * render.setFillStrokeStyle(new Fill({ color: blue }));
+ * render.drawPolygon(
+ *     new Polygon([[[0, 0], [100, 100], [100, 0], [0, 0]]]));
+ * ```
+ *
+ * @param {CanvasRenderingContext2D} context Canvas context.
+ * @param {ToContextOptions=} opt_options Options.
+ * @return {CanvasImmediateRenderer} Canvas Immediate.
+ * @api
+ */
+function toContext(context, opt_options) {
+  var canvas = context.canvas;
+  var options = opt_options ? opt_options : {};
+  var pixelRatio = options.pixelRatio || _has.DEVICE_PIXEL_RATIO;
+  var size = options.size;
+
+  if (size) {
+    canvas.width = size[0] * pixelRatio;
+    canvas.height = size[1] * pixelRatio;
+    canvas.style.width = size[0] + 'px';
+    canvas.style.height = size[1] + 'px';
+  }
+
+  var extent = [0, 0, canvas.width, canvas.height];
+  var transform = (0, _transform.scale)((0, _transform.create)(), pixelRatio, pixelRatio);
+  return new _Immediate.default(context, pixelRatio, extent, transform, 0);
+}
+/**
+ * Gets a vector context for drawing to the event's canvas.
+ * @param {import("./render/Event.js").default} event Render event.
+ * @returns {CanvasImmediateRenderer} Vector context.
+ * @api
+ */
+
+
+function getVectorContext(event) {
+  var frameState = event.frameState;
+  var transform = (0, _transform.multiply)(event.inversePixelTransform.slice(), frameState.coordinateToPixelTransform);
+  return new _Immediate.default(event.context, frameState.pixelRatio, frameState.extent, transform, frameState.viewState.rotation);
+}
+/**
+ * Gets the pixel of the event's canvas context from the map viewport's CSS pixel.
+ * @param {import("./render/Event.js").default} event Render event.
+ * @param {import("./pixel.js").Pixel} pixel CSS pixel relative to the top-left
+ * corner of the map viewport.
+ * @returns {import("./pixel.js").Pixel} Pixel on the event's canvas context.
+ * @api
+ */
+
+
+function getRenderPixel(event, pixel) {
+  var result = pixel.slice(0);
+  (0, _transform.apply)(event.inversePixelTransform.slice(), result);
+  return result;
+}
+/**
+ * @param {import("./PluggableMap.js").FrameState} frameState Frame state.
+ * @param {?} declutterTree Declutter tree.
+ * @returns {?} Declutter tree.
+ */
+
+
+function renderDeclutterItems(frameState, declutterTree) {
+  if (declutterTree) {
+    declutterTree.clear();
+  }
+
+  var items = frameState.declutterItems;
+
+  for (var z = items.length - 1; z >= 0; --z) {
+    var item = items[z];
+    var zIndexItems = item.items;
+
+    for (var i = 0, ii = zIndexItems.length; i < ii; i += 3) {
+      declutterTree = zIndexItems[i].renderDeclutter(zIndexItems[i + 1], zIndexItems[i + 2], item.opacity, declutterTree);
+    }
+  }
+
+  items.length = 0;
+  return declutterTree;
+}
+},{"./has.js":"../node_modules/ol/has.js","./transform.js":"../node_modules/ol/transform.js","./render/canvas/Immediate.js":"../node_modules/ol/render/canvas/Immediate.js"}],"../node_modules/ol/renderer/Map.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _util = require("../util.js");
+
+var _Disposable = _interopRequireDefault(require("../Disposable.js"));
+
+var _extent = require("../extent.js");
+
+var _functions = require("../functions.js");
+
+var _Layer = require("../layer/Layer.js");
+
+var _IconImageCache = require("../style/IconImageCache.js");
+
+var _transform = require("../transform.js");
+
+var _render = require("../render.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+/**
+ * @module ol/renderer/Map
+ */
+
+
+/**
+ * @abstract
+ */
+var MapRenderer =
+/** @class */
+function (_super) {
+  __extends(MapRenderer, _super);
+  /**
+   * @param {import("../PluggableMap.js").default} map Map.
+   */
+
+
+  function MapRenderer(map) {
+    var _this = _super.call(this) || this;
+    /**
+     * @private
+     * @type {import("../PluggableMap.js").default}
+     */
+
+
+    _this.map_ = map;
+    /**
+     * @private
+     */
+
+    _this.declutterTree_ = null;
+    return _this;
+  }
+  /**
+   * @abstract
+   * @param {import("../render/EventType.js").default} type Event type.
+   * @param {import("../PluggableMap.js").FrameState} frameState Frame state.
+   */
+
+
+  MapRenderer.prototype.dispatchRenderEvent = function (type, frameState) {
+    (0, _util.abstract)();
+  };
+  /**
+   * @param {import("../PluggableMap.js").FrameState} frameState FrameState.
+   * @protected
+   */
+
+
+  MapRenderer.prototype.calculateMatrices2D = function (frameState) {
+    var viewState = frameState.viewState;
+    var coordinateToPixelTransform = frameState.coordinateToPixelTransform;
+    var pixelToCoordinateTransform = frameState.pixelToCoordinateTransform;
+    (0, _transform.compose)(coordinateToPixelTransform, frameState.size[0] / 2, frameState.size[1] / 2, 1 / viewState.resolution, -1 / viewState.resolution, -viewState.rotation, -viewState.center[0], -viewState.center[1]);
+    (0, _transform.makeInverse)(pixelToCoordinateTransform, coordinateToPixelTransform);
+  };
+  /**
+   * @param {import("../coordinate.js").Coordinate} coordinate Coordinate.
+   * @param {import("../PluggableMap.js").FrameState} frameState FrameState.
+   * @param {number} hitTolerance Hit tolerance in pixels.
+   * @param {function(this: S, import("../Feature.js").FeatureLike,
+   *     import("../layer/Layer.js").default): T} callback Feature callback.
+   * @param {S} thisArg Value to use as `this` when executing `callback`.
+   * @param {function(this: U, import("../layer/Layer.js").default): boolean} layerFilter Layer filter
+   *     function, only layers which are visible and for which this function
+   *     returns `true` will be tested for features.  By default, all visible
+   *     layers will be tested.
+   * @param {U} thisArg2 Value to use as `this` when executing `layerFilter`.
+   * @return {T|undefined} Callback result.
+   * @template S,T,U
+   */
+
+
+  MapRenderer.prototype.forEachFeatureAtCoordinate = function (coordinate, frameState, hitTolerance, callback, thisArg, layerFilter, thisArg2) {
+    var result;
+    var viewState = frameState.viewState;
+    var viewResolution = viewState.resolution;
+    /**
+     * @param {boolean} managed Managed layer.
+     * @param {import("../Feature.js").FeatureLike} feature Feature.
+     * @param {import("../layer/Layer.js").default} layer Layer.
+     * @return {?} Callback result.
+     */
+
+    function forEachFeatureAtCoordinate(managed, feature, layer) {
+      if (!((0, _util.getUid)(feature) in frameState.skippedFeatureUids && !managed)) {
+        return callback.call(thisArg, feature, managed ? layer : null);
+      }
+    }
+
+    var projection = viewState.projection;
+    var translatedCoordinate = coordinate;
+
+    if (projection.canWrapX()) {
+      var projectionExtent = projection.getExtent();
+      var worldWidth = (0, _extent.getWidth)(projectionExtent);
+      var x = coordinate[0];
+
+      if (x < projectionExtent[0] || x > projectionExtent[2]) {
+        var worldsAway = Math.ceil((projectionExtent[0] - x) / worldWidth);
+        translatedCoordinate = [x + worldWidth * worldsAway, coordinate[1]];
+      }
+    }
+
+    var layerStates = frameState.layerStatesArray;
+    var numLayers = layerStates.length;
+    var declutteredFeatures;
+
+    if (this.declutterTree_) {
+      declutteredFeatures = this.declutterTree_.all().map(function (entry) {
+        return entry.value;
+      });
+    }
+
+    var i;
+
+    for (i = numLayers - 1; i >= 0; --i) {
+      var layerState = layerStates[i];
+      var layer =
+      /** @type {import("../layer/Layer.js").default} */
+      layerState.layer;
+
+      if (layer.hasRenderer() && (0, _Layer.visibleAtResolution)(layerState, viewResolution) && layerFilter.call(thisArg2, layer)) {
+        var layerRenderer = layer.getRenderer();
+        var source = layer.getSource();
+
+        if (layerRenderer && source) {
+          var callback_1 = forEachFeatureAtCoordinate.bind(null, layerState.managed);
+          result = layerRenderer.forEachFeatureAtCoordinate(source.getWrapX() ? translatedCoordinate : coordinate, frameState, hitTolerance, callback_1, declutteredFeatures);
+        }
+
+        if (result) {
+          return result;
+        }
+      }
+    }
+
+    return undefined;
+  };
+  /**
+   * @abstract
+   * @param {import("../pixel.js").Pixel} pixel Pixel.
+   * @param {import("../PluggableMap.js").FrameState} frameState FrameState.
+   * @param {number} hitTolerance Hit tolerance in pixels.
+   * @param {function(this: S, import("../layer/Layer.js").default, (Uint8ClampedArray|Uint8Array)): T} callback Layer
+   *     callback.
+   * @param {function(this: U, import("../layer/Layer.js").default): boolean} layerFilter Layer filter
+   *     function, only layers which are visible and for which this function
+   *     returns `true` will be tested for features.  By default, all visible
+   *     layers will be tested.
+   * @return {T|undefined} Callback result.
+   * @template S,T,U
+   */
+
+
+  MapRenderer.prototype.forEachLayerAtPixel = function (pixel, frameState, hitTolerance, callback, layerFilter) {
+    return (0, _util.abstract)();
+  };
+  /**
+   * @param {import("../coordinate.js").Coordinate} coordinate Coordinate.
+   * @param {import("../PluggableMap.js").FrameState} frameState FrameState.
+   * @param {number} hitTolerance Hit tolerance in pixels.
+   * @param {function(this: U, import("../layer/Layer.js").default): boolean} layerFilter Layer filter
+   *     function, only layers which are visible and for which this function
+   *     returns `true` will be tested for features.  By default, all visible
+   *     layers will be tested.
+   * @param {U} thisArg Value to use as `this` when executing `layerFilter`.
+   * @return {boolean} Is there a feature at the given coordinate?
+   * @template U
+   */
+
+
+  MapRenderer.prototype.hasFeatureAtCoordinate = function (coordinate, frameState, hitTolerance, layerFilter, thisArg) {
+    var hasFeature = this.forEachFeatureAtCoordinate(coordinate, frameState, hitTolerance, _functions.TRUE, this, layerFilter, thisArg);
+    return hasFeature !== undefined;
+  };
+  /**
+   * @return {import("../PluggableMap.js").default} Map.
+   */
+
+
+  MapRenderer.prototype.getMap = function () {
+    return this.map_;
+  };
+  /**
+   * Render.
+   * @param {?import("../PluggableMap.js").FrameState} frameState Frame state.
+   */
+
+
+  MapRenderer.prototype.renderFrame = function (frameState) {
+    this.declutterTree_ = (0, _render.renderDeclutterItems)(frameState, this.declutterTree_);
+  };
+  /**
+   * @param {import("../PluggableMap.js").FrameState} frameState Frame state.
+   * @protected
+   */
+
+
+  MapRenderer.prototype.scheduleExpireIconCache = function (frameState) {
+    if (_IconImageCache.shared.canExpireCache()) {
+      frameState.postRenderFunctions.push(expireIconCache);
+    }
+  };
+
+  return MapRenderer;
+}(_Disposable.default);
+/**
+ * @param {import("../PluggableMap.js").default} map Map.
+ * @param {import("../PluggableMap.js").FrameState} frameState Frame state.
+ */
+
+
+function expireIconCache(map, frameState) {
+  _IconImageCache.shared.expire();
+}
+
+var _default = MapRenderer;
+exports.default = _default;
+},{"../util.js":"../node_modules/ol/util.js","../Disposable.js":"../node_modules/ol/Disposable.js","../extent.js":"../node_modules/ol/extent.js","../functions.js":"../node_modules/ol/functions.js","../layer/Layer.js":"../node_modules/ol/layer/Layer.js","../style/IconImageCache.js":"../node_modules/ol/style/IconImageCache.js","../transform.js":"../node_modules/ol/transform.js","../render.js":"../node_modules/ol/render.js"}],"../node_modules/ol/renderer/Composite.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _css = require("../css.js");
+
+var _Layer = require("../layer/Layer.js");
+
+var _Event = _interopRequireDefault(require("../render/Event.js"));
+
+var _EventType = _interopRequireDefault(require("../render/EventType.js"));
+
+var _Map = _interopRequireDefault(require("./Map.js"));
+
+var _State = _interopRequireDefault(require("../source/State.js"));
+
+var _dom = require("../dom.js");
+
+var _canvas = require("../render/canvas.js");
+
+var _EventType2 = _interopRequireDefault(require("../events/EventType.js"));
+
+var _events = require("../events.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+/**
+ * @module ol/renderer/Composite
+ */
+
+
+/**
+ * @classdesc
+ * Canvas map renderer.
+ * @api
+ */
+var CompositeMapRenderer =
+/** @class */
+function (_super) {
+  __extends(CompositeMapRenderer, _super);
+  /**
+   * @param {import("../PluggableMap.js").default} map Map.
+   */
+
+
+  function CompositeMapRenderer(map) {
+    var _this = _super.call(this, map) || this;
+    /**
+     * @type {import("../events.js").EventsKey}
+     */
+
+
+    _this.labelCacheKey_ = (0, _events.listen)(_canvas.labelCache, _EventType2.default.CLEAR, map.redrawText.bind(map));
+    /**
+     * @private
+     * @type {HTMLDivElement}
+     */
+
+    _this.element_ = document.createElement('div');
+    var style = _this.element_.style;
+    style.position = 'absolute';
+    style.width = '100%';
+    style.height = '100%';
+    style.zIndex = '0';
+    _this.element_.className = _css.CLASS_UNSELECTABLE + ' ol-layers';
+    var container = map.getViewport();
+    container.insertBefore(_this.element_, container.firstChild || null);
+    /**
+     * @private
+     * @type {Array<HTMLElement>}
+     */
+
+    _this.children_ = [];
+    /**
+     * @private
+     * @type {boolean}
+     */
+
+    _this.renderedVisible_ = true;
+    return _this;
+  }
+  /**
+   * @param {import("../render/EventType.js").default} type Event type.
+   * @param {import("../PluggableMap.js").FrameState} frameState Frame state.
+   */
+
+
+  CompositeMapRenderer.prototype.dispatchRenderEvent = function (type, frameState) {
+    var map = this.getMap();
+
+    if (map.hasListener(type)) {
+      var event_1 = new _Event.default(type, undefined, frameState);
+      map.dispatchEvent(event_1);
+    }
+  };
+
+  CompositeMapRenderer.prototype.disposeInternal = function () {
+    (0, _events.unlistenByKey)(this.labelCacheKey_);
+
+    _super.prototype.disposeInternal.call(this);
+  };
+  /**
+   * @inheritDoc
+   */
+
+
+  CompositeMapRenderer.prototype.renderFrame = function (frameState) {
+    if (!frameState) {
+      if (this.renderedVisible_) {
+        this.element_.style.display = 'none';
+        this.renderedVisible_ = false;
+      }
+
+      return;
+    }
+
+    this.calculateMatrices2D(frameState);
+    this.dispatchRenderEvent(_EventType.default.PRECOMPOSE, frameState);
+    var layerStatesArray = frameState.layerStatesArray.sort(function (a, b) {
+      return a.zIndex - b.zIndex;
+    });
+    var viewResolution = frameState.viewState.resolution;
+    this.children_.length = 0;
+    var hasOverlay = false;
+    var previousElement = null;
+
+    for (var i = 0, ii = layerStatesArray.length; i < ii; ++i) {
+      var layerState = layerStatesArray[i];
+      hasOverlay = hasOverlay || layerState.hasOverlay;
+      frameState.layerIndex = i;
+
+      if (!(0, _Layer.visibleAtResolution)(layerState, viewResolution) || layerState.sourceState != _State.default.READY && layerState.sourceState != _State.default.UNDEFINED) {
+        continue;
+      }
+
+      var layer = layerState.layer;
+      var element = layer.render(frameState, previousElement);
+
+      if (!element) {
+        continue;
+      }
+
+      if ((element !== previousElement || i == ii - 1) && element.childElementCount === 2 && !hasOverlay) {
+        element.removeChild(element.lastElementChild);
+      }
+
+      if (element !== previousElement) {
+        this.children_.push(element);
+        hasOverlay = false;
+        previousElement = element;
+      }
+    }
+
+    _super.prototype.renderFrame.call(this, frameState);
+
+    (0, _dom.replaceChildren)(this.element_, this.children_);
+    this.dispatchRenderEvent(_EventType.default.POSTCOMPOSE, frameState);
+
+    if (!this.renderedVisible_) {
+      this.element_.style.display = '';
+      this.renderedVisible_ = true;
+    }
+
+    this.scheduleExpireIconCache(frameState);
+  };
+  /**
+   * @inheritDoc
+   */
+
+
+  CompositeMapRenderer.prototype.forEachLayerAtPixel = function (pixel, frameState, hitTolerance, callback, layerFilter) {
+    var viewState = frameState.viewState;
+    var viewResolution = viewState.resolution;
+    var layerStates = frameState.layerStatesArray;
+    var numLayers = layerStates.length;
+
+    for (var i = numLayers - 1; i >= 0; --i) {
+      var layerState = layerStates[i];
+      var layer = layerState.layer;
+
+      if (layer.hasRenderer() && (0, _Layer.visibleAtResolution)(layerState, viewResolution) && layerFilter(layer)) {
+        var layerRenderer = layer.getRenderer();
+        var data = layerRenderer.getDataAtPixel(pixel, frameState, hitTolerance);
+
+        if (data) {
+          var result = callback(layer, data);
+
+          if (result) {
+            return result;
+          }
+        }
+      }
+    }
+
+    return undefined;
+  };
+
+  return CompositeMapRenderer;
+}(_Map.default);
+
+var _default = CompositeMapRenderer;
+exports.default = _default;
+},{"../css.js":"../node_modules/ol/css.js","../layer/Layer.js":"../node_modules/ol/layer/Layer.js","../render/Event.js":"../node_modules/ol/render/Event.js","../render/EventType.js":"../node_modules/ol/render/EventType.js","./Map.js":"../node_modules/ol/renderer/Map.js","../source/State.js":"../node_modules/ol/source/State.js","../dom.js":"../node_modules/ol/dom.js","../render/canvas.js":"../node_modules/ol/render/canvas.js","../events/EventType.js":"../node_modules/ol/events/EventType.js","../events.js":"../node_modules/ol/events.js"}],"../node_modules/ol/OverlayPositioning.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+/**
+ * @module ol/OverlayPositioning
+ */
+
+/**
+ * Overlay position: `'bottom-left'`, `'bottom-center'`,  `'bottom-right'`,
+ * `'center-left'`, `'center-center'`, `'center-right'`, `'top-left'`,
+ * `'top-center'`, `'top-right'`
+ * @enum {string}
+ */
+var _default = {
+  BOTTOM_LEFT: 'bottom-left',
+  BOTTOM_CENTER: 'bottom-center',
+  BOTTOM_RIGHT: 'bottom-right',
+  CENTER_LEFT: 'center-left',
+  CENTER_CENTER: 'center-center',
+  CENTER_RIGHT: 'center-right',
+  TOP_LEFT: 'top-left',
+  TOP_CENTER: 'top-center',
+  TOP_RIGHT: 'top-right'
+};
+exports.default = _default;
+},{}],"../node_modules/ol/Overlay.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _MapEventType = _interopRequireDefault(require("./MapEventType.js"));
+
+var _Object = _interopRequireWildcard(require("./Object.js"));
+
+var _OverlayPositioning = _interopRequireDefault(require("./OverlayPositioning.js"));
+
+var _css = require("./css.js");
+
+var _dom = require("./dom.js");
+
+var _events = require("./events.js");
+
+var _extent = require("./extent.js");
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+/**
+ * @module ol/Overlay
+ */
+
+
+/**
+ * @typedef {Object} Options
+ * @property {number|string} [id] Set the overlay id. The overlay id can be used
+ * with the {@link module:ol/Map~Map#getOverlayById} method.
+ * @property {HTMLElement} [element] The overlay element.
+ * @property {Array<number>} [offset=[0, 0]] Offsets in pixels used when positioning
+ * the overlay. The first element in the
+ * array is the horizontal offset. A positive value shifts the overlay right.
+ * The second element in the array is the vertical offset. A positive value
+ * shifts the overlay down.
+ * @property {import("./coordinate.js").Coordinate} [position] The overlay position
+ * in map projection.
+ * @property {OverlayPositioning} [positioning='top-left'] Defines how
+ * the overlay is actually positioned with respect to its `position` property.
+ * Possible values are `'bottom-left'`, `'bottom-center'`, `'bottom-right'`,
+ * `'center-left'`, `'center-center'`, `'center-right'`, `'top-left'`,
+ * `'top-center'`, and `'top-right'`.
+ * @property {boolean} [stopEvent=true] Whether event propagation to the map
+ * viewport should be stopped. If `true` the overlay is placed in the same
+ * container as that of the controls (CSS class name
+ * `ol-overlaycontainer-stopevent`); if `false` it is placed in the container
+ * with CSS class name specified by the `className` property.
+ * @property {boolean} [insertFirst=true] Whether the overlay is inserted first
+ * in the overlay container, or appended. If the overlay is placed in the same
+ * container as that of the controls (see the `stopEvent` option) you will
+ * probably set `insertFirst` to `true` so the overlay is displayed below the
+ * controls.
+ * @property {boolean} [autoPan=false] If set to `true` the map is panned when
+ * calling `setPosition`, so that the overlay is entirely visible in the current
+ * viewport.
+ * @property {PanOptions} [autoPanAnimation] The
+ * animation options used to pan the overlay into view. This animation is only
+ * used when `autoPan` is enabled. A `duration` and `easing` may be provided to
+ * customize the animation.
+ * @property {number} [autoPanMargin=20] The margin (in pixels) between the
+ * overlay and the borders of the map when autopanning.
+ * @property {string} [className='ol-overlay-container ol-selectable'] CSS class
+ * name.
+ */
+
+/**
+ * @typedef {Object} PanOptions
+ * @property {number} [duration=1000] The duration of the animation in
+ * milliseconds.
+ * @property {function(number):number} [easing] The easing function to use. Can
+ * be one from {@link module:ol/easing} or a custom function.
+ * Default is {@link module:ol/easing~inAndOut}.
+ */
+
+/**
+ * @enum {string}
+ * @protected
+ */
+var Property = {
+  ELEMENT: 'element',
+  MAP: 'map',
+  OFFSET: 'offset',
+  POSITION: 'position',
+  POSITIONING: 'positioning'
+};
+/**
+ * @classdesc
+ * An element to be displayed over the map and attached to a single map
+ * location.  Like {@link module:ol/control/Control~Control}, Overlays are
+ * visible widgets. Unlike Controls, they are not in a fixed position on the
+ * screen, but are tied to a geographical coordinate, so panning the map will
+ * move an Overlay but not a Control.
+ *
+ * Example:
+ *
+ *     import Overlay from 'ol/Overlay';
+ *
+ *     var popup = new Overlay({
+ *       element: document.getElementById('popup')
+ *     });
+ *     popup.setPosition(coordinate);
+ *     map.addOverlay(popup);
+ *
+ * @api
+ */
+
+var Overlay =
+/** @class */
+function (_super) {
+  __extends(Overlay, _super);
+  /**
+   * @param {Options} options Overlay options.
+   */
+
+
+  function Overlay(options) {
+    var _this = _super.call(this) || this;
+    /**
+     * @protected
+     * @type {Options}
+     */
+
+
+    _this.options = options;
+    /**
+     * @protected
+     * @type {number|string|undefined}
+     */
+
+    _this.id = options.id;
+    /**
+     * @protected
+     * @type {boolean}
+     */
+
+    _this.insertFirst = options.insertFirst !== undefined ? options.insertFirst : true;
+    /**
+     * @protected
+     * @type {boolean}
+     */
+
+    _this.stopEvent = options.stopEvent !== undefined ? options.stopEvent : true;
+    /**
+     * @protected
+     * @type {HTMLElement}
+     */
+
+    _this.element = document.createElement('div');
+    _this.element.className = options.className !== undefined ? options.className : 'ol-overlay-container ' + _css.CLASS_SELECTABLE;
+    _this.element.style.position = 'absolute';
+    /**
+     * @protected
+     * @type {boolean}
+     */
+
+    _this.autoPan = options.autoPan !== undefined ? options.autoPan : false;
+    /**
+     * @protected
+     * @type {PanOptions}
+     */
+
+    _this.autoPanAnimation = options.autoPanAnimation ||
+    /** @type {PanOptions} */
+    {};
+    /**
+     * @protected
+     * @type {number}
+     */
+
+    _this.autoPanMargin = options.autoPanMargin !== undefined ? options.autoPanMargin : 20;
+    /**
+     * @protected
+     * @type {{bottom_: string,
+     *         left_: string,
+     *         right_: string,
+     *         top_: string,
+     *         visible: boolean}}
+     */
+
+    _this.rendered = {
+      bottom_: '',
+      left_: '',
+      right_: '',
+      top_: '',
+      visible: true
+    };
+    /**
+     * @protected
+     * @type {?import("./events.js").EventsKey}
+     */
+
+    _this.mapPostrenderListenerKey = null;
+    (0, _events.listen)(_this, (0, _Object.getChangeEventType)(Property.ELEMENT), _this.handleElementChanged, _this);
+    (0, _events.listen)(_this, (0, _Object.getChangeEventType)(Property.MAP), _this.handleMapChanged, _this);
+    (0, _events.listen)(_this, (0, _Object.getChangeEventType)(Property.OFFSET), _this.handleOffsetChanged, _this);
+    (0, _events.listen)(_this, (0, _Object.getChangeEventType)(Property.POSITION), _this.handlePositionChanged, _this);
+    (0, _events.listen)(_this, (0, _Object.getChangeEventType)(Property.POSITIONING), _this.handlePositioningChanged, _this);
+
+    if (options.element !== undefined) {
+      _this.setElement(options.element);
+    }
+
+    _this.setOffset(options.offset !== undefined ? options.offset : [0, 0]);
+
+    _this.setPositioning(options.positioning !== undefined ?
+    /** @type {OverlayPositioning} */
+    options.positioning : _OverlayPositioning.default.TOP_LEFT);
+
+    if (options.position !== undefined) {
+      _this.setPosition(options.position);
+    }
+
+    return _this;
+  }
+  /**
+   * Get the DOM element of this overlay.
+   * @return {HTMLElement|undefined} The Element containing the overlay.
+   * @observable
+   * @api
+   */
+
+
+  Overlay.prototype.getElement = function () {
+    return (
+      /** @type {HTMLElement|undefined} */
+      this.get(Property.ELEMENT)
+    );
+  };
+  /**
+   * Get the overlay identifier which is set on constructor.
+   * @return {number|string|undefined} Id.
+   * @api
+   */
+
+
+  Overlay.prototype.getId = function () {
+    return this.id;
+  };
+  /**
+   * Get the map associated with this overlay.
+   * @return {import("./PluggableMap.js").default|undefined} The map that the
+   * overlay is part of.
+   * @observable
+   * @api
+   */
+
+
+  Overlay.prototype.getMap = function () {
+    return (
+      /** @type {import("./PluggableMap.js").default|undefined} */
+      this.get(Property.MAP)
+    );
+  };
+  /**
+   * Get the offset of this overlay.
+   * @return {Array<number>} The offset.
+   * @observable
+   * @api
+   */
+
+
+  Overlay.prototype.getOffset = function () {
+    return (
+      /** @type {Array<number>} */
+      this.get(Property.OFFSET)
+    );
+  };
+  /**
+   * Get the current position of this overlay.
+   * @return {import("./coordinate.js").Coordinate|undefined} The spatial point that the overlay is
+   *     anchored at.
+   * @observable
+   * @api
+   */
+
+
+  Overlay.prototype.getPosition = function () {
+    return (
+      /** @type {import("./coordinate.js").Coordinate|undefined} */
+      this.get(Property.POSITION)
+    );
+  };
+  /**
+   * Get the current positioning of this overlay.
+   * @return {OverlayPositioning} How the overlay is positioned
+   *     relative to its point on the map.
+   * @observable
+   * @api
+   */
+
+
+  Overlay.prototype.getPositioning = function () {
+    return (
+      /** @type {OverlayPositioning} */
+      this.get(Property.POSITIONING)
+    );
+  };
+  /**
+   * @protected
+   */
+
+
+  Overlay.prototype.handleElementChanged = function () {
+    (0, _dom.removeChildren)(this.element);
+    var element = this.getElement();
+
+    if (element) {
+      this.element.appendChild(element);
+    }
+  };
+  /**
+   * @protected
+   */
+
+
+  Overlay.prototype.handleMapChanged = function () {
+    if (this.mapPostrenderListenerKey) {
+      (0, _dom.removeNode)(this.element);
+      (0, _events.unlistenByKey)(this.mapPostrenderListenerKey);
+      this.mapPostrenderListenerKey = null;
+    }
+
+    var map = this.getMap();
+
+    if (map) {
+      this.mapPostrenderListenerKey = (0, _events.listen)(map, _MapEventType.default.POSTRENDER, this.render, this);
+      this.updatePixelPosition();
+      var container = this.stopEvent ? map.getOverlayContainerStopEvent() : map.getOverlayContainer();
+
+      if (this.insertFirst) {
+        container.insertBefore(this.element, container.childNodes[0] || null);
+      } else {
+        container.appendChild(this.element);
+      }
+    }
+  };
+  /**
+   * @protected
+   */
+
+
+  Overlay.prototype.render = function () {
+    this.updatePixelPosition();
+  };
+  /**
+   * @protected
+   */
+
+
+  Overlay.prototype.handleOffsetChanged = function () {
+    this.updatePixelPosition();
+  };
+  /**
+   * @protected
+   */
+
+
+  Overlay.prototype.handlePositionChanged = function () {
+    this.updatePixelPosition();
+
+    if (this.get(Property.POSITION) && this.autoPan) {
+      this.panIntoView();
+    }
+  };
+  /**
+   * @protected
+   */
+
+
+  Overlay.prototype.handlePositioningChanged = function () {
+    this.updatePixelPosition();
+  };
+  /**
+   * Set the DOM element to be associated with this overlay.
+   * @param {HTMLElement|undefined} element The Element containing the overlay.
+   * @observable
+   * @api
+   */
+
+
+  Overlay.prototype.setElement = function (element) {
+    this.set(Property.ELEMENT, element);
+  };
+  /**
+   * Set the map to be associated with this overlay.
+   * @param {import("./PluggableMap.js").default|undefined} map The map that the
+   * overlay is part of.
+   * @observable
+   * @api
+   */
+
+
+  Overlay.prototype.setMap = function (map) {
+    this.set(Property.MAP, map);
+  };
+  /**
+   * Set the offset for this overlay.
+   * @param {Array<number>} offset Offset.
+   * @observable
+   * @api
+   */
+
+
+  Overlay.prototype.setOffset = function (offset) {
+    this.set(Property.OFFSET, offset);
+  };
+  /**
+   * Set the position for this overlay. If the position is `undefined` the
+   * overlay is hidden.
+   * @param {import("./coordinate.js").Coordinate|undefined} position The spatial point that the overlay
+   *     is anchored at.
+   * @observable
+   * @api
+   */
+
+
+  Overlay.prototype.setPosition = function (position) {
+    this.set(Property.POSITION, position);
+  };
+  /**
+   * Pan the map so that the overlay is entirely visible in the current viewport
+   * (if necessary).
+   * @protected
+   */
+
+
+  Overlay.prototype.panIntoView = function () {
+    var map = this.getMap();
+
+    if (!map || !map.getTargetElement()) {
+      return;
+    }
+
+    var mapRect = this.getRect(map.getTargetElement(), map.getSize());
+    var element = this.getElement();
+    var overlayRect = this.getRect(element, [(0, _dom.outerWidth)(element), (0, _dom.outerHeight)(element)]);
+    var margin = this.autoPanMargin;
+
+    if (!(0, _extent.containsExtent)(mapRect, overlayRect)) {
+      // the overlay is not completely inside the viewport, so pan the map
+      var offsetLeft = overlayRect[0] - mapRect[0];
+      var offsetRight = mapRect[2] - overlayRect[2];
+      var offsetTop = overlayRect[1] - mapRect[1];
+      var offsetBottom = mapRect[3] - overlayRect[3];
+      var delta = [0, 0];
+
+      if (offsetLeft < 0) {
+        // move map to the left
+        delta[0] = offsetLeft - margin;
+      } else if (offsetRight < 0) {
+        // move map to the right
+        delta[0] = Math.abs(offsetRight) + margin;
+      }
+
+      if (offsetTop < 0) {
+        // move map up
+        delta[1] = offsetTop - margin;
+      } else if (offsetBottom < 0) {
+        // move map down
+        delta[1] = Math.abs(offsetBottom) + margin;
+      }
+
+      if (delta[0] !== 0 || delta[1] !== 0) {
+        var center =
+        /** @type {import("./coordinate.js").Coordinate} */
+        map.getView().getCenter();
+        var centerPx = map.getPixelFromCoordinate(center);
+        var newCenterPx = [centerPx[0] + delta[0], centerPx[1] + delta[1]];
+        map.getView().animate({
+          center: map.getCoordinateFromPixel(newCenterPx),
+          duration: this.autoPanAnimation.duration,
+          easing: this.autoPanAnimation.easing
+        });
+      }
+    }
+  };
+  /**
+   * Get the extent of an element relative to the document
+   * @param {HTMLElement|undefined} element The element.
+   * @param {import("./size.js").Size|undefined} size The size of the element.
+   * @return {import("./extent.js").Extent} The extent.
+   * @protected
+   */
+
+
+  Overlay.prototype.getRect = function (element, size) {
+    var box = element.getBoundingClientRect();
+    var offsetX = box.left + window.pageXOffset;
+    var offsetY = box.top + window.pageYOffset;
+    return [offsetX, offsetY, offsetX + size[0], offsetY + size[1]];
+  };
+  /**
+   * Set the positioning for this overlay.
+   * @param {OverlayPositioning} positioning how the overlay is
+   *     positioned relative to its point on the map.
+   * @observable
+   * @api
+   */
+
+
+  Overlay.prototype.setPositioning = function (positioning) {
+    this.set(Property.POSITIONING, positioning);
+  };
+  /**
+   * Modify the visibility of the element.
+   * @param {boolean} visible Element visibility.
+   * @protected
+   */
+
+
+  Overlay.prototype.setVisible = function (visible) {
+    if (this.rendered.visible !== visible) {
+      this.element.style.display = visible ? '' : 'none';
+      this.rendered.visible = visible;
+    }
+  };
+  /**
+   * Update pixel position.
+   * @protected
+   */
+
+
+  Overlay.prototype.updatePixelPosition = function () {
+    var map = this.getMap();
+    var position = this.getPosition();
+
+    if (!map || !map.isRendered() || !position) {
+      this.setVisible(false);
+      return;
+    }
+
+    var pixel = map.getPixelFromCoordinate(position);
+    var mapSize = map.getSize();
+    this.updateRenderedPosition(pixel, mapSize);
+  };
+  /**
+   * @param {import("./pixel.js").Pixel} pixel The pixel location.
+   * @param {import("./size.js").Size|undefined} mapSize The map size.
+   * @protected
+   */
+
+
+  Overlay.prototype.updateRenderedPosition = function (pixel, mapSize) {
+    var style = this.element.style;
+    var offset = this.getOffset();
+    var positioning = this.getPositioning();
+    this.setVisible(true);
+    var offsetX = offset[0];
+    var offsetY = offset[1];
+
+    if (positioning == _OverlayPositioning.default.BOTTOM_RIGHT || positioning == _OverlayPositioning.default.CENTER_RIGHT || positioning == _OverlayPositioning.default.TOP_RIGHT) {
+      if (this.rendered.left_ !== '') {
+        this.rendered.left_ = style.left = '';
+      }
+
+      var right = Math.round(mapSize[0] - pixel[0] - offsetX) + 'px';
+
+      if (this.rendered.right_ != right) {
+        this.rendered.right_ = style.right = right;
+      }
+    } else {
+      if (this.rendered.right_ !== '') {
+        this.rendered.right_ = style.right = '';
+      }
+
+      if (positioning == _OverlayPositioning.default.BOTTOM_CENTER || positioning == _OverlayPositioning.default.CENTER_CENTER || positioning == _OverlayPositioning.default.TOP_CENTER) {
+        offsetX -= this.element.offsetWidth / 2;
+      }
+
+      var left = Math.round(pixel[0] + offsetX) + 'px';
+
+      if (this.rendered.left_ != left) {
+        this.rendered.left_ = style.left = left;
+      }
+    }
+
+    if (positioning == _OverlayPositioning.default.BOTTOM_LEFT || positioning == _OverlayPositioning.default.BOTTOM_CENTER || positioning == _OverlayPositioning.default.BOTTOM_RIGHT) {
+      if (this.rendered.top_ !== '') {
+        this.rendered.top_ = style.top = '';
+      }
+
+      var bottom = Math.round(mapSize[1] - pixel[1] - offsetY) + 'px';
+
+      if (this.rendered.bottom_ != bottom) {
+        this.rendered.bottom_ = style.bottom = bottom;
+      }
+    } else {
+      if (this.rendered.bottom_ !== '') {
+        this.rendered.bottom_ = style.bottom = '';
+      }
+
+      if (positioning == _OverlayPositioning.default.CENTER_LEFT || positioning == _OverlayPositioning.default.CENTER_CENTER || positioning == _OverlayPositioning.default.CENTER_RIGHT) {
+        offsetY -= this.element.offsetHeight / 2;
+      }
+
+      var top_1 = Math.round(pixel[1] + offsetY) + 'px';
+
+      if (this.rendered.top_ != top_1) {
+        this.rendered.top_ = style.top = top_1;
+      }
+    }
+  };
+  /**
+   * returns the options this Overlay has been created with
+   * @return {Options} overlay options
+   */
+
+
+  Overlay.prototype.getOptions = function () {
+    return this.options;
+  };
+
+  return Overlay;
+}(_Object.default);
+
+var _default = Overlay;
+exports.default = _default;
+},{"./MapEventType.js":"../node_modules/ol/MapEventType.js","./Object.js":"../node_modules/ol/Object.js","./OverlayPositioning.js":"../node_modules/ol/OverlayPositioning.js","./css.js":"../node_modules/ol/css.js","./dom.js":"../node_modules/ol/dom.js","./events.js":"../node_modules/ol/events.js","./extent.js":"../node_modules/ol/extent.js"}],"../node_modules/ol/control/OverviewMap.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.render = render;
+exports.default = void 0;
+
+var _PluggableMap = _interopRequireDefault(require("../PluggableMap.js"));
+
+var _Composite = _interopRequireDefault(require("../renderer/Composite.js"));
+
+var _MapEventType = _interopRequireDefault(require("../MapEventType.js"));
+
+var _MapProperty = _interopRequireDefault(require("../MapProperty.js"));
+
+var _Object = require("../Object.js");
+
+var _ObjectEventType = _interopRequireDefault(require("../ObjectEventType.js"));
+
+var _Overlay = _interopRequireDefault(require("../Overlay.js"));
+
+var _OverlayPositioning = _interopRequireDefault(require("../OverlayPositioning.js"));
+
+var _ViewProperty = _interopRequireDefault(require("../ViewProperty.js"));
+
+var _Control = _interopRequireDefault(require("./Control.js"));
+
+var _coordinate = require("../coordinate.js");
+
+var _css = require("../css.js");
+
+var _dom = require("../dom.js");
+
+var _events = require("../events.js");
+
+var _EventType = _interopRequireDefault(require("../events/EventType.js"));
+
+var _extent = require("../extent.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+/**
+ * @module ol/control/OverviewMap
+ */
+
+
+/**
+ * Maximum width and/or height extent ratio that determines when the overview
+ * map should be zoomed out.
+ * @type {number}
+ */
+var MAX_RATIO = 0.75;
+/**
+ * Minimum width and/or height extent ratio that determines when the overview
+ * map should be zoomed in.
+ * @type {number}
+ */
+
+var MIN_RATIO = 0.1;
+
+var ControlledMap =
+/** @class */
+function (_super) {
+  __extends(ControlledMap, _super);
+
+  function ControlledMap() {
+    return _super !== null && _super.apply(this, arguments) || this;
+  }
+
+  ControlledMap.prototype.createRenderer = function () {
+    return new _Composite.default(this);
+  };
+
+  return ControlledMap;
+}(_PluggableMap.default);
+/**
+ * @typedef {Object} Options
+ * @property {string} [className='ol-overviewmap'] CSS class name.
+ * @property {boolean} [collapsed=true] Whether the control should start collapsed or not (expanded).
+ * @property {string|HTMLElement} [collapseLabel='«'] Text label to use for the
+ * expanded overviewmap button. Instead of text, also an element (e.g. a `span` element) can be used.
+ * @property {boolean} [collapsible=true] Whether the control can be collapsed or not.
+ * @property {string|HTMLElement} [label='»'] Text label to use for the collapsed
+ * overviewmap button. Instead of text, also an element (e.g. a `span` element) can be used.
+ * @property {Array<import("../layer/Layer.js").default>|import("../Collection.js").default<import("../layer/Layer.js").default>} [layers]
+ * Layers for the overview map.
+ * @property {function(import("../MapEvent.js").default)} [render] Function called when the control
+ * should be re-rendered. This is called in a `requestAnimationFrame` callback.
+ * @property {HTMLElement|string} [target] Specify a target if you want the control
+ * to be rendered outside of the map's viewport.
+ * @property {string} [tipLabel='Overview map'] Text label to use for the button tip.
+ * @property {import("../View.js").default} [view] Custom view for the overview map. If not provided,
+ * a default view with an EPSG:3857 projection will be used.
+ */
+
+/**
+ * Create a new control with a map acting as an overview map for an other
+ * defined map.
+ *
+ * @api
+ */
+
+
+var OverviewMap =
+/** @class */
+function (_super) {
+  __extends(OverviewMap, _super);
+  /**
+   * @param {Options=} opt_options OverviewMap options.
+   */
+
+
+  function OverviewMap(opt_options) {
+    var _this = this;
+
+    var options = opt_options ? opt_options : {};
+    _this = _super.call(this, {
+      element: document.createElement('div'),
+      render: options.render || render,
+      target: options.target
+    }) || this;
+    /**
+     * @type {boolean}
+     * @private
+     */
+
+    _this.collapsed_ = options.collapsed !== undefined ? options.collapsed : true;
+    /**
+     * @private
+     * @type {boolean}
+     */
+
+    _this.collapsible_ = options.collapsible !== undefined ? options.collapsible : true;
+
+    if (!_this.collapsible_) {
+      _this.collapsed_ = false;
+    }
+
+    var className = options.className !== undefined ? options.className : 'ol-overviewmap';
+    var tipLabel = options.tipLabel !== undefined ? options.tipLabel : 'Overview map';
+    var collapseLabel = options.collapseLabel !== undefined ? options.collapseLabel : '\u00AB';
+
+    if (typeof collapseLabel === 'string') {
+      /**
+       * @private
+       * @type {HTMLElement}
+       */
+      _this.collapseLabel_ = document.createElement('span');
+      _this.collapseLabel_.textContent = collapseLabel;
+    } else {
+      _this.collapseLabel_ = collapseLabel;
+    }
+
+    var label = options.label !== undefined ? options.label : '\u00BB';
+
+    if (typeof label === 'string') {
+      /**
+       * @private
+       * @type {HTMLElement}
+       */
+      _this.label_ = document.createElement('span');
+      _this.label_.textContent = label;
+    } else {
+      _this.label_ = label;
+    }
+
+    var activeLabel = _this.collapsible_ && !_this.collapsed_ ? _this.collapseLabel_ : _this.label_;
+    var button = document.createElement('button');
+    button.setAttribute('type', 'button');
+    button.title = tipLabel;
+    button.appendChild(activeLabel);
+    (0, _events.listen)(button, _EventType.default.CLICK, _this.handleClick_, _this);
+    /**
+     * @type {HTMLElement}
+     * @private
+     */
+
+    _this.ovmapDiv_ = document.createElement('div');
+    _this.ovmapDiv_.className = 'ol-overviewmap-map';
+    /**
+     * @type {ControlledMap}
+     * @private
+     */
+
+    _this.ovmap_ = new ControlledMap({
+      view: options.view
+    });
+    var ovmap = _this.ovmap_;
+
+    if (options.layers) {
+      options.layers.forEach(function (layer) {
+        ovmap.addLayer(layer);
+      });
+    }
+
+    var box = document.createElement('div');
+    box.className = 'ol-overviewmap-box';
+    box.style.boxSizing = 'border-box';
+    /**
+     * @type {import("../Overlay.js").default}
+     * @private
+     */
+
+    _this.boxOverlay_ = new _Overlay.default({
+      position: [0, 0],
+      positioning: _OverlayPositioning.default.BOTTOM_LEFT,
+      element: box
+    });
+
+    _this.ovmap_.addOverlay(_this.boxOverlay_);
+
+    var cssClasses = className + ' ' + _css.CLASS_UNSELECTABLE + ' ' + _css.CLASS_CONTROL + (_this.collapsed_ && _this.collapsible_ ? ' ' + _css.CLASS_COLLAPSED : '') + (_this.collapsible_ ? '' : ' ol-uncollapsible');
+    var element = _this.element;
+    element.className = cssClasses;
+    element.appendChild(_this.ovmapDiv_);
+    element.appendChild(button);
+    /* Interactive map */
+
+    var scope = _this;
+    var overlay = _this.boxOverlay_;
+
+    var overlayBox = _this.boxOverlay_.getElement();
+    /* Functions definition */
+
+
+    var computeDesiredMousePosition = function (mousePosition) {
+      return {
+        clientX: mousePosition.clientX - overlayBox.offsetWidth / 2,
+        clientY: mousePosition.clientY + overlayBox.offsetHeight / 2
+      };
+    };
+
+    var move = function (event) {
+      var position =
+      /** @type {?} */
+      computeDesiredMousePosition(event);
+      var coordinates = ovmap.getEventCoordinate(
+      /** @type {Event} */
+      position);
+      overlay.setPosition(coordinates);
+    };
+
+    var endMoving = function (event) {
+      var coordinates = ovmap.getEventCoordinate(event);
+      scope.getMap().getView().setCenter(coordinates);
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', endMoving);
+    };
+    /* Binding */
+
+
+    overlayBox.addEventListener('mousedown', function () {
+      window.addEventListener('mousemove', move);
+      window.addEventListener('mouseup', endMoving);
+    });
+    return _this;
+  }
+  /**
+   * @inheritDoc
+   * @api
+   */
+
+
+  OverviewMap.prototype.setMap = function (map) {
+    var oldMap = this.getMap();
+
+    if (map === oldMap) {
+      return;
+    }
+
+    if (oldMap) {
+      var oldView = oldMap.getView();
+
+      if (oldView) {
+        this.unbindView_(oldView);
+      }
+
+      this.ovmap_.setTarget(null);
+    }
+
+    _super.prototype.setMap.call(this, map);
+
+    if (map) {
+      this.ovmap_.setTarget(this.ovmapDiv_);
+      this.listenerKeys.push((0, _events.listen)(map, _ObjectEventType.default.PROPERTYCHANGE, this.handleMapPropertyChange_, this));
+      var view = map.getView();
+
+      if (view) {
+        this.bindView_(view);
+
+        if (view.isDef()) {
+          this.ovmap_.updateSize();
+          this.resetExtent_();
+        }
+      }
+    }
+  };
+  /**
+   * Handle map property changes.  This only deals with changes to the map's view.
+   * @param {import("../Object.js").ObjectEvent} event The propertychange event.
+   * @private
+   */
+
+
+  OverviewMap.prototype.handleMapPropertyChange_ = function (event) {
+    if (event.key === _MapProperty.default.VIEW) {
+      var oldView =
+      /** @type {import("../View.js").default} */
+      event.oldValue;
+
+      if (oldView) {
+        this.unbindView_(oldView);
+      }
+
+      var newView = this.getMap().getView();
+      this.bindView_(newView);
+    }
+  };
+  /**
+   * Register listeners for view property changes.
+   * @param {import("../View.js").default} view The view.
+   * @private
+   */
+
+
+  OverviewMap.prototype.bindView_ = function (view) {
+    (0, _events.listen)(view, (0, _Object.getChangeEventType)(_ViewProperty.default.ROTATION), this.handleRotationChanged_, this);
+  };
+  /**
+   * Unregister listeners for view property changes.
+   * @param {import("../View.js").default} view The view.
+   * @private
+   */
+
+
+  OverviewMap.prototype.unbindView_ = function (view) {
+    (0, _events.unlisten)(view, (0, _Object.getChangeEventType)(_ViewProperty.default.ROTATION), this.handleRotationChanged_, this);
+  };
+  /**
+   * Handle rotation changes to the main map.
+   * TODO: This should rotate the extent rectrangle instead of the
+   * overview map's view.
+   * @private
+   */
+
+
+  OverviewMap.prototype.handleRotationChanged_ = function () {
+    this.ovmap_.getView().setRotation(this.getMap().getView().getRotation());
+  };
+  /**
+   * Reset the overview map extent if the box size (width or
+   * height) is less than the size of the overview map size times minRatio
+   * or is greater than the size of the overview size times maxRatio.
+   *
+   * If the map extent was not reset, the box size can fits in the defined
+   * ratio sizes. This method then checks if is contained inside the overview
+   * map current extent. If not, recenter the overview map to the current
+   * main map center location.
+   * @private
+   */
+
+
+  OverviewMap.prototype.validateExtent_ = function () {
+    var map = this.getMap();
+    var ovmap = this.ovmap_;
+
+    if (!map.isRendered() || !ovmap.isRendered()) {
+      return;
+    }
+
+    var mapSize =
+    /** @type {import("../size.js").Size} */
+    map.getSize();
+    var view = map.getView();
+    var extent = view.calculateExtent(mapSize);
+    var ovmapSize =
+    /** @type {import("../size.js").Size} */
+    ovmap.getSize();
+    var ovview = ovmap.getView();
+    var ovextent = ovview.calculateExtent(ovmapSize);
+    var topLeftPixel = ovmap.getPixelFromCoordinate((0, _extent.getTopLeft)(extent));
+    var bottomRightPixel = ovmap.getPixelFromCoordinate((0, _extent.getBottomRight)(extent));
+    var boxWidth = Math.abs(topLeftPixel[0] - bottomRightPixel[0]);
+    var boxHeight = Math.abs(topLeftPixel[1] - bottomRightPixel[1]);
+    var ovmapWidth = ovmapSize[0];
+    var ovmapHeight = ovmapSize[1];
+
+    if (boxWidth < ovmapWidth * MIN_RATIO || boxHeight < ovmapHeight * MIN_RATIO || boxWidth > ovmapWidth * MAX_RATIO || boxHeight > ovmapHeight * MAX_RATIO) {
+      this.resetExtent_();
+    } else if (!(0, _extent.containsExtent)(ovextent, extent)) {
+      this.recenter_();
+    }
+  };
+  /**
+   * Reset the overview map extent to half calculated min and max ratio times
+   * the extent of the main map.
+   * @private
+   */
+
+
+  OverviewMap.prototype.resetExtent_ = function () {
+    if (MAX_RATIO === 0 || MIN_RATIO === 0) {
+      return;
+    }
+
+    var map = this.getMap();
+    var ovmap = this.ovmap_;
+    var mapSize =
+    /** @type {import("../size.js").Size} */
+    map.getSize();
+    var view = map.getView();
+    var extent = view.calculateExtent(mapSize);
+    var ovview = ovmap.getView(); // get how many times the current map overview could hold different
+    // box sizes using the min and max ratio, pick the step in the middle used
+    // to calculate the extent from the main map to set it to the overview map,
+
+    var steps = Math.log(MAX_RATIO / MIN_RATIO) / Math.LN2;
+    var ratio = 1 / (Math.pow(2, steps / 2) * MIN_RATIO);
+    (0, _extent.scaleFromCenter)(extent, ratio);
+    ovview.fit(extent);
+  };
+  /**
+   * Set the center of the overview map to the map center without changing its
+   * resolution.
+   * @private
+   */
+
+
+  OverviewMap.prototype.recenter_ = function () {
+    var map = this.getMap();
+    var ovmap = this.ovmap_;
+    var view = map.getView();
+    var ovview = ovmap.getView();
+    ovview.setCenter(view.getCenter());
+  };
+  /**
+   * Update the box using the main map extent
+   * @private
+   */
+
+
+  OverviewMap.prototype.updateBox_ = function () {
+    var map = this.getMap();
+    var ovmap = this.ovmap_;
+
+    if (!map.isRendered() || !ovmap.isRendered()) {
+      return;
+    }
+
+    var mapSize =
+    /** @type {import("../size.js").Size} */
+    map.getSize();
+    var view = map.getView();
+    var ovview = ovmap.getView();
+    var rotation = view.getRotation();
+    var overlay = this.boxOverlay_;
+    var box = this.boxOverlay_.getElement();
+    var extent = view.calculateExtent(mapSize);
+    var ovresolution = ovview.getResolution();
+    var bottomLeft = (0, _extent.getBottomLeft)(extent);
+    var topRight = (0, _extent.getTopRight)(extent); // set position using bottom left coordinates
+
+    var rotateBottomLeft = this.calculateCoordinateRotate_(rotation, bottomLeft);
+    overlay.setPosition(rotateBottomLeft); // set box size calculated from map extent size and overview map resolution
+
+    if (box) {
+      box.style.width = Math.abs((bottomLeft[0] - topRight[0]) / ovresolution) + 'px';
+      box.style.height = Math.abs((topRight[1] - bottomLeft[1]) / ovresolution) + 'px';
+    }
+  };
+  /**
+   * @param {number} rotation Target rotation.
+   * @param {import("../coordinate.js").Coordinate} coordinate Coordinate.
+   * @return {import("../coordinate.js").Coordinate|undefined} Coordinate for rotation and center anchor.
+   * @private
+   */
+
+
+  OverviewMap.prototype.calculateCoordinateRotate_ = function (rotation, coordinate) {
+    var coordinateRotate;
+    var map = this.getMap();
+    var view = map.getView();
+    var currentCenter = view.getCenter();
+
+    if (currentCenter) {
+      coordinateRotate = [coordinate[0] - currentCenter[0], coordinate[1] - currentCenter[1]];
+      (0, _coordinate.rotate)(coordinateRotate, rotation);
+      (0, _coordinate.add)(coordinateRotate, currentCenter);
+    }
+
+    return coordinateRotate;
+  };
+  /**
+   * @param {MouseEvent} event The event to handle
+   * @private
+   */
+
+
+  OverviewMap.prototype.handleClick_ = function (event) {
+    event.preventDefault();
+    this.handleToggle_();
+  };
+  /**
+   * @private
+   */
+
+
+  OverviewMap.prototype.handleToggle_ = function () {
+    this.element.classList.toggle(_css.CLASS_COLLAPSED);
+
+    if (this.collapsed_) {
+      (0, _dom.replaceNode)(this.collapseLabel_, this.label_);
+    } else {
+      (0, _dom.replaceNode)(this.label_, this.collapseLabel_);
+    }
+
+    this.collapsed_ = !this.collapsed_; // manage overview map if it had not been rendered before and control
+    // is expanded
+
+    var ovmap = this.ovmap_;
+
+    if (!this.collapsed_ && !ovmap.isRendered()) {
+      ovmap.updateSize();
+      this.resetExtent_();
+      (0, _events.listenOnce)(ovmap, _MapEventType.default.POSTRENDER, function (event) {
+        this.updateBox_();
+      }, this);
+    }
+  };
+  /**
+   * Return `true` if the overview map is collapsible, `false` otherwise.
+   * @return {boolean} True if the widget is collapsible.
+   * @api
+   */
+
+
+  OverviewMap.prototype.getCollapsible = function () {
+    return this.collapsible_;
+  };
+  /**
+   * Set whether the overview map should be collapsible.
+   * @param {boolean} collapsible True if the widget is collapsible.
+   * @api
+   */
+
+
+  OverviewMap.prototype.setCollapsible = function (collapsible) {
+    if (this.collapsible_ === collapsible) {
+      return;
+    }
+
+    this.collapsible_ = collapsible;
+    this.element.classList.toggle('ol-uncollapsible');
+
+    if (!collapsible && this.collapsed_) {
+      this.handleToggle_();
+    }
+  };
+  /**
+   * Collapse or expand the overview map according to the passed parameter. Will
+   * not do anything if the overview map isn't collapsible or if the current
+   * collapsed state is already the one requested.
+   * @param {boolean} collapsed True if the widget is collapsed.
+   * @api
+   */
+
+
+  OverviewMap.prototype.setCollapsed = function (collapsed) {
+    if (!this.collapsible_ || this.collapsed_ === collapsed) {
+      return;
+    }
+
+    this.handleToggle_();
+  };
+  /**
+   * Determine if the overview map is collapsed.
+   * @return {boolean} The overview map is collapsed.
+   * @api
+   */
+
+
+  OverviewMap.prototype.getCollapsed = function () {
+    return this.collapsed_;
+  };
+  /**
+   * Return the overview map.
+   * @return {import("../PluggableMap.js").default} Overview map.
+   * @api
+   */
+
+
+  OverviewMap.prototype.getOverviewMap = function () {
+    return this.ovmap_;
+  };
+
+  return OverviewMap;
+}(_Control.default);
+/**
+ * Update the overview map element.
+ * @param {import("../MapEvent.js").default} mapEvent Map event.
+ * @this {OverviewMap}
+ * @api
+ */
+
+
+function render(mapEvent) {
+  this.validateExtent_();
+  this.updateBox_();
+}
+
+var _default = OverviewMap;
+exports.default = _default;
+},{"../PluggableMap.js":"../node_modules/ol/PluggableMap.js","../renderer/Composite.js":"../node_modules/ol/renderer/Composite.js","../MapEventType.js":"../node_modules/ol/MapEventType.js","../MapProperty.js":"../node_modules/ol/MapProperty.js","../Object.js":"../node_modules/ol/Object.js","../ObjectEventType.js":"../node_modules/ol/ObjectEventType.js","../Overlay.js":"../node_modules/ol/Overlay.js","../OverlayPositioning.js":"../node_modules/ol/OverlayPositioning.js","../ViewProperty.js":"../node_modules/ol/ViewProperty.js","./Control.js":"../node_modules/ol/control/Control.js","../coordinate.js":"../node_modules/ol/coordinate.js","../css.js":"../node_modules/ol/css.js","../dom.js":"../node_modules/ol/dom.js","../events.js":"../node_modules/ol/events.js","../events/EventType.js":"../node_modules/ol/events/EventType.js","../extent.js":"../node_modules/ol/extent.js"}],"../node_modules/ol/control/ScaleLine.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.render = render;
+exports.default = exports.Units = void 0;
+
+var _Object = require("../Object.js");
+
+var _asserts = require("../asserts.js");
+
+var _Control = _interopRequireDefault(require("./Control.js"));
+
+var _css = require("../css.js");
+
+var _events = require("../events.js");
+
+var _proj = require("../proj.js");
+
+var _Units = _interopRequireDefault(require("../proj/Units.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+/**
+ * @module ol/control/ScaleLine
+ */
+
+
+/**
+ * @type {string}
+ */
+var UNITS_PROP = 'units';
+/**
+ * Units for the scale line. Supported values are `'degrees'`, `'imperial'`,
+ * `'nautical'`, `'metric'`, `'us'`.
+ * @enum {string}
+ */
+
+var Units = {
+  DEGREES: 'degrees',
+  IMPERIAL: 'imperial',
+  NAUTICAL: 'nautical',
+  METRIC: 'metric',
+  US: 'us'
+};
+/**
+ * @const
+ * @type {Array<number>}
+ */
+
+exports.Units = Units;
+var LEADING_DIGITS = [1, 2, 5];
+/**
+ * @typedef {Object} Options
+ * @property {string} [className='ol-scale-line'] CSS Class name.
+ * @property {number} [minWidth=64] Minimum width in pixels.
+ * @property {function(import("../MapEvent.js").default)} [render] Function called when the control
+ * should be re-rendered. This is called in a `requestAnimationFrame` callback.
+ * @property {HTMLElement|string} [target] Specify a target if you want the control
+ * to be rendered outside of the map's viewport.
+ * @property {Units|string} [units='metric'] Units.
+ * @property {boolean} [bar=false] Render scalebars instead of a line.
+ * @property {number} [steps=4] Number of steps the scalebar should use. Use even numbers
+ * for best results. Only applies when `bar` is `true`.
+ * @property {boolean} [text=false] Render the text scale above of the scalebar. Only applies
+ * when `bar` is `true`.
+ */
+
+/**
+ * @classdesc
+ * A control displaying rough y-axis distances, calculated for the center of the
+ * viewport. For conformal projections (e.g. EPSG:3857, the default view
+ * projection in OpenLayers), the scale is valid for all directions.
+ * No scale line will be shown when the y-axis distance of a pixel at the
+ * viewport center cannot be calculated in the view projection.
+ * By default the scale line will show in the bottom left portion of the map,
+ * but this can be changed by using the css selector `.ol-scale-line`.
+ * When specifying `bar` as `true`, a scalebar will be rendered instead
+ * of a scaleline.
+ *
+ * @api
+ */
+
+var ScaleLine =
+/** @class */
+function (_super) {
+  __extends(ScaleLine, _super);
+  /**
+   * @param {Options=} opt_options Scale line options.
+   */
+
+
+  function ScaleLine(opt_options) {
+    var _this = this;
+
+    var options = opt_options ? opt_options : {};
+    var className = options.className !== undefined ? options.className : options.bar ? 'ol-scale-bar' : 'ol-scale-line';
+    _this = _super.call(this, {
+      element: document.createElement('div'),
+      render: options.render || render,
+      target: options.target
+    }) || this;
+    /**
+     * @private
+     * @type {HTMLElement}
+     */
+
+    _this.innerElement_ = document.createElement('div');
+    _this.innerElement_.className = className + '-inner';
+    _this.element.className = className + ' ' + _css.CLASS_UNSELECTABLE;
+
+    _this.element.appendChild(_this.innerElement_);
+    /**
+     * @private
+     * @type {?import("../View.js").State}
+     */
+
+
+    _this.viewState_ = null;
+    /**
+     * @private
+     * @type {number}
+     */
+
+    _this.minWidth_ = options.minWidth !== undefined ? options.minWidth : 64;
+    /**
+     * @private
+     * @type {boolean}
+     */
+
+    _this.renderedVisible_ = false;
+    /**
+     * @private
+     * @type {number|undefined}
+     */
+
+    _this.renderedWidth_ = undefined;
+    /**
+     * @private
+     * @type {string}
+     */
+
+    _this.renderedHTML_ = '';
+    (0, _events.listen)(_this, (0, _Object.getChangeEventType)(UNITS_PROP), _this.handleUnitsChanged_, _this);
+
+    _this.setUnits(
+    /** @type {Units} */
+    options.units || Units.METRIC);
+    /**
+     * @private
+     * @type {boolean}
+     */
+
+
+    _this.scaleBar_ = options.bar || false;
+    /**
+     * @private
+     * @type {number}
+     */
+
+    _this.scaleBarSteps_ = options.steps || 4;
+    /**
+     * @private
+     * @type {boolean}
+     */
+
+    _this.scaleBarText_ = options.text || false;
+    return _this;
+  }
+  /**
+   * Return the units to use in the scale line.
+   * @return {Units} The units
+   * to use in the scale line.
+   * @observable
+   * @api
+   */
+
+
+  ScaleLine.prototype.getUnits = function () {
+    return this.get(UNITS_PROP);
+  };
+  /**
+   * @private
+   */
+
+
+  ScaleLine.prototype.handleUnitsChanged_ = function () {
+    this.updateElement_();
+  };
+  /**
+   * Set the units to use in the scale line.
+   * @param {Units} units The units to use in the scale line.
+   * @observable
+   * @api
+   */
+
+
+  ScaleLine.prototype.setUnits = function (units) {
+    this.set(UNITS_PROP, units);
+  };
+  /**
+   * @private
+   */
+
+
+  ScaleLine.prototype.updateElement_ = function () {
+    var viewState = this.viewState_;
+
+    if (!viewState) {
+      if (this.renderedVisible_) {
+        this.element.style.display = 'none';
+        this.renderedVisible_ = false;
+      }
+
+      return;
+    }
+
+    var center = viewState.center;
+    var projection = viewState.projection;
+    var units = this.getUnits();
+    var pointResolutionUnits = units == Units.DEGREES ? _Units.default.DEGREES : _Units.default.METERS;
+    var pointResolution = (0, _proj.getPointResolution)(projection, viewState.resolution, center, pointResolutionUnits);
+    var nominalCount = this.minWidth_ * pointResolution;
+    var suffix = '';
+
+    if (units == Units.DEGREES) {
+      var metersPerDegree = _proj.METERS_PER_UNIT[_Units.default.DEGREES];
+      nominalCount *= metersPerDegree;
+
+      if (nominalCount < metersPerDegree / 60) {
+        suffix = '\u2033'; // seconds
+
+        pointResolution *= 3600;
+      } else if (nominalCount < metersPerDegree) {
+        suffix = '\u2032'; // minutes
+
+        pointResolution *= 60;
+      } else {
+        suffix = '\u00b0'; // degrees
+      }
+    } else if (units == Units.IMPERIAL) {
+      if (nominalCount < 0.9144) {
+        suffix = 'in';
+        pointResolution /= 0.0254;
+      } else if (nominalCount < 1609.344) {
+        suffix = 'ft';
+        pointResolution /= 0.3048;
+      } else {
+        suffix = 'mi';
+        pointResolution /= 1609.344;
+      }
+    } else if (units == Units.NAUTICAL) {
+      pointResolution /= 1852;
+      suffix = 'nm';
+    } else if (units == Units.METRIC) {
+      if (nominalCount < 0.001) {
+        suffix = 'μm';
+        pointResolution *= 1000000;
+      } else if (nominalCount < 1) {
+        suffix = 'mm';
+        pointResolution *= 1000;
+      } else if (nominalCount < 1000) {
+        suffix = 'm';
+      } else {
+        suffix = 'km';
+        pointResolution /= 1000;
+      }
+    } else if (units == Units.US) {
+      if (nominalCount < 0.9144) {
+        suffix = 'in';
+        pointResolution *= 39.37;
+      } else if (nominalCount < 1609.344) {
+        suffix = 'ft';
+        pointResolution /= 0.30480061;
+      } else {
+        suffix = 'mi';
+        pointResolution /= 1609.3472;
+      }
+    } else {
+      (0, _asserts.assert)(false, 33); // Invalid units
+    }
+
+    var i = 3 * Math.floor(Math.log(this.minWidth_ * pointResolution) / Math.log(10));
+    var count, width, decimalCount;
+
+    while (true) {
+      decimalCount = Math.floor(i / 3);
+      var decimal = Math.pow(10, decimalCount);
+      count = LEADING_DIGITS[(i % 3 + 3) % 3] * decimal;
+      width = Math.round(count / pointResolution);
+
+      if (isNaN(width)) {
+        this.element.style.display = 'none';
+        this.renderedVisible_ = false;
+        return;
+      } else if (width >= this.minWidth_) {
+        break;
+      }
+
+      ++i;
+    }
+
+    var html;
+
+    if (this.scaleBar_) {
+      html = this.createScaleBar(width, count, suffix);
+    } else {
+      html = count.toFixed(decimalCount < 0 ? -decimalCount : 0) + ' ' + suffix;
+    }
+
+    if (this.renderedHTML_ != html) {
+      this.innerElement_.innerHTML = html;
+      this.renderedHTML_ = html;
+    }
+
+    if (this.renderedWidth_ != width) {
+      this.innerElement_.style.width = width + 'px';
+      this.renderedWidth_ = width;
+    }
+
+    if (!this.renderedVisible_) {
+      this.element.style.display = '';
+      this.renderedVisible_ = true;
+    }
+  };
+  /**
+   * @private
+   * @param {number} width The current width of the scalebar.
+   * @param {number} scale The current scale.
+   * @param {string} suffix The suffix to append to the scale text.
+   * @returns {string} The stringified HTML of the scalebar.
+   */
+
+
+  ScaleLine.prototype.createScaleBar = function (width, scale, suffix) {
+    var mapScale = '1 : ' + Math.round(this.getScaleForResolution()).toLocaleString();
+    var scaleSteps = [];
+    var stepWidth = width / this.scaleBarSteps_;
+    var backgroundColor = '#ffffff';
+
+    for (var i = 0; i < this.scaleBarSteps_; i++) {
+      if (i === 0) {
+        // create the first marker at position 0
+        scaleSteps.push(this.createMarker('absolute', i));
+      }
+
+      scaleSteps.push('<div>' + '<div ' + 'class="ol-scale-singlebar" ' + 'style=' + '"width: ' + stepWidth + 'px;' + 'background-color: ' + backgroundColor + ';"' + '>' + '</div>' + this.createMarker('relative', i) + (
+      /*render text every second step, except when only 2 steps */
+      i % 2 === 0 || this.scaleBarSteps_ === 2 ? this.createStepText(i, width, false, scale, suffix) : '') + '</div>');
+
+      if (i === this.scaleBarSteps_ - 1) {
+        {
+          /*render text at the end */
+        }
+        scaleSteps.push(this.createStepText(i + 1, width, true, scale, suffix));
+      } // switch colors of steps between black and white
+
+
+      if (backgroundColor === '#ffffff') {
+        backgroundColor = '#000000';
+      } else {
+        backgroundColor = '#ffffff';
+      }
+    }
+
+    var scaleBarText;
+
+    if (this.scaleBarText_) {
+      scaleBarText = '<div ' + 'class="ol-scale-text" ' + 'style="width: ' + width + 'px;">' + mapScale + '</div>';
+    } else {
+      scaleBarText = '';
+    }
+
+    var container = '<div ' + 'style="display: flex;">' + scaleBarText + scaleSteps.join('') + '</div>';
+    return container;
+  };
+  /**
+   * Creates a marker at given position
+   * @param {string} position - The position, absolute or relative
+   * @param {number} i - The iterator
+   * @returns {string} The stringified div containing the marker
+   */
+
+
+  ScaleLine.prototype.createMarker = function (position, i) {
+    var top = position === 'absolute' ? 3 : -10;
+    return '<div ' + 'class="ol-scale-step-marker" ' + 'style="position: ' + position + ';' + 'top: ' + top + 'px;"' + '></div>';
+  };
+  /**
+   * Creates the label for a marker marker at given position
+   * @param {number} i - The iterator
+   * @param {number} width - The width the scalebar will currently use
+   * @param {boolean} isLast - Flag indicating if we add the last step text
+   * @param {number} scale - The current scale for the whole scalebar
+   * @param {string} suffix - The suffix for the scale
+   * @returns {string} The stringified div containing the step text
+   */
+
+
+  ScaleLine.prototype.createStepText = function (i, width, isLast, scale, suffix) {
+    var length = i === 0 ? 0 : Math.round(scale / this.scaleBarSteps_ * i * 100) / 100;
+    var lengthString = length + (i === 0 ? '' : ' ' + suffix);
+    var margin = i === 0 ? -3 : width / this.scaleBarSteps_ * -1;
+    var minWidth = i === 0 ? 0 : width / this.scaleBarSteps_ * 2;
+    return '<div ' + 'class="ol-scale-step-text" ' + 'style="' + 'margin-left: ' + margin + 'px;' + 'text-align: ' + (i === 0 ? 'left' : 'center') + '; ' + 'min-width: ' + minWidth + 'px;' + 'left: ' + (isLast ? width + 'px' : 'unset') + ';"' + '>' + lengthString + '</div>';
+  };
+  /**
+   * Returns the appropriate scale for the given resolution and units.
+   * @return {number} The appropriate scale.
+   */
+
+
+  ScaleLine.prototype.getScaleForResolution = function () {
+    var resolution = this.getMap().getView().getResolution();
+    var dpi = 25.4 / 0.28;
+    var mpu = this.viewState_.projection.getMetersPerUnit();
+    var inchesPerMeter = 39.37;
+    return parseFloat(resolution.toString()) * mpu * inchesPerMeter * dpi;
+  };
+
+  return ScaleLine;
+}(_Control.default);
+/**
+ * Update the scale line element.
+ * @param {import("../MapEvent.js").default} mapEvent Map event.
+ * @this {ScaleLine}
+ * @api
+ */
+
+
+function render(mapEvent) {
+  var frameState = mapEvent.frameState;
+
+  if (!frameState) {
+    this.viewState_ = null;
+  } else {
+    this.viewState_ = frameState.viewState;
+  }
+
+  this.updateElement_();
+}
+
+var _default = ScaleLine;
+exports.default = _default;
+},{"../Object.js":"../node_modules/ol/Object.js","../asserts.js":"../node_modules/ol/asserts.js","./Control.js":"../node_modules/ol/control/Control.js","../css.js":"../node_modules/ol/css.js","../events.js":"../node_modules/ol/events.js","../proj.js":"../node_modules/ol/proj.js","../proj/Units.js":"../node_modules/ol/proj/Units.js"}],"../node_modules/ol/control/ZoomSlider.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.render = render;
+exports.default = void 0;
+
+var _Control = _interopRequireDefault(require("./Control.js"));
+
+var _css = require("../css.js");
+
+var _easing = require("../easing.js");
+
+var _events = require("../events.js");
+
+var _Event = require("../events/Event.js");
+
+var _EventType = _interopRequireDefault(require("../events/EventType.js"));
+
+var _math = require("../math.js");
+
+var _EventType2 = _interopRequireDefault(require("../pointer/EventType.js"));
+
+var _PointerEventHandler = _interopRequireDefault(require("../pointer/PointerEventHandler.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+/**
+ * @module ol/control/ZoomSlider
+ */
+
+
+/**
+ * The enum for available directions.
+ *
+ * @enum {number}
+ */
+var Direction = {
+  VERTICAL: 0,
+  HORIZONTAL: 1
+};
+/**
+ * @typedef {Object} Options
+ * @property {string} [className='ol-zoomslider'] CSS class name.
+ * @property {number} [duration=200] Animation duration in milliseconds.
+ * @property {function(import("../MapEvent.js").default)} [render] Function called when the control
+ * should be re-rendered. This is called in a `requestAnimationFrame` callback.
+ */
+
+/**
+ * @classdesc
+ * A slider type of control for zooming.
+ *
+ * Example:
+ *
+ *     map.addControl(new ZoomSlider());
+ *
+ * @api
+ */
+
+var ZoomSlider =
+/** @class */
+function (_super) {
+  __extends(ZoomSlider, _super);
+  /**
+   * @param {Options=} opt_options Zoom slider options.
+   */
+
+
+  function ZoomSlider(opt_options) {
+    var _this = this;
+
+    var options = opt_options ? opt_options : {};
+    _this = _super.call(this, {
+      element: document.createElement('div'),
+      render: options.render || render
+    }) || this;
+    /**
+      * @type {!Array.<import("../events.js").EventsKey>}
+      * @private
+      */
+
+    _this.dragListenerKeys_ = [];
+    /**
+     * Will hold the current resolution of the view.
+     *
+     * @type {number|undefined}
+     * @private
+     */
+
+    _this.currentResolution_ = undefined;
+    /**
+     * The direction of the slider. Will be determined from actual display of the
+     * container and defaults to Direction.VERTICAL.
+     *
+     * @type {Direction}
+     * @private
+     */
+
+    _this.direction_ = Direction.VERTICAL;
+    /**
+     * @type {boolean}
+     * @private
+     */
+
+    _this.dragging_;
+    /**
+     * @type {number}
+     * @private
+     */
+
+    _this.heightLimit_ = 0;
+    /**
+     * @type {number}
+     * @private
+     */
+
+    _this.widthLimit_ = 0;
+    /**
+     * @type {number|undefined}
+     * @private
+     */
+
+    _this.startX_;
+    /**
+     * @type {number|undefined}
+     * @private
+     */
+
+    _this.startY_;
+    /**
+     * The calculated thumb size (border box plus margins).  Set when initSlider_
+     * is called.
+     * @type {import("../size.js").Size}
+     * @private
+     */
+
+    _this.thumbSize_ = null;
+    /**
+     * Whether the slider is initialized.
+     * @type {boolean}
+     * @private
+     */
+
+    _this.sliderInitialized_ = false;
+    /**
+     * @type {number}
+     * @private
+     */
+
+    _this.duration_ = options.duration !== undefined ? options.duration : 200;
+    var className = options.className !== undefined ? options.className : 'ol-zoomslider';
+    var thumbElement = document.createElement('button');
+    thumbElement.setAttribute('type', 'button');
+    thumbElement.className = className + '-thumb ' + _css.CLASS_UNSELECTABLE;
+    var containerElement = _this.element;
+    containerElement.className = className + ' ' + _css.CLASS_UNSELECTABLE + ' ' + _css.CLASS_CONTROL;
+    containerElement.appendChild(thumbElement);
+    /**
+     * @type {PointerEventHandler}
+     * @private
+     */
+
+    _this.dragger_ = new _PointerEventHandler.default(containerElement);
+    (0, _events.listen)(_this.dragger_, _EventType2.default.POINTERDOWN, _this.handleDraggerStart_, _this);
+    (0, _events.listen)(_this.dragger_, _EventType2.default.POINTERMOVE, _this.handleDraggerDrag_, _this);
+    (0, _events.listen)(_this.dragger_, _EventType2.default.POINTERUP, _this.handleDraggerEnd_, _this);
+    (0, _events.listen)(containerElement, _EventType.default.CLICK, _this.handleContainerClick_, _this);
+    (0, _events.listen)(thumbElement, _EventType.default.CLICK, _Event.stopPropagation);
+    return _this;
+  }
+  /**
+   * @inheritDoc
+   */
+
+
+  ZoomSlider.prototype.disposeInternal = function () {
+    this.dragger_.dispose();
+
+    _super.prototype.disposeInternal.call(this);
+  };
+  /**
+   * @inheritDoc
+   */
+
+
+  ZoomSlider.prototype.setMap = function (map) {
+    _super.prototype.setMap.call(this, map);
+
+    if (map) {
+      map.render();
+    }
+  };
+  /**
+   * Initializes the slider element. This will determine and set this controls
+   * direction_ and also constrain the dragging of the thumb to always be within
+   * the bounds of the container.
+   *
+   * @private
+   */
+
+
+  ZoomSlider.prototype.initSlider_ = function () {
+    var container = this.element;
+    var containerSize = {
+      width: container.offsetWidth,
+      height: container.offsetHeight
+    };
+    var thumb =
+    /** @type {HTMLElement} */
+    container.firstElementChild;
+    var computedStyle = getComputedStyle(thumb);
+    var thumbWidth = thumb.offsetWidth + parseFloat(computedStyle['marginRight']) + parseFloat(computedStyle['marginLeft']);
+    var thumbHeight = thumb.offsetHeight + parseFloat(computedStyle['marginTop']) + parseFloat(computedStyle['marginBottom']);
+    this.thumbSize_ = [thumbWidth, thumbHeight];
+
+    if (containerSize.width > containerSize.height) {
+      this.direction_ = Direction.HORIZONTAL;
+      this.widthLimit_ = containerSize.width - thumbWidth;
+    } else {
+      this.direction_ = Direction.VERTICAL;
+      this.heightLimit_ = containerSize.height - thumbHeight;
+    }
+
+    this.sliderInitialized_ = true;
+  };
+  /**
+   * @param {MouseEvent} event The browser event to handle.
+   * @private
+   */
+
+
+  ZoomSlider.prototype.handleContainerClick_ = function (event) {
+    var view = this.getMap().getView();
+    var relativePosition = this.getRelativePosition_(event.offsetX - this.thumbSize_[0] / 2, event.offsetY - this.thumbSize_[1] / 2);
+    var resolution = this.getResolutionForPosition_(relativePosition);
+    var zoom = view.getConstrainedZoom(view.getZoomForResolution(resolution));
+    view.animate({
+      zoom: zoom,
+      duration: this.duration_,
+      easing: _easing.easeOut
+    });
+  };
+  /**
+   * Handle dragger start events.
+   * @param {import("../pointer/PointerEvent.js").default} event The drag event.
+   * @private
+   */
+
+
+  ZoomSlider.prototype.handleDraggerStart_ = function (event) {
+    if (!this.dragging_ && event.originalEvent.target === this.element.firstElementChild) {
+      var element =
+      /** @type {HTMLElement} */
+      this.element.firstElementChild;
+      this.getMap().getView().beginInteraction();
+      this.startX_ = event.clientX - parseFloat(element.style.left);
+      this.startY_ = event.clientY - parseFloat(element.style.top);
+      this.dragging_ = true;
+
+      if (this.dragListenerKeys_.length === 0) {
+        var drag = this.handleDraggerDrag_;
+        var end = this.handleDraggerEnd_;
+        this.dragListenerKeys_.push((0, _events.listen)(document, _EventType.default.MOUSEMOVE, drag, this), (0, _events.listen)(document, _EventType2.default.POINTERMOVE, drag, this), (0, _events.listen)(document, _EventType.default.MOUSEUP, end, this), (0, _events.listen)(document, _EventType2.default.POINTERUP, end, this));
+      }
+    }
+  };
+  /**
+   * Handle dragger drag events.
+   *
+   * @param {import("../pointer/PointerEvent.js").default} event The drag event.
+   * @private
+   */
+
+
+  ZoomSlider.prototype.handleDraggerDrag_ = function (event) {
+    if (this.dragging_) {
+      var deltaX = event.clientX - this.startX_;
+      var deltaY = event.clientY - this.startY_;
+      var relativePosition = this.getRelativePosition_(deltaX, deltaY);
+      this.currentResolution_ = this.getResolutionForPosition_(relativePosition);
+      this.getMap().getView().setResolution(this.currentResolution_);
+    }
+  };
+  /**
+   * Handle dragger end events.
+   * @param {import("../pointer/PointerEvent.js").default} event The drag event.
+   * @private
+   */
+
+
+  ZoomSlider.prototype.handleDraggerEnd_ = function (event) {
+    if (this.dragging_) {
+      var view = this.getMap().getView();
+      view.endInteraction();
+      this.dragging_ = false;
+      this.startX_ = undefined;
+      this.startY_ = undefined;
+      this.dragListenerKeys_.forEach(_events.unlistenByKey);
+      this.dragListenerKeys_.length = 0;
+    }
+  };
+  /**
+   * Positions the thumb inside its container according to the given resolution.
+   *
+   * @param {number} res The res.
+   * @private
+   */
+
+
+  ZoomSlider.prototype.setThumbPosition_ = function (res) {
+    var position = this.getPositionForResolution_(res);
+    var thumb =
+    /** @type {HTMLElement} */
+    this.element.firstElementChild;
+
+    if (this.direction_ == Direction.HORIZONTAL) {
+      thumb.style.left = this.widthLimit_ * position + 'px';
+    } else {
+      thumb.style.top = this.heightLimit_ * position + 'px';
+    }
+  };
+  /**
+   * Calculates the relative position of the thumb given x and y offsets.  The
+   * relative position scales from 0 to 1.  The x and y offsets are assumed to be
+   * in pixel units within the dragger limits.
+   *
+   * @param {number} x Pixel position relative to the left of the slider.
+   * @param {number} y Pixel position relative to the top of the slider.
+   * @return {number} The relative position of the thumb.
+   * @private
+   */
+
+
+  ZoomSlider.prototype.getRelativePosition_ = function (x, y) {
+    var amount;
+
+    if (this.direction_ === Direction.HORIZONTAL) {
+      amount = x / this.widthLimit_;
+    } else {
+      amount = y / this.heightLimit_;
+    }
+
+    return (0, _math.clamp)(amount, 0, 1);
+  };
+  /**
+   * Calculates the corresponding resolution of the thumb given its relative
+   * position (where 0 is the minimum and 1 is the maximum).
+   *
+   * @param {number} position The relative position of the thumb.
+   * @return {number} The corresponding resolution.
+   * @private
+   */
+
+
+  ZoomSlider.prototype.getResolutionForPosition_ = function (position) {
+    var fn = this.getMap().getView().getResolutionForValueFunction();
+    return fn(1 - position);
+  };
+  /**
+   * Determines the relative position of the slider for the given resolution.  A
+   * relative position of 0 corresponds to the minimum view resolution.  A
+   * relative position of 1 corresponds to the maximum view resolution.
+   *
+   * @param {number} res The resolution.
+   * @return {number} The relative position value (between 0 and 1).
+   * @private
+   */
+
+
+  ZoomSlider.prototype.getPositionForResolution_ = function (res) {
+    var fn = this.getMap().getView().getValueForResolutionFunction();
+    return (0, _math.clamp)(1 - fn(res), 0, 1);
+  };
+
+  return ZoomSlider;
+}(_Control.default);
+/**
+ * Update the zoomslider element.
+ * @param {import("../MapEvent.js").default} mapEvent Map event.
+ * @this {ZoomSlider}
+ * @api
+ */
+
+
+function render(mapEvent) {
+  if (!mapEvent.frameState) {
+    return;
+  }
+
+  if (!this.sliderInitialized_) {
+    this.initSlider_();
+  }
+
+  var res = mapEvent.frameState.viewState.resolution;
+  this.currentResolution_ = res;
+  this.setThumbPosition_(res);
+}
+
+var _default = ZoomSlider;
+exports.default = _default;
+},{"./Control.js":"../node_modules/ol/control/Control.js","../css.js":"../node_modules/ol/css.js","../easing.js":"../node_modules/ol/easing.js","../events.js":"../node_modules/ol/events.js","../events/Event.js":"../node_modules/ol/events/Event.js","../events/EventType.js":"../node_modules/ol/events/EventType.js","../math.js":"../node_modules/ol/math.js","../pointer/EventType.js":"../node_modules/ol/pointer/EventType.js","../pointer/PointerEventHandler.js":"../node_modules/ol/pointer/PointerEventHandler.js"}],"../node_modules/ol/control/ZoomToExtent.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _events = require("../events.js");
+
+var _EventType = _interopRequireDefault(require("../events/EventType.js"));
+
+var _Control = _interopRequireDefault(require("./Control.js"));
+
+var _css = require("../css.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+/**
+ * @module ol/control/ZoomToExtent
+ */
+
+
+/**
+ * @typedef {Object} Options
+ * @property {string} [className='ol-zoom-extent'] Class name.
+ * @property {HTMLElement|string} [target] Specify a target if you want the control
+ * to be rendered outside of the map's viewport.
+ * @property {string|HTMLElement} [label='E'] Text label to use for the button.
+ * Instead of text, also an element (e.g. a `span` element) can be used.
+ * @property {string} [tipLabel='Fit to extent'] Text label to use for the button tip.
+ * @property {import("../extent.js").Extent} [extent] The extent to zoom to. If undefined the validity
+ * extent of the view projection is used.
+ */
+
+/**
+ * @classdesc
+ * A button control which, when pressed, changes the map view to a specific
+ * extent. To style this control use the css selector `.ol-zoom-extent`.
+ *
+ * @api
+ */
+var ZoomToExtent =
+/** @class */
+function (_super) {
+  __extends(ZoomToExtent, _super);
+  /**
+   * @param {Options=} opt_options Options.
+   */
+
+
+  function ZoomToExtent(opt_options) {
+    var _this = this;
+
+    var options = opt_options ? opt_options : {};
+    _this = _super.call(this, {
+      element: document.createElement('div'),
+      target: options.target
+    }) || this;
+    /**
+     * @type {import("../extent.js").Extent}
+     * @protected
+     */
+
+    _this.extent = options.extent ? options.extent : null;
+    var className = options.className !== undefined ? options.className : 'ol-zoom-extent';
+    var label = options.label !== undefined ? options.label : 'E';
+    var tipLabel = options.tipLabel !== undefined ? options.tipLabel : 'Fit to extent';
+    var button = document.createElement('button');
+    button.setAttribute('type', 'button');
+    button.title = tipLabel;
+    button.appendChild(typeof label === 'string' ? document.createTextNode(label) : label);
+    (0, _events.listen)(button, _EventType.default.CLICK, _this.handleClick_, _this);
+    var cssClasses = className + ' ' + _css.CLASS_UNSELECTABLE + ' ' + _css.CLASS_CONTROL;
+    var element = _this.element;
+    element.className = cssClasses;
+    element.appendChild(button);
+    return _this;
+  }
+  /**
+   * @param {MouseEvent} event The event to handle
+   * @private
+   */
+
+
+  ZoomToExtent.prototype.handleClick_ = function (event) {
+    event.preventDefault();
+    this.handleZoomToExtent();
+  };
+  /**
+   * @protected
+   */
+
+
+  ZoomToExtent.prototype.handleZoomToExtent = function () {
+    var map = this.getMap();
+    var view = map.getView();
+    var extent = !this.extent ? view.getProjection().getExtent() : this.extent;
+    view.fit(extent);
+  };
+
+  return ZoomToExtent;
+}(_Control.default);
+
+var _default = ZoomToExtent;
+exports.default = _default;
+},{"../events.js":"../node_modules/ol/events.js","../events/EventType.js":"../node_modules/ol/events/EventType.js","./Control.js":"../node_modules/ol/control/Control.js","../css.js":"../node_modules/ol/css.js"}],"../node_modules/ol/control.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.defaults = defaults;
+Object.defineProperty(exports, "Attribution", {
+  enumerable: true,
+  get: function () {
+    return _Attribution.default;
+  }
+});
+Object.defineProperty(exports, "Rotate", {
+  enumerable: true,
+  get: function () {
+    return _Rotate.default;
+  }
+});
+Object.defineProperty(exports, "Zoom", {
+  enumerable: true,
+  get: function () {
+    return _Zoom.default;
+  }
+});
+Object.defineProperty(exports, "Control", {
+  enumerable: true,
+  get: function () {
+    return _Control.default;
+  }
+});
+Object.defineProperty(exports, "FullScreen", {
+  enumerable: true,
+  get: function () {
+    return _FullScreen.default;
+  }
+});
+Object.defineProperty(exports, "MousePosition", {
+  enumerable: true,
+  get: function () {
+    return _MousePosition.default;
+  }
+});
+Object.defineProperty(exports, "OverviewMap", {
+  enumerable: true,
+  get: function () {
+    return _OverviewMap.default;
+  }
+});
+Object.defineProperty(exports, "ScaleLine", {
+  enumerable: true,
+  get: function () {
+    return _ScaleLine.default;
+  }
+});
+Object.defineProperty(exports, "ZoomSlider", {
+  enumerable: true,
+  get: function () {
+    return _ZoomSlider.default;
+  }
+});
+Object.defineProperty(exports, "ZoomToExtent", {
+  enumerable: true,
+  get: function () {
+    return _ZoomToExtent.default;
+  }
+});
 
-var _Collection = _interopRequireDefault(require("../Collection.js"));
+var _Collection = _interopRequireDefault(require("./Collection.js"));
 
-var _Attribution = _interopRequireDefault(require("./Attribution.js"));
+var _Attribution = _interopRequireDefault(require("./control/Attribution.js"));
 
-var _Rotate = _interopRequireDefault(require("./Rotate.js"));
+var _Rotate = _interopRequireDefault(require("./control/Rotate.js"));
 
-var _Zoom = _interopRequireDefault(require("./Zoom.js"));
+var _Zoom = _interopRequireDefault(require("./control/Zoom.js"));
+
+var _Control = _interopRequireDefault(require("./control/Control.js"));
+
+var _FullScreen = _interopRequireDefault(require("./control/FullScreen.js"));
+
+var _MousePosition = _interopRequireDefault(require("./control/MousePosition.js"));
+
+var _OverviewMap = _interopRequireDefault(require("./control/OverviewMap.js"));
+
+var _ScaleLine = _interopRequireDefault(require("./control/ScaleLine.js"));
+
+var _ZoomSlider = _interopRequireDefault(require("./control/ZoomSlider.js"));
+
+var _ZoomToExtent = _interopRequireDefault(require("./control/ZoomToExtent.js"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
- * @module ol/control/util
+ * @module ol/control
  */
 
 /**
  * @typedef {Object} DefaultsOptions
  * @property {boolean} [attribution=true] Include
  * {@link module:ol/control/Attribution~Attribution}.
- * @property {import("./Attribution.js").Options} [attributionOptions]
+ * @property {import("./control/Attribution.js").Options} [attributionOptions]
  * Options for {@link module:ol/control/Attribution~Attribution}.
  * @property {boolean} [rotate=true] Include
  * {@link module:ol/control/Rotate~Rotate}.
- * @property {import("./Rotate.js").Options} [rotateOptions] Options
+ * @property {import("./control/Rotate.js").Options} [rotateOptions] Options
  * for {@link module:ol/control/Rotate~Rotate}.
  * @property {boolean} [zoom] Include {@link module:ol/control/Zoom~Zoom}.
- * @property {import("./Zoom.js").Options} [zoomOptions] Options for
+ * @property {import("./control/Zoom.js").Options} [zoomOptions] Options for
  * {@link module:ol/control/Zoom~Zoom}.
  * @api
  */
@@ -35091,9 +39115,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  *
  * @param {DefaultsOptions=} opt_options
  * Defaults options.
- * @return {Collection<import("./Control.js").default>}
+ * @return {Collection<import("./control/Control.js").default>}
  * Controls.
- * @function module:ol/control.defaults
  * @api
  */
 function defaults(opt_options) {
@@ -35119,7 +39142,7 @@ function defaults(opt_options) {
 
   return controls;
 }
-},{"../Collection.js":"../node_modules/ol/Collection.js","./Attribution.js":"../node_modules/ol/control/Attribution.js","./Rotate.js":"../node_modules/ol/control/Rotate.js","./Zoom.js":"../node_modules/ol/control/Zoom.js"}],"../node_modules/ol/interaction/Property.js":[function(require,module,exports) {
+},{"./Collection.js":"../node_modules/ol/Collection.js","./control/Attribution.js":"../node_modules/ol/control/Attribution.js","./control/Rotate.js":"../node_modules/ol/control/Rotate.js","./control/Zoom.js":"../node_modules/ol/control/Zoom.js","./control/Control.js":"../node_modules/ol/control/Control.js","./control/FullScreen.js":"../node_modules/ol/control/FullScreen.js","./control/MousePosition.js":"../node_modules/ol/control/MousePosition.js","./control/OverviewMap.js":"../node_modules/ol/control/OverviewMap.js","./control/ScaleLine.js":"../node_modules/ol/control/ScaleLine.js","./control/ZoomSlider.js":"../node_modules/ol/control/ZoomSlider.js","./control/ZoomToExtent.js":"../node_modules/ol/control/ZoomToExtent.js"}],"../node_modules/ol/interaction/Property.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -36132,7 +40155,7 @@ var __extends = void 0 && (void 0).__extends || function () {
  * @typedef {Object} Options
  * @property {import("../events/condition.js").Condition} [condition] A function that takes an {@link module:ol/MapBrowserEvent~MapBrowserEvent} and returns a boolean
  * to indicate whether that event should be handled.
- * Default is {@link module:ol/events/condition~noModifierKeys}.
+ * Default is {@link module:ol/events/condition~noModifierKeys} and {@link module:ol/events/condition~primaryAction}.
  * @property {import("../Kinetic.js").default} [kinetic] Kinetic inertia to apply to the pan.
  */
 
@@ -36182,7 +40205,7 @@ function (_super) {
      * @type {import("../events/condition.js").Condition}
      */
 
-    _this.condition_ = options.condition ? options.condition : _condition.noModifierKeys;
+    _this.condition_ = options.condition ? options.condition : defaultCondition;
     /**
      * @private
      * @type {boolean}
@@ -36197,6 +40220,11 @@ function (_super) {
 
 
   DragPan.prototype.handleDragEvent = function (mapBrowserEvent) {
+    if (!this.panning_) {
+      this.panning_ = true;
+      this.getMap().getView().beginInteraction();
+    }
+
     var targetPointers = this.targetPointers;
     var centroid = (0, _Pointer.centroid)(targetPointers);
 
@@ -36279,11 +40307,6 @@ function (_super) {
         view.cancelAnimations();
       }
 
-      if (!this.panning_) {
-        this.panning_ = true;
-        this.getMap().getView().beginInteraction();
-      }
-
       if (this.kinetic_) {
         this.kinetic_.begin();
       } // No kinetic as soon as more than one pointer on the screen is
@@ -36299,6 +40322,15 @@ function (_super) {
 
   return DragPan;
 }(_Pointer.default);
+/**
+ * @param {import("../MapBrowserPointerEvent.js").default} mapBrowserEvent Browser event.
+ * @return {boolean} Combined condition result.
+ */
+
+
+function defaultCondition(mapBrowserEvent) {
+  return (0, _condition.noModifierKeys)(mapBrowserEvent) && (0, _condition.primaryAction)(mapBrowserEvent);
+}
 
 var _default = DragPan;
 exports.default = _default;
@@ -40509,7 +44541,7 @@ function (_super) {
     _this.sketchFeature_ = null;
     /**
      * Sketch point.
-     * @type {Feature}
+     * @type {Feature<Point>}
      * @private
      */
 
@@ -40523,7 +44555,7 @@ function (_super) {
     _this.sketchCoords_ = null;
     /**
      * Sketch line. Used when drawing polygon.
-     * @type {Feature}
+     * @type {Feature<LineString>}
      * @private
      */
 
@@ -40825,9 +44857,7 @@ function (_super) {
       this.sketchPoint_ = new _Feature.default(new _Point.default(coordinates));
       this.updateSketchFeatures_();
     } else {
-      var sketchPointGeom =
-      /** @type {Point} */
-      this.sketchPoint_.getGeometry();
+      var sketchPointGeom = this.sketchPoint_.getGeometry();
       sketchPointGeom.setCoordinates(coordinates);
     }
   };
@@ -40875,9 +44905,7 @@ function (_super) {
 
   Draw.prototype.modifyDrawing_ = function (event) {
     var coordinate = event.coordinate;
-    var geometry =
-    /** @type {import("../geom/SimpleGeometry.js").default} */
-    this.sketchFeature_.getGeometry();
+    var geometry = this.sketchFeature_.getGeometry();
     var coordinates, last;
 
     if (this.mode_ === Mode.POINT) {
@@ -40904,9 +44932,7 @@ function (_super) {
     this.sketchCoords_, geometry);
 
     if (this.sketchPoint_) {
-      var sketchPointGeom =
-      /** @type {Point} */
-      this.sketchPoint_.getGeometry();
+      var sketchPointGeom = this.sketchPoint_.getGeometry();
       sketchPointGeom.setCoordinates(coordinate);
     }
     /** @type {LineString} */
@@ -40919,12 +44945,8 @@ function (_super) {
         this.sketchLine_ = new _Feature.default();
       }
 
-      var ring =
-      /** @type {Polygon} */
-      geometry.getLinearRing(0);
-      sketchLineGeom =
-      /** @type {LineString} */
-      this.sketchLine_.getGeometry();
+      var ring = geometry.getLinearRing(0);
+      sketchLineGeom = this.sketchLine_.getGeometry();
 
       if (!sketchLineGeom) {
         sketchLineGeom = new _LineString.default(ring.getFlatCoordinates(), ring.getLayout());
@@ -40934,9 +44956,7 @@ function (_super) {
         sketchLineGeom.changed();
       }
     } else if (this.sketchLineCoords_) {
-      sketchLineGeom =
-      /** @type {LineString} */
-      this.sketchLine_.getGeometry();
+      sketchLineGeom = this.sketchLine_.getGeometry();
       sketchLineGeom.setCoordinates(this.sketchLineCoords_);
     }
 
@@ -40951,9 +44971,7 @@ function (_super) {
 
   Draw.prototype.addToDrawing_ = function (event) {
     var coordinate = event.coordinate;
-    var geometry =
-    /** @type {import("../geom/SimpleGeometry.js").default} */
-    this.sketchFeature_.getGeometry();
+    var geometry = this.sketchFeature_.getGeometry();
     var done;
     var coordinates;
 
@@ -41012,9 +45030,7 @@ function (_super) {
       return;
     }
 
-    var geometry =
-    /** @type {import("../geom/SimpleGeometry.js").default} */
-    this.sketchFeature_.getGeometry();
+    var geometry = this.sketchFeature_.getGeometry();
     var coordinates;
     /** @type {LineString} */
 
@@ -41035,9 +45051,7 @@ function (_super) {
       /** @type {PolyCoordType} */
       this.sketchCoords_[0];
       coordinates.splice(-2, 1);
-      sketchLineGeom =
-      /** @type {LineString} */
-      this.sketchLine_.getGeometry();
+      sketchLineGeom = this.sketchLine_.getGeometry();
       sketchLineGeom.setCoordinates(coordinates);
       this.geometryFunction_(this.sketchCoords_, geometry);
     }
@@ -41064,9 +45078,7 @@ function (_super) {
     }
 
     var coordinates = this.sketchCoords_;
-    var geometry =
-    /** @type {import("../geom/SimpleGeometry.js").default} */
-    sketchFeature.getGeometry();
+    var geometry = sketchFeature.getGeometry();
 
     if (this.mode_ === Mode.LINE_STRING) {
       // remove the redundant last point
@@ -41131,16 +45143,14 @@ function (_super) {
    * Extend an existing geometry by adding additional points. This only works
    * on features with `LineString` geometries, where the interaction will
    * extend lines by adding points to the end of the coordinates array.
-   * @param {!Feature} feature Feature to be extended.
+   * @param {!Feature<LineString>} feature Feature to be extended.
    * @api
    */
 
 
   Draw.prototype.extend = function (feature) {
     var geometry = feature.getGeometry();
-    var lineString =
-    /** @type {LineString} */
-    geometry;
+    var lineString = geometry;
     this.sketchFeature_ = feature;
     this.sketchCoords_ = lineString.getCoordinates();
     var last = this.sketchCoords_[this.sketchCoords_.length - 1];
@@ -41381,27 +45391,27 @@ var __extends = void 0 && (void 0).__extends || function () {
 var ExtentEventType = {
   /**
    * Triggered after the extent is changed
-   * @event ExtentEventType#extentchanged
+   * @event ExtentEvent#extentchanged
    * @api
    */
   EXTENTCHANGED: 'extentchanged'
 };
 /**
  * @classdesc
- * Events emitted by {@link module:ol/interaction/Extent~ExtentInteraction} instances are
+ * Events emitted by {@link module:ol/interaction/Extent~Extent} instances are
  * instances of this type.
  */
 
-var ExtentInteractionEvent =
+var ExtentEvent =
 /** @class */
 function (_super) {
-  __extends(ExtentInteractionEvent, _super);
+  __extends(ExtentEvent, _super);
   /**
    * @param {import("../extent.js").Extent} extent the new extent
    */
 
 
-  function ExtentInteractionEvent(extent) {
+  function ExtentEvent(extent) {
     var _this = _super.call(this, ExtentEventType.EXTENTCHANGED) || this;
     /**
      * The current extent.
@@ -41414,7 +45424,7 @@ function (_super) {
     return _this;
   }
 
-  return ExtentInteractionEvent;
+  return ExtentEvent;
 }(_Event.default);
 /**
  * @classdesc
@@ -41422,21 +45432,21 @@ function (_super) {
  * Once drawn, the vector box can be modified by dragging its vertices or edges.
  * This interaction is only supported for mouse devices.
  *
- * @fires Event
+ * @fires ExtentEvent
  * @api
  */
 
 
-var ExtentInteraction =
+var Extent =
 /** @class */
 function (_super) {
-  __extends(ExtentInteraction, _super);
+  __extends(Extent, _super);
   /**
    * @param {Options=} opt_options Options.
    */
 
 
-  function ExtentInteraction(opt_options) {
+  function Extent(opt_options) {
     var _this = this;
 
     var options = opt_options || {};
@@ -41480,7 +45490,7 @@ function (_super) {
     _this.extentFeature_ = null;
     /**
      * Feature for displaying the visible pointer
-     * @type {Feature}
+     * @type {Feature<Point>}
      * @private
      */
 
@@ -41535,7 +45545,7 @@ function (_super) {
    */
 
 
-  ExtentInteraction.prototype.snapToVertex_ = function (pixel, map) {
+  Extent.prototype.snapToVertex_ = function (pixel, map) {
     var pixelCoordinate = map.getCoordinateFromPixel(pixel);
 
     var sortByDistance = function (a, b) {
@@ -41577,7 +45587,7 @@ function (_super) {
    */
 
 
-  ExtentInteraction.prototype.handlePointerMove_ = function (mapBrowserEvent) {
+  Extent.prototype.handlePointerMove_ = function (mapBrowserEvent) {
     var pixel = mapBrowserEvent.pixel;
     var map = mapBrowserEvent.map;
     var vertex = this.snapToVertex_(pixel, map);
@@ -41595,7 +45605,7 @@ function (_super) {
    */
 
 
-  ExtentInteraction.prototype.createOrUpdateExtentFeature_ = function (extent) {
+  Extent.prototype.createOrUpdateExtentFeature_ = function (extent) {
     var extentFeature = this.extentFeature_;
 
     if (!extentFeature) {
@@ -41624,7 +45634,7 @@ function (_super) {
    */
 
 
-  ExtentInteraction.prototype.createOrUpdatePointerFeature_ = function (vertex) {
+  Extent.prototype.createOrUpdatePointerFeature_ = function (vertex) {
     var vertexFeature = this.vertexFeature_;
 
     if (!vertexFeature) {
@@ -41632,9 +45642,7 @@ function (_super) {
       this.vertexFeature_ = vertexFeature;
       this.vertexOverlay_.getSource().addFeature(vertexFeature);
     } else {
-      var geometry =
-      /** @type {Point} */
-      vertexFeature.getGeometry();
+      var geometry = vertexFeature.getGeometry();
       geometry.setCoordinates(vertex);
     }
 
@@ -41645,7 +45653,7 @@ function (_super) {
    */
 
 
-  ExtentInteraction.prototype.handleEvent = function (mapBrowserEvent) {
+  Extent.prototype.handleEvent = function (mapBrowserEvent) {
     if (!
     /** @type {import("../MapBrowserPointerEvent.js").default} */
     mapBrowserEvent.pointerEvent) {
@@ -41668,7 +45676,7 @@ function (_super) {
    */
 
 
-  ExtentInteraction.prototype.handleDownEvent = function (mapBrowserEvent) {
+  Extent.prototype.handleDownEvent = function (mapBrowserEvent) {
     var pixel = mapBrowserEvent.pixel;
     var map = mapBrowserEvent.map;
     var extent = this.getExtent();
@@ -41722,7 +45730,7 @@ function (_super) {
    */
 
 
-  ExtentInteraction.prototype.handleDragEvent = function (mapBrowserEvent) {
+  Extent.prototype.handleDragEvent = function (mapBrowserEvent) {
     if (this.pointerHandler_) {
       var pixelCoordinate = mapBrowserEvent.coordinate;
       this.setExtent(this.pointerHandler_(pixelCoordinate));
@@ -41736,7 +45744,7 @@ function (_super) {
    */
 
 
-  ExtentInteraction.prototype.handleUpEvent = function (mapBrowserEvent) {
+  Extent.prototype.handleUpEvent = function (mapBrowserEvent) {
     this.pointerHandler_ = null; //If bbox is zero area, set to null;
 
     var extent = this.getExtent();
@@ -41752,7 +45760,7 @@ function (_super) {
    */
 
 
-  ExtentInteraction.prototype.setMap = function (map) {
+  Extent.prototype.setMap = function (map) {
     this.extentOverlay_.setMap(map);
     this.vertexOverlay_.setMap(map);
 
@@ -41766,7 +45774,7 @@ function (_super) {
    */
 
 
-  ExtentInteraction.prototype.getExtent = function () {
+  Extent.prototype.getExtent = function () {
     return this.extent_;
   };
   /**
@@ -41777,14 +45785,14 @@ function (_super) {
    */
 
 
-  ExtentInteraction.prototype.setExtent = function (extent) {
+  Extent.prototype.setExtent = function (extent) {
     //Null extent means no bbox
     this.extent_ = extent ? extent : null;
     this.createOrUpdateExtentFeature_(extent);
-    this.dispatchEvent(new ExtentInteractionEvent(this.extent_));
+    this.dispatchEvent(new ExtentEvent(this.extent_));
   };
 
-  return ExtentInteraction;
+  return Extent;
 }(_Pointer.default);
 /**
  * Returns the default style for the drawn bbox
@@ -41853,7 +45861,7 @@ function getSegments(extent) {
   return [[[extent[0], extent[1]], [extent[0], extent[3]]], [[extent[0], extent[3]], [extent[2], extent[3]]], [[extent[2], extent[3]], [extent[2], extent[1]]], [[extent[2], extent[1]], [extent[0], extent[1]]]];
 }
 
-var _default = ExtentInteraction;
+var _default = Extent;
 exports.default = _default;
 },{"../Feature.js":"../node_modules/ol/Feature.js","../MapBrowserEventType.js":"../node_modules/ol/MapBrowserEventType.js","../coordinate.js":"../node_modules/ol/coordinate.js","../events/Event.js":"../node_modules/ol/events/Event.js","../extent.js":"../node_modules/ol/extent.js","../geom/GeometryType.js":"../node_modules/ol/geom/GeometryType.js","../geom/Point.js":"../node_modules/ol/geom/Point.js","../geom/Polygon.js":"../node_modules/ol/geom/Polygon.js","./Pointer.js":"../node_modules/ol/interaction/Pointer.js","../layer/Vector.js":"../node_modules/ol/layer/Vector.js","../source/Vector.js":"../node_modules/ol/source/Vector.js","../style/Style.js":"../node_modules/ol/style/Style.js"}],"../node_modules/ol/interaction/Modify.js":[function(require,module,exports) {
 "use strict";
@@ -42640,9 +46648,7 @@ function (_super) {
       this.vertexFeature_ = vertexFeature;
       this.overlay_.getSource().addFeature(vertexFeature);
     } else {
-      var geometry =
-      /** @type {Point} */
-      vertexFeature.getGeometry();
+      var geometry = vertexFeature.getGeometry();
       geometry.setCoordinates(coordinates);
     }
 
@@ -42786,9 +46792,7 @@ function (_super) {
 
     if (vertexFeature) {
       var insertVertices = [];
-      var geometry =
-      /** @type {Point} */
-      vertexFeature.getGeometry();
+      var geometry = vertexFeature.getGeometry();
       var vertex = geometry.getCoordinates();
       var vertexExtent = (0, _extent.boundingExtent)([vertex]);
       var segmentDataMatches = this.rBush_.getInExtent(vertexExtent);
@@ -44678,6 +48682,14 @@ var TranslateEventType = {
   TRANSLATEEND: 'translateend'
 };
 /**
+ * A function that takes an {@link module:ol/Feature} or
+ * {@link module:ol/render/Feature} and an
+ * {@link module:ol/layer/Layer} and returns `true` if the feature may be
+ * translated or `false` otherwise.
+ * @typedef {function(import("../Feature.js").FeatureLike, import("../layer/Layer.js").default):boolean} FilterFunction
+ */
+
+/**
  * @typedef {Object} Options
  * @property {Collection<import("../Feature.js").default>} [features] Only features contained in this collection will be able to be translated. If
  * not specified, all features on the map will be able to be translated.
@@ -44686,6 +48698,10 @@ var TranslateEventType = {
  * function will be called for each layer in the map and should return
  * `true` for layers that you want to be translatable. If the option is
  * absent, all visible layers will be considered translatable.
+ * @property {FilterFunction} [filter] A function
+ * that takes an {@link module:ol/Feature} and an
+ * {@link module:ol/layer/Layer} and returns `true` if the feature may be
+ * translated or `false` otherwise.
  * @property {number} [hitTolerance=0] Hit-detection tolerance. Pixels inside the radius around the given position
  * will be checked for features.
  */
@@ -44795,6 +48811,12 @@ function (_super) {
     _this.layerFilter_ = layerFilter;
     /**
      * @private
+     * @type {FilterFunction}
+     */
+
+    _this.filter_ = options.filter ? options.filter : _functions.TRUE;
+    /**
+     * @private
      * @type {number}
      */
 
@@ -44890,9 +48912,11 @@ function (_super) {
 
 
   Translate.prototype.featuresAtPixel_ = function (pixel, map) {
-    return map.forEachFeatureAtPixel(pixel, function (feature) {
-      if (!this.features_ || (0, _array.includes)(this.features_.getArray(), feature)) {
-        return feature;
+    return map.forEachFeatureAtPixel(pixel, function (feature, layer) {
+      if (this.filter_(feature, layer)) {
+        if (!this.features_ || (0, _array.includes)(this.features_.getArray(), feature)) {
+          return feature;
+        }
       }
     }.bind(this), {
       layerFilter: this.layerFilter_,
@@ -45263,724 +49287,7 @@ function defaults(opt_options) {
 
   return interactions;
 }
-},{"./Collection.js":"../node_modules/ol/Collection.js","./Kinetic.js":"../node_modules/ol/Kinetic.js","./interaction/DoubleClickZoom.js":"../node_modules/ol/interaction/DoubleClickZoom.js","./interaction/DragPan.js":"../node_modules/ol/interaction/DragPan.js","./interaction/DragRotate.js":"../node_modules/ol/interaction/DragRotate.js","./interaction/DragZoom.js":"../node_modules/ol/interaction/DragZoom.js","./interaction/KeyboardPan.js":"../node_modules/ol/interaction/KeyboardPan.js","./interaction/KeyboardZoom.js":"../node_modules/ol/interaction/KeyboardZoom.js","./interaction/MouseWheelZoom.js":"../node_modules/ol/interaction/MouseWheelZoom.js","./interaction/PinchRotate.js":"../node_modules/ol/interaction/PinchRotate.js","./interaction/PinchZoom.js":"../node_modules/ol/interaction/PinchZoom.js","./events/condition.js":"../node_modules/ol/events/condition.js","./interaction/DragAndDrop.js":"../node_modules/ol/interaction/DragAndDrop.js","./interaction/DragBox.js":"../node_modules/ol/interaction/DragBox.js","./interaction/DragRotateAndZoom.js":"../node_modules/ol/interaction/DragRotateAndZoom.js","./interaction/Draw.js":"../node_modules/ol/interaction/Draw.js","./interaction/Extent.js":"../node_modules/ol/interaction/Extent.js","./interaction/Interaction.js":"../node_modules/ol/interaction/Interaction.js","./interaction/Modify.js":"../node_modules/ol/interaction/Modify.js","./interaction/Pointer.js":"../node_modules/ol/interaction/Pointer.js","./interaction/Select.js":"../node_modules/ol/interaction/Select.js","./interaction/Snap.js":"../node_modules/ol/interaction/Snap.js","./interaction/Translate.js":"../node_modules/ol/interaction/Translate.js"}],"../node_modules/ol/style/IconImageCache.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.shared = exports.default = void 0;
-
-var _color = require("../color.js");
-
-/**
- * @module ol/style/IconImageCache
- */
-
-/**
- * @classdesc
- * Singleton class. Available through {@link module:ol/style/IconImageCache~shared}.
- */
-var IconImageCache =
-/** @class */
-function () {
-  function IconImageCache() {
-    /**
-    * @type {!Object<string, import("./IconImage.js").default>}
-    * @private
-    */
-    this.cache_ = {};
-    /**
-    * @type {number}
-    * @private
-    */
-
-    this.cacheSize_ = 0;
-    /**
-    * @type {number}
-    * @private
-    */
-
-    this.maxCacheSize_ = 32;
-  }
-  /**
-  * FIXME empty description for jsdoc
-  */
-
-
-  IconImageCache.prototype.clear = function () {
-    this.cache_ = {};
-    this.cacheSize_ = 0;
-  };
-  /**
-   * @return {boolean} Can expire cache.
-   */
-
-
-  IconImageCache.prototype.canExpireCache = function () {
-    return this.cacheSize_ > this.maxCacheSize_;
-  };
-  /**
-  * FIXME empty description for jsdoc
-  */
-
-
-  IconImageCache.prototype.expire = function () {
-    if (this.canExpireCache()) {
-      var i = 0;
-
-      for (var key in this.cache_) {
-        var iconImage = this.cache_[key];
-
-        if ((i++ & 3) === 0 && !iconImage.hasListener()) {
-          delete this.cache_[key];
-          --this.cacheSize_;
-        }
-      }
-    }
-  };
-  /**
-  * @param {string} src Src.
-  * @param {?string} crossOrigin Cross origin.
-  * @param {import("../color.js").Color} color Color.
-  * @return {import("./IconImage.js").default} Icon image.
-  */
-
-
-  IconImageCache.prototype.get = function (src, crossOrigin, color) {
-    var key = getKey(src, crossOrigin, color);
-    return key in this.cache_ ? this.cache_[key] : null;
-  };
-  /**
-  * @param {string} src Src.
-  * @param {?string} crossOrigin Cross origin.
-  * @param {import("../color.js").Color} color Color.
-  * @param {import("./IconImage.js").default} iconImage Icon image.
-  */
-
-
-  IconImageCache.prototype.set = function (src, crossOrigin, color, iconImage) {
-    var key = getKey(src, crossOrigin, color);
-    this.cache_[key] = iconImage;
-    ++this.cacheSize_;
-  };
-  /**
-  * Set the cache size of the icon cache. Default is `32`. Change this value when
-  * your map uses more than 32 different icon images and you are not caching icon
-  * styles on the application level.
-  * @param {number} maxCacheSize Cache max size.
-  * @api
-  */
-
-
-  IconImageCache.prototype.setSize = function (maxCacheSize) {
-    this.maxCacheSize_ = maxCacheSize;
-    this.expire();
-  };
-
-  return IconImageCache;
-}();
-/**
- * @param {string} src Src.
- * @param {?string} crossOrigin Cross origin.
- * @param {import("../color.js").Color} color Color.
- * @return {string} Cache key.
- */
-
-
-function getKey(src, crossOrigin, color) {
-  var colorString = color ? (0, _color.asString)(color) : 'null';
-  return crossOrigin + ':' + src + ':' + colorString;
-}
-
-var _default = IconImageCache;
-/**
- * The {@link module:ol/style/IconImageCache~IconImageCache} for
- * {@link module:ol/style/Icon~Icon} images.
- * @api
- */
-
-exports.default = _default;
-var shared = new IconImageCache();
-exports.shared = shared;
-},{"../color.js":"../node_modules/ol/color.js"}],"../node_modules/ol/renderer/Map.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _util = require("../util.js");
-
-var _Disposable = _interopRequireDefault(require("../Disposable.js"));
-
-var _events = require("../events.js");
-
-var _EventType = _interopRequireDefault(require("../events/EventType.js"));
-
-var _extent = require("../extent.js");
-
-var _functions = require("../functions.js");
-
-var _Layer = require("../layer/Layer.js");
-
-var _IconImageCache = require("../style/IconImageCache.js");
-
-var _transform = require("../transform.js");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var __extends = void 0 && (void 0).__extends || function () {
-  var extendStatics = function (d, b) {
-    extendStatics = Object.setPrototypeOf || {
-      __proto__: []
-    } instanceof Array && function (d, b) {
-      d.__proto__ = b;
-    } || function (d, b) {
-      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    };
-
-    return extendStatics(d, b);
-  };
-
-  return function (d, b) {
-    extendStatics(d, b);
-
-    function __() {
-      this.constructor = d;
-    }
-
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-}();
-/**
- * @module ol/renderer/Map
- */
-
-
-/**
- * @abstract
- */
-var MapRenderer =
-/** @class */
-function (_super) {
-  __extends(MapRenderer, _super);
-  /**
-   * @param {import("../PluggableMap.js").default} map Map.
-   */
-
-
-  function MapRenderer(map) {
-    var _this = _super.call(this) || this;
-    /**
-     * @private
-     * @type {import("../PluggableMap.js").default}
-     */
-
-
-    _this.map_ = map;
-    /**
-     * @private
-     * @type {!Object<string, import("./Layer.js").default>}
-     */
-
-    _this.layerRenderers_ = {};
-    /**
-     * @private
-     * @type {Object<string, import("../events.js").EventsKey>}
-     */
-
-    _this.layerRendererListeners_ = {};
-    return _this;
-  }
-  /**
-   * @abstract
-   * @param {import("../render/EventType.js").default} type Event type.
-   * @param {import("../PluggableMap.js").FrameState} frameState Frame state.
-   */
-
-
-  MapRenderer.prototype.dispatchRenderEvent = function (type, frameState) {
-    (0, _util.abstract)();
-  };
-  /**
-   * @param {import("../PluggableMap.js").FrameState} frameState FrameState.
-   * @protected
-   */
-
-
-  MapRenderer.prototype.calculateMatrices2D = function (frameState) {
-    var viewState = frameState.viewState;
-    var coordinateToPixelTransform = frameState.coordinateToPixelTransform;
-    var pixelToCoordinateTransform = frameState.pixelToCoordinateTransform;
-    (0, _transform.compose)(coordinateToPixelTransform, frameState.size[0] / 2, frameState.size[1] / 2, 1 / viewState.resolution, -1 / viewState.resolution, -viewState.rotation, -viewState.center[0], -viewState.center[1]);
-    (0, _transform.makeInverse)(pixelToCoordinateTransform, coordinateToPixelTransform);
-  };
-  /**
-   * Removes all layer renderers.
-   */
-
-
-  MapRenderer.prototype.removeLayerRenderers = function () {
-    for (var key in this.layerRenderers_) {
-      this.removeLayerRendererByKey_(key).dispose();
-    }
-  };
-  /**
-   * @param {import("../coordinate.js").Coordinate} coordinate Coordinate.
-   * @param {import("../PluggableMap.js").FrameState} frameState FrameState.
-   * @param {number} hitTolerance Hit tolerance in pixels.
-   * @param {function(this: S, import("../Feature.js").FeatureLike,
-   *     import("../layer/Layer.js").default): T} callback Feature callback.
-   * @param {S} thisArg Value to use as `this` when executing `callback`.
-   * @param {function(this: U, import("../layer/Layer.js").default): boolean} layerFilter Layer filter
-   *     function, only layers which are visible and for which this function
-   *     returns `true` will be tested for features.  By default, all visible
-   *     layers will be tested.
-   * @param {U} thisArg2 Value to use as `this` when executing `layerFilter`.
-   * @return {T|undefined} Callback result.
-   * @template S,T,U
-   */
-
-
-  MapRenderer.prototype.forEachFeatureAtCoordinate = function (coordinate, frameState, hitTolerance, callback, thisArg, layerFilter, thisArg2) {
-    var result;
-    var viewState = frameState.viewState;
-    var viewResolution = viewState.resolution;
-    /**
-     * @param {boolean} managed Managed layer.
-     * @param {import("../Feature.js").FeatureLike} feature Feature.
-     * @param {import("../layer/Layer.js").default} layer Layer.
-     * @return {?} Callback result.
-     */
-
-    function forEachFeatureAtCoordinate(managed, feature, layer) {
-      if (!((0, _util.getUid)(feature) in frameState.skippedFeatureUids && !managed)) {
-        return callback.call(thisArg, feature, managed ? layer : null);
-      }
-    }
-
-    var projection = viewState.projection;
-    var translatedCoordinate = coordinate;
-
-    if (projection.canWrapX()) {
-      var projectionExtent = projection.getExtent();
-      var worldWidth = (0, _extent.getWidth)(projectionExtent);
-      var x = coordinate[0];
-
-      if (x < projectionExtent[0] || x > projectionExtent[2]) {
-        var worldsAway = Math.ceil((projectionExtent[0] - x) / worldWidth);
-        translatedCoordinate = [x + worldWidth * worldsAway, coordinate[1]];
-      }
-    }
-
-    var layerStates = frameState.layerStatesArray;
-    var numLayers = layerStates.length;
-    var i;
-
-    for (i = numLayers - 1; i >= 0; --i) {
-      var layerState = layerStates[i];
-      var layer =
-      /** @type {import("../layer/Layer.js").default} */
-      layerState.layer;
-
-      if ((0, _Layer.visibleAtResolution)(layerState, viewResolution) && layerFilter.call(thisArg2, layer)) {
-        var layerRenderer = this.getLayerRenderer(layer);
-        var source = layer.getSource();
-
-        if (layerRenderer && source) {
-          var callback_1 = forEachFeatureAtCoordinate.bind(null, layerState.managed);
-          result = layerRenderer.forEachFeatureAtCoordinate(source.getWrapX() ? translatedCoordinate : coordinate, frameState, hitTolerance, callback_1);
-        }
-
-        if (result) {
-          return result;
-        }
-      }
-    }
-
-    return undefined;
-  };
-  /**
-   * @abstract
-   * @param {import("../pixel.js").Pixel} pixel Pixel.
-   * @param {import("../PluggableMap.js").FrameState} frameState FrameState.
-   * @param {number} hitTolerance Hit tolerance in pixels.
-   * @param {function(this: S, import("../layer/Layer.js").default, (Uint8ClampedArray|Uint8Array)): T} callback Layer
-   *     callback.
-   * @param {function(this: U, import("../layer/Layer.js").default): boolean} layerFilter Layer filter
-   *     function, only layers which are visible and for which this function
-   *     returns `true` will be tested for features.  By default, all visible
-   *     layers will be tested.
-   * @return {T|undefined} Callback result.
-   * @template S,T,U
-   */
-
-
-  MapRenderer.prototype.forEachLayerAtPixel = function (pixel, frameState, hitTolerance, callback, layerFilter) {
-    return (0, _util.abstract)();
-  };
-  /**
-   * @param {import("../coordinate.js").Coordinate} coordinate Coordinate.
-   * @param {import("../PluggableMap.js").FrameState} frameState FrameState.
-   * @param {number} hitTolerance Hit tolerance in pixels.
-   * @param {function(this: U, import("../layer/Layer.js").default): boolean} layerFilter Layer filter
-   *     function, only layers which are visible and for which this function
-   *     returns `true` will be tested for features.  By default, all visible
-   *     layers will be tested.
-   * @param {U} thisArg Value to use as `this` when executing `layerFilter`.
-   * @return {boolean} Is there a feature at the given coordinate?
-   * @template U
-   */
-
-
-  MapRenderer.prototype.hasFeatureAtCoordinate = function (coordinate, frameState, hitTolerance, layerFilter, thisArg) {
-    var hasFeature = this.forEachFeatureAtCoordinate(coordinate, frameState, hitTolerance, _functions.TRUE, this, layerFilter, thisArg);
-    return hasFeature !== undefined;
-  };
-  /**
-   * @param {import("../layer/Layer.js").default} layer Layer.
-   * @protected
-   * @return {import("./Layer.js").default} Layer renderer. May return null.
-   */
-
-
-  MapRenderer.prototype.getLayerRenderer = function (layer) {
-    var layerKey = (0, _util.getUid)(layer);
-
-    if (layerKey in this.layerRenderers_) {
-      return this.layerRenderers_[layerKey];
-    }
-
-    var renderer = layer.getRenderer();
-
-    if (!renderer) {
-      return null;
-    }
-
-    this.layerRenderers_[layerKey] = renderer;
-    this.layerRendererListeners_[layerKey] = (0, _events.listen)(renderer, _EventType.default.CHANGE, this.handleLayerRendererChange_, this);
-    return renderer;
-  };
-  /**
-   * @protected
-   * @return {Object<string, import("./Layer.js").default>} Layer renderers.
-   */
-
-
-  MapRenderer.prototype.getLayerRenderers = function () {
-    return this.layerRenderers_;
-  };
-  /**
-   * @return {import("../PluggableMap.js").default} Map.
-   */
-
-
-  MapRenderer.prototype.getMap = function () {
-    return this.map_;
-  };
-  /**
-   * Handle changes in a layer renderer.
-   * @private
-   */
-
-
-  MapRenderer.prototype.handleLayerRendererChange_ = function () {
-    this.map_.render();
-  };
-  /**
-   * @param {string} layerKey Layer key.
-   * @return {import("./Layer.js").default} Layer renderer.
-   * @private
-   */
-
-
-  MapRenderer.prototype.removeLayerRendererByKey_ = function (layerKey) {
-    var layerRenderer = this.layerRenderers_[layerKey];
-    delete this.layerRenderers_[layerKey];
-    (0, _events.unlistenByKey)(this.layerRendererListeners_[layerKey]);
-    delete this.layerRendererListeners_[layerKey];
-    return layerRenderer;
-  };
-  /**
-   * Render.
-   * @abstract
-   * @param {?import("../PluggableMap.js").FrameState} frameState Frame state.
-   */
-
-
-  MapRenderer.prototype.renderFrame = function (frameState) {
-    (0, _util.abstract)();
-  };
-  /**
-   * @param {import("../PluggableMap.js").FrameState} frameState Frame state.
-   * @protected
-   */
-
-
-  MapRenderer.prototype.scheduleExpireIconCache = function (frameState) {
-    if (_IconImageCache.shared.canExpireCache()) {
-      frameState.postRenderFunctions.push(expireIconCache);
-    }
-  };
-  /**
-   * @param {!import("../PluggableMap.js").FrameState} frameState Frame state.
-   * @protected
-   */
-
-
-  MapRenderer.prototype.scheduleRemoveUnusedLayerRenderers = function (frameState) {
-    var layerStatesMap = getLayerStatesMap(frameState.layerStatesArray);
-
-    var _loop_1 = function (layerKey) {
-      if (!(layerKey in layerStatesMap)) {
-        frameState.postRenderFunctions.push(function () {
-          this.removeLayerRendererByKey_(layerKey).dispose();
-        }.bind(this_1));
-      }
-    };
-
-    var this_1 = this;
-
-    for (var layerKey in this.layerRenderers_) {
-      _loop_1(layerKey);
-    }
-  };
-
-  return MapRenderer;
-}(_Disposable.default);
-/**
- * @param {import("../PluggableMap.js").default} map Map.
- * @param {import("../PluggableMap.js").FrameState} frameState Frame state.
- */
-
-
-function expireIconCache(map, frameState) {
-  _IconImageCache.shared.expire();
-}
-/**
- * @param {Array<import("../layer/Layer.js").State>} layerStatesArray Layer states array.
- * @return {Object<string, import("../layer/Layer.js").State>} States mapped by layer uid.
- */
-
-
-function getLayerStatesMap(layerStatesArray) {
-  return layerStatesArray.reduce(function (acc, state) {
-    acc[(0, _util.getUid)(state.layer)] = state;
-    return acc;
-  }, {});
-}
-
-var _default = MapRenderer;
-exports.default = _default;
-},{"../util.js":"../node_modules/ol/util.js","../Disposable.js":"../node_modules/ol/Disposable.js","../events.js":"../node_modules/ol/events.js","../events/EventType.js":"../node_modules/ol/events/EventType.js","../extent.js":"../node_modules/ol/extent.js","../functions.js":"../node_modules/ol/functions.js","../layer/Layer.js":"../node_modules/ol/layer/Layer.js","../style/IconImageCache.js":"../node_modules/ol/style/IconImageCache.js","../transform.js":"../node_modules/ol/transform.js"}],"../node_modules/ol/renderer/Composite.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _css = require("../css.js");
-
-var _Layer = require("../layer/Layer.js");
-
-var _Event = _interopRequireDefault(require("../render/Event.js"));
-
-var _EventType = _interopRequireDefault(require("../render/EventType.js"));
-
-var _Map = _interopRequireDefault(require("./Map.js"));
-
-var _State = _interopRequireDefault(require("../source/State.js"));
-
-var _dom = require("../dom.js");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var __extends = void 0 && (void 0).__extends || function () {
-  var extendStatics = function (d, b) {
-    extendStatics = Object.setPrototypeOf || {
-      __proto__: []
-    } instanceof Array && function (d, b) {
-      d.__proto__ = b;
-    } || function (d, b) {
-      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    };
-
-    return extendStatics(d, b);
-  };
-
-  return function (d, b) {
-    extendStatics(d, b);
-
-    function __() {
-      this.constructor = d;
-    }
-
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-}();
-/**
- * @module ol/renderer/Composite
- */
-
-
-/**
- * @classdesc
- * Canvas map renderer.
- * @api
- */
-var CompositeMapRenderer =
-/** @class */
-function (_super) {
-  __extends(CompositeMapRenderer, _super);
-  /**
-   * @param {import("../PluggableMap.js").default} map Map.
-   */
-
-
-  function CompositeMapRenderer(map) {
-    var _this = _super.call(this, map) || this;
-    /**
-     * @private
-     * @type {HTMLDivElement}
-     */
-
-
-    _this.element_ = document.createElement('div');
-    var style = _this.element_.style;
-    style.position = 'absolute';
-    style.width = '100%';
-    style.height = '100%';
-    style.zIndex = '0';
-    _this.element_.className = _css.CLASS_UNSELECTABLE + ' ol-layers';
-    var container = map.getViewport();
-    container.insertBefore(_this.element_, container.firstChild || null);
-    /**
-     * @private
-     * @type {Array<HTMLElement>}
-     */
-
-    _this.children_ = [];
-    /**
-     * @private
-     * @type {boolean}
-     */
-
-    _this.renderedVisible_ = true;
-    return _this;
-  }
-  /**
-   * @param {import("../render/EventType.js").default} type Event type.
-   * @param {import("../PluggableMap.js").FrameState} frameState Frame state.
-   */
-
-
-  CompositeMapRenderer.prototype.dispatchRenderEvent = function (type, frameState) {
-    var map = this.getMap();
-
-    if (map.hasListener(type)) {
-      var event_1 = new _Event.default(type, undefined, frameState);
-      map.dispatchEvent(event_1);
-    }
-  };
-  /**
-   * @inheritDoc
-   */
-
-
-  CompositeMapRenderer.prototype.renderFrame = function (frameState) {
-    if (!frameState) {
-      if (this.renderedVisible_) {
-        this.element_.style.display = 'none';
-        this.renderedVisible_ = false;
-      }
-
-      return;
-    }
-
-    this.calculateMatrices2D(frameState);
-    this.dispatchRenderEvent(_EventType.default.PRECOMPOSE, frameState);
-    var layerStatesArray = frameState.layerStatesArray;
-    var viewResolution = frameState.viewState.resolution;
-    this.children_.length = 0;
-
-    for (var i = 0, ii = layerStatesArray.length; i < ii; ++i) {
-      var layerState = layerStatesArray[i];
-
-      if (!(0, _Layer.visibleAtResolution)(layerState, viewResolution) || layerState.sourceState != _State.default.READY) {
-        continue;
-      }
-
-      var layer = layerState.layer;
-      var element = layer.render(frameState);
-
-      if (element) {
-        var zIndex = layerState.zIndex;
-
-        if (zIndex !== element.style.zIndex) {
-          element.style.zIndex = zIndex;
-        }
-
-        this.children_.push(element);
-      }
-    }
-
-    (0, _dom.replaceChildren)(this.element_, this.children_);
-    this.dispatchRenderEvent(_EventType.default.POSTCOMPOSE, frameState);
-
-    if (!this.renderedVisible_) {
-      this.element_.style.display = '';
-      this.renderedVisible_ = true;
-    }
-
-    this.scheduleRemoveUnusedLayerRenderers(frameState);
-    this.scheduleExpireIconCache(frameState);
-  };
-  /**
-   * @inheritDoc
-   */
-
-
-  CompositeMapRenderer.prototype.forEachLayerAtPixel = function (pixel, frameState, hitTolerance, callback, layerFilter) {
-    var viewState = frameState.viewState;
-    var viewResolution = viewState.resolution;
-    var layerStates = frameState.layerStatesArray;
-    var numLayers = layerStates.length;
-
-    for (var i = numLayers - 1; i >= 0; --i) {
-      var layerState = layerStates[i];
-      var layer = layerState.layer;
-
-      if ((0, _Layer.visibleAtResolution)(layerState, viewResolution) && layerFilter(layer)) {
-        var layerRenderer = this.getLayerRenderer(layer);
-
-        if (!layerRenderer) {
-          continue;
-        }
-
-        var data = layerRenderer.getDataAtPixel(pixel, frameState, hitTolerance);
-
-        if (data) {
-          var result = callback(layer, data);
-
-          if (result) {
-            return result;
-          }
-        }
-      }
-    }
-
-    return undefined;
-  };
-
-  return CompositeMapRenderer;
-}(_Map.default);
-
-var _default = CompositeMapRenderer;
-exports.default = _default;
-},{"../css.js":"../node_modules/ol/css.js","../layer/Layer.js":"../node_modules/ol/layer/Layer.js","../render/Event.js":"../node_modules/ol/render/Event.js","../render/EventType.js":"../node_modules/ol/render/EventType.js","./Map.js":"../node_modules/ol/renderer/Map.js","../source/State.js":"../node_modules/ol/source/State.js","../dom.js":"../node_modules/ol/dom.js"}],"../node_modules/ol/Map.js":[function(require,module,exports) {
+},{"./Collection.js":"../node_modules/ol/Collection.js","./Kinetic.js":"../node_modules/ol/Kinetic.js","./interaction/DoubleClickZoom.js":"../node_modules/ol/interaction/DoubleClickZoom.js","./interaction/DragPan.js":"../node_modules/ol/interaction/DragPan.js","./interaction/DragRotate.js":"../node_modules/ol/interaction/DragRotate.js","./interaction/DragZoom.js":"../node_modules/ol/interaction/DragZoom.js","./interaction/KeyboardPan.js":"../node_modules/ol/interaction/KeyboardPan.js","./interaction/KeyboardZoom.js":"../node_modules/ol/interaction/KeyboardZoom.js","./interaction/MouseWheelZoom.js":"../node_modules/ol/interaction/MouseWheelZoom.js","./interaction/PinchRotate.js":"../node_modules/ol/interaction/PinchRotate.js","./interaction/PinchZoom.js":"../node_modules/ol/interaction/PinchZoom.js","./events/condition.js":"../node_modules/ol/events/condition.js","./interaction/DragAndDrop.js":"../node_modules/ol/interaction/DragAndDrop.js","./interaction/DragBox.js":"../node_modules/ol/interaction/DragBox.js","./interaction/DragRotateAndZoom.js":"../node_modules/ol/interaction/DragRotateAndZoom.js","./interaction/Draw.js":"../node_modules/ol/interaction/Draw.js","./interaction/Extent.js":"../node_modules/ol/interaction/Extent.js","./interaction/Interaction.js":"../node_modules/ol/interaction/Interaction.js","./interaction/Modify.js":"../node_modules/ol/interaction/Modify.js","./interaction/Pointer.js":"../node_modules/ol/interaction/Pointer.js","./interaction/Select.js":"../node_modules/ol/interaction/Select.js","./interaction/Snap.js":"../node_modules/ol/interaction/Snap.js","./interaction/Translate.js":"../node_modules/ol/interaction/Translate.js"}],"../node_modules/ol/Map.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -45990,7 +49297,7 @@ exports.default = void 0;
 
 var _PluggableMap = _interopRequireDefault(require("./PluggableMap.js"));
 
-var _util = require("./control/util.js");
+var _control = require("./control.js");
 
 var _interaction = require("./interaction.js");
 
@@ -46090,7 +49397,7 @@ function (_super) {
     options = (0, _obj.assign)({}, options);
 
     if (!options.controls) {
-      options.controls = (0, _util.defaults)();
+      options.controls = (0, _control.defaults)();
     }
 
     if (!options.interactions) {
@@ -46110,683 +49417,7 @@ function (_super) {
 
 var _default = Map;
 exports.default = _default;
-},{"./PluggableMap.js":"../node_modules/ol/PluggableMap.js","./control/util.js":"../node_modules/ol/control/util.js","./interaction.js":"../node_modules/ol/interaction.js","./obj.js":"../node_modules/ol/obj.js","./renderer/Composite.js":"../node_modules/ol/renderer/Composite.js"}],"../node_modules/ol/OverlayPositioning.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-/**
- * @module ol/OverlayPositioning
- */
-
-/**
- * Overlay position: `'bottom-left'`, `'bottom-center'`,  `'bottom-right'`,
- * `'center-left'`, `'center-center'`, `'center-right'`, `'top-left'`,
- * `'top-center'`, `'top-right'`
- * @enum {string}
- */
-var _default = {
-  BOTTOM_LEFT: 'bottom-left',
-  BOTTOM_CENTER: 'bottom-center',
-  BOTTOM_RIGHT: 'bottom-right',
-  CENTER_LEFT: 'center-left',
-  CENTER_CENTER: 'center-center',
-  CENTER_RIGHT: 'center-right',
-  TOP_LEFT: 'top-left',
-  TOP_CENTER: 'top-center',
-  TOP_RIGHT: 'top-right'
-};
-exports.default = _default;
-},{}],"../node_modules/ol/Overlay.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _MapEventType = _interopRequireDefault(require("./MapEventType.js"));
-
-var _Object = _interopRequireWildcard(require("./Object.js"));
-
-var _OverlayPositioning = _interopRequireDefault(require("./OverlayPositioning.js"));
-
-var _css = require("./css.js");
-
-var _dom = require("./dom.js");
-
-var _events = require("./events.js");
-
-var _extent = require("./extent.js");
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var __extends = void 0 && (void 0).__extends || function () {
-  var extendStatics = function (d, b) {
-    extendStatics = Object.setPrototypeOf || {
-      __proto__: []
-    } instanceof Array && function (d, b) {
-      d.__proto__ = b;
-    } || function (d, b) {
-      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    };
-
-    return extendStatics(d, b);
-  };
-
-  return function (d, b) {
-    extendStatics(d, b);
-
-    function __() {
-      this.constructor = d;
-    }
-
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-}();
-/**
- * @module ol/Overlay
- */
-
-
-/**
- * @typedef {Object} Options
- * @property {number|string} [id] Set the overlay id. The overlay id can be used
- * with the {@link module:ol/Map~Map#getOverlayById} method.
- * @property {HTMLElement} [element] The overlay element.
- * @property {Array<number>} [offset=[0, 0]] Offsets in pixels used when positioning
- * the overlay. The first element in the
- * array is the horizontal offset. A positive value shifts the overlay right.
- * The second element in the array is the vertical offset. A positive value
- * shifts the overlay down.
- * @property {import("./coordinate.js").Coordinate} [position] The overlay position
- * in map projection.
- * @property {OverlayPositioning} [positioning='top-left'] Defines how
- * the overlay is actually positioned with respect to its `position` property.
- * Possible values are `'bottom-left'`, `'bottom-center'`, `'bottom-right'`,
- * `'center-left'`, `'center-center'`, `'center-right'`, `'top-left'`,
- * `'top-center'`, and `'top-right'`.
- * @property {boolean} [stopEvent=true] Whether event propagation to the map
- * viewport should be stopped. If `true` the overlay is placed in the same
- * container as that of the controls (CSS class name
- * `ol-overlaycontainer-stopevent`); if `false` it is placed in the container
- * with CSS class name specified by the `className` property.
- * @property {boolean} [insertFirst=true] Whether the overlay is inserted first
- * in the overlay container, or appended. If the overlay is placed in the same
- * container as that of the controls (see the `stopEvent` option) you will
- * probably set `insertFirst` to `true` so the overlay is displayed below the
- * controls.
- * @property {boolean} [autoPan=false] If set to `true` the map is panned when
- * calling `setPosition`, so that the overlay is entirely visible in the current
- * viewport.
- * @property {PanOptions} [autoPanAnimation] The
- * animation options used to pan the overlay into view. This animation is only
- * used when `autoPan` is enabled. A `duration` and `easing` may be provided to
- * customize the animation.
- * @property {number} [autoPanMargin=20] The margin (in pixels) between the
- * overlay and the borders of the map when autopanning.
- * @property {string} [className='ol-overlay-container ol-selectable'] CSS class
- * name.
- */
-
-/**
- * @typedef {Object} PanOptions
- * @property {number} [duration=1000] The duration of the animation in
- * milliseconds.
- * @property {function(number):number} [easing] The easing function to use. Can
- * be one from {@link module:ol/easing} or a custom function.
- * Default is {@link module:ol/easing~inAndOut}.
- */
-
-/**
- * @enum {string}
- * @protected
- */
-var Property = {
-  ELEMENT: 'element',
-  MAP: 'map',
-  OFFSET: 'offset',
-  POSITION: 'position',
-  POSITIONING: 'positioning'
-};
-/**
- * @classdesc
- * An element to be displayed over the map and attached to a single map
- * location.  Like {@link module:ol/control/Control~Control}, Overlays are
- * visible widgets. Unlike Controls, they are not in a fixed position on the
- * screen, but are tied to a geographical coordinate, so panning the map will
- * move an Overlay but not a Control.
- *
- * Example:
- *
- *     import Overlay from 'ol/Overlay';
- *
- *     var popup = new Overlay({
- *       element: document.getElementById('popup')
- *     });
- *     popup.setPosition(coordinate);
- *     map.addOverlay(popup);
- *
- * @api
- */
-
-var Overlay =
-/** @class */
-function (_super) {
-  __extends(Overlay, _super);
-  /**
-   * @param {Options} options Overlay options.
-   */
-
-
-  function Overlay(options) {
-    var _this = _super.call(this) || this;
-    /**
-     * @protected
-     * @type {Options}
-     */
-
-
-    _this.options = options;
-    /**
-     * @protected
-     * @type {number|string|undefined}
-     */
-
-    _this.id = options.id;
-    /**
-     * @protected
-     * @type {boolean}
-     */
-
-    _this.insertFirst = options.insertFirst !== undefined ? options.insertFirst : true;
-    /**
-     * @protected
-     * @type {boolean}
-     */
-
-    _this.stopEvent = options.stopEvent !== undefined ? options.stopEvent : true;
-    /**
-     * @protected
-     * @type {HTMLElement}
-     */
-
-    _this.element = document.createElement('div');
-    _this.element.className = options.className !== undefined ? options.className : 'ol-overlay-container ' + _css.CLASS_SELECTABLE;
-    _this.element.style.position = 'absolute';
-    /**
-     * @protected
-     * @type {boolean}
-     */
-
-    _this.autoPan = options.autoPan !== undefined ? options.autoPan : false;
-    /**
-     * @protected
-     * @type {PanOptions}
-     */
-
-    _this.autoPanAnimation = options.autoPanAnimation ||
-    /** @type {PanOptions} */
-    {};
-    /**
-     * @protected
-     * @type {number}
-     */
-
-    _this.autoPanMargin = options.autoPanMargin !== undefined ? options.autoPanMargin : 20;
-    /**
-     * @protected
-     * @type {{bottom_: string,
-     *         left_: string,
-     *         right_: string,
-     *         top_: string,
-     *         visible: boolean}}
-     */
-
-    _this.rendered = {
-      bottom_: '',
-      left_: '',
-      right_: '',
-      top_: '',
-      visible: true
-    };
-    /**
-     * @protected
-     * @type {?import("./events.js").EventsKey}
-     */
-
-    _this.mapPostrenderListenerKey = null;
-    (0, _events.listen)(_this, (0, _Object.getChangeEventType)(Property.ELEMENT), _this.handleElementChanged, _this);
-    (0, _events.listen)(_this, (0, _Object.getChangeEventType)(Property.MAP), _this.handleMapChanged, _this);
-    (0, _events.listen)(_this, (0, _Object.getChangeEventType)(Property.OFFSET), _this.handleOffsetChanged, _this);
-    (0, _events.listen)(_this, (0, _Object.getChangeEventType)(Property.POSITION), _this.handlePositionChanged, _this);
-    (0, _events.listen)(_this, (0, _Object.getChangeEventType)(Property.POSITIONING), _this.handlePositioningChanged, _this);
-
-    if (options.element !== undefined) {
-      _this.setElement(options.element);
-    }
-
-    _this.setOffset(options.offset !== undefined ? options.offset : [0, 0]);
-
-    _this.setPositioning(options.positioning !== undefined ?
-    /** @type {OverlayPositioning} */
-    options.positioning : _OverlayPositioning.default.TOP_LEFT);
-
-    if (options.position !== undefined) {
-      _this.setPosition(options.position);
-    }
-
-    return _this;
-  }
-  /**
-   * Get the DOM element of this overlay.
-   * @return {HTMLElement|undefined} The Element containing the overlay.
-   * @observable
-   * @api
-   */
-
-
-  Overlay.prototype.getElement = function () {
-    return (
-      /** @type {HTMLElement|undefined} */
-      this.get(Property.ELEMENT)
-    );
-  };
-  /**
-   * Get the overlay identifier which is set on constructor.
-   * @return {number|string|undefined} Id.
-   * @api
-   */
-
-
-  Overlay.prototype.getId = function () {
-    return this.id;
-  };
-  /**
-   * Get the map associated with this overlay.
-   * @return {import("./PluggableMap.js").default|undefined} The map that the
-   * overlay is part of.
-   * @observable
-   * @api
-   */
-
-
-  Overlay.prototype.getMap = function () {
-    return (
-      /** @type {import("./PluggableMap.js").default|undefined} */
-      this.get(Property.MAP)
-    );
-  };
-  /**
-   * Get the offset of this overlay.
-   * @return {Array<number>} The offset.
-   * @observable
-   * @api
-   */
-
-
-  Overlay.prototype.getOffset = function () {
-    return (
-      /** @type {Array<number>} */
-      this.get(Property.OFFSET)
-    );
-  };
-  /**
-   * Get the current position of this overlay.
-   * @return {import("./coordinate.js").Coordinate|undefined} The spatial point that the overlay is
-   *     anchored at.
-   * @observable
-   * @api
-   */
-
-
-  Overlay.prototype.getPosition = function () {
-    return (
-      /** @type {import("./coordinate.js").Coordinate|undefined} */
-      this.get(Property.POSITION)
-    );
-  };
-  /**
-   * Get the current positioning of this overlay.
-   * @return {OverlayPositioning} How the overlay is positioned
-   *     relative to its point on the map.
-   * @observable
-   * @api
-   */
-
-
-  Overlay.prototype.getPositioning = function () {
-    return (
-      /** @type {OverlayPositioning} */
-      this.get(Property.POSITIONING)
-    );
-  };
-  /**
-   * @protected
-   */
-
-
-  Overlay.prototype.handleElementChanged = function () {
-    (0, _dom.removeChildren)(this.element);
-    var element = this.getElement();
-
-    if (element) {
-      this.element.appendChild(element);
-    }
-  };
-  /**
-   * @protected
-   */
-
-
-  Overlay.prototype.handleMapChanged = function () {
-    if (this.mapPostrenderListenerKey) {
-      (0, _dom.removeNode)(this.element);
-      (0, _events.unlistenByKey)(this.mapPostrenderListenerKey);
-      this.mapPostrenderListenerKey = null;
-    }
-
-    var map = this.getMap();
-
-    if (map) {
-      this.mapPostrenderListenerKey = (0, _events.listen)(map, _MapEventType.default.POSTRENDER, this.render, this);
-      this.updatePixelPosition();
-      var container = this.stopEvent ? map.getOverlayContainerStopEvent() : map.getOverlayContainer();
-
-      if (this.insertFirst) {
-        container.insertBefore(this.element, container.childNodes[0] || null);
-      } else {
-        container.appendChild(this.element);
-      }
-    }
-  };
-  /**
-   * @protected
-   */
-
-
-  Overlay.prototype.render = function () {
-    this.updatePixelPosition();
-  };
-  /**
-   * @protected
-   */
-
-
-  Overlay.prototype.handleOffsetChanged = function () {
-    this.updatePixelPosition();
-  };
-  /**
-   * @protected
-   */
-
-
-  Overlay.prototype.handlePositionChanged = function () {
-    this.updatePixelPosition();
-
-    if (this.get(Property.POSITION) && this.autoPan) {
-      this.panIntoView();
-    }
-  };
-  /**
-   * @protected
-   */
-
-
-  Overlay.prototype.handlePositioningChanged = function () {
-    this.updatePixelPosition();
-  };
-  /**
-   * Set the DOM element to be associated with this overlay.
-   * @param {HTMLElement|undefined} element The Element containing the overlay.
-   * @observable
-   * @api
-   */
-
-
-  Overlay.prototype.setElement = function (element) {
-    this.set(Property.ELEMENT, element);
-  };
-  /**
-   * Set the map to be associated with this overlay.
-   * @param {import("./PluggableMap.js").default|undefined} map The map that the
-   * overlay is part of.
-   * @observable
-   * @api
-   */
-
-
-  Overlay.prototype.setMap = function (map) {
-    this.set(Property.MAP, map);
-  };
-  /**
-   * Set the offset for this overlay.
-   * @param {Array<number>} offset Offset.
-   * @observable
-   * @api
-   */
-
-
-  Overlay.prototype.setOffset = function (offset) {
-    this.set(Property.OFFSET, offset);
-  };
-  /**
-   * Set the position for this overlay. If the position is `undefined` the
-   * overlay is hidden.
-   * @param {import("./coordinate.js").Coordinate|undefined} position The spatial point that the overlay
-   *     is anchored at.
-   * @observable
-   * @api
-   */
-
-
-  Overlay.prototype.setPosition = function (position) {
-    this.set(Property.POSITION, position);
-  };
-  /**
-   * Pan the map so that the overlay is entirely visible in the current viewport
-   * (if necessary).
-   * @protected
-   */
-
-
-  Overlay.prototype.panIntoView = function () {
-    var map = this.getMap();
-
-    if (!map || !map.getTargetElement()) {
-      return;
-    }
-
-    var mapRect = this.getRect(map.getTargetElement(), map.getSize());
-    var element = this.getElement();
-    var overlayRect = this.getRect(element, [(0, _dom.outerWidth)(element), (0, _dom.outerHeight)(element)]);
-    var margin = this.autoPanMargin;
-
-    if (!(0, _extent.containsExtent)(mapRect, overlayRect)) {
-      // the overlay is not completely inside the viewport, so pan the map
-      var offsetLeft = overlayRect[0] - mapRect[0];
-      var offsetRight = mapRect[2] - overlayRect[2];
-      var offsetTop = overlayRect[1] - mapRect[1];
-      var offsetBottom = mapRect[3] - overlayRect[3];
-      var delta = [0, 0];
-
-      if (offsetLeft < 0) {
-        // move map to the left
-        delta[0] = offsetLeft - margin;
-      } else if (offsetRight < 0) {
-        // move map to the right
-        delta[0] = Math.abs(offsetRight) + margin;
-      }
-
-      if (offsetTop < 0) {
-        // move map up
-        delta[1] = offsetTop - margin;
-      } else if (offsetBottom < 0) {
-        // move map down
-        delta[1] = Math.abs(offsetBottom) + margin;
-      }
-
-      if (delta[0] !== 0 || delta[1] !== 0) {
-        var center =
-        /** @type {import("./coordinate.js").Coordinate} */
-        map.getView().getCenter();
-        var centerPx = map.getPixelFromCoordinate(center);
-        var newCenterPx = [centerPx[0] + delta[0], centerPx[1] + delta[1]];
-        map.getView().animate({
-          center: map.getCoordinateFromPixel(newCenterPx),
-          duration: this.autoPanAnimation.duration,
-          easing: this.autoPanAnimation.easing
-        });
-      }
-    }
-  };
-  /**
-   * Get the extent of an element relative to the document
-   * @param {HTMLElement|undefined} element The element.
-   * @param {import("./size.js").Size|undefined} size The size of the element.
-   * @return {import("./extent.js").Extent} The extent.
-   * @protected
-   */
-
-
-  Overlay.prototype.getRect = function (element, size) {
-    var box = element.getBoundingClientRect();
-    var offsetX = box.left + window.pageXOffset;
-    var offsetY = box.top + window.pageYOffset;
-    return [offsetX, offsetY, offsetX + size[0], offsetY + size[1]];
-  };
-  /**
-   * Set the positioning for this overlay.
-   * @param {OverlayPositioning} positioning how the overlay is
-   *     positioned relative to its point on the map.
-   * @observable
-   * @api
-   */
-
-
-  Overlay.prototype.setPositioning = function (positioning) {
-    this.set(Property.POSITIONING, positioning);
-  };
-  /**
-   * Modify the visibility of the element.
-   * @param {boolean} visible Element visibility.
-   * @protected
-   */
-
-
-  Overlay.prototype.setVisible = function (visible) {
-    if (this.rendered.visible !== visible) {
-      this.element.style.display = visible ? '' : 'none';
-      this.rendered.visible = visible;
-    }
-  };
-  /**
-   * Update pixel position.
-   * @protected
-   */
-
-
-  Overlay.prototype.updatePixelPosition = function () {
-    var map = this.getMap();
-    var position = this.getPosition();
-
-    if (!map || !map.isRendered() || !position) {
-      this.setVisible(false);
-      return;
-    }
-
-    var pixel = map.getPixelFromCoordinate(position);
-    var mapSize = map.getSize();
-    this.updateRenderedPosition(pixel, mapSize);
-  };
-  /**
-   * @param {import("./pixel.js").Pixel} pixel The pixel location.
-   * @param {import("./size.js").Size|undefined} mapSize The map size.
-   * @protected
-   */
-
-
-  Overlay.prototype.updateRenderedPosition = function (pixel, mapSize) {
-    var style = this.element.style;
-    var offset = this.getOffset();
-    var positioning = this.getPositioning();
-    this.setVisible(true);
-    var offsetX = offset[0];
-    var offsetY = offset[1];
-
-    if (positioning == _OverlayPositioning.default.BOTTOM_RIGHT || positioning == _OverlayPositioning.default.CENTER_RIGHT || positioning == _OverlayPositioning.default.TOP_RIGHT) {
-      if (this.rendered.left_ !== '') {
-        this.rendered.left_ = style.left = '';
-      }
-
-      var right = Math.round(mapSize[0] - pixel[0] - offsetX) + 'px';
-
-      if (this.rendered.right_ != right) {
-        this.rendered.right_ = style.right = right;
-      }
-    } else {
-      if (this.rendered.right_ !== '') {
-        this.rendered.right_ = style.right = '';
-      }
-
-      if (positioning == _OverlayPositioning.default.BOTTOM_CENTER || positioning == _OverlayPositioning.default.CENTER_CENTER || positioning == _OverlayPositioning.default.TOP_CENTER) {
-        offsetX -= this.element.offsetWidth / 2;
-      }
-
-      var left = Math.round(pixel[0] + offsetX) + 'px';
-
-      if (this.rendered.left_ != left) {
-        this.rendered.left_ = style.left = left;
-      }
-    }
-
-    if (positioning == _OverlayPositioning.default.BOTTOM_LEFT || positioning == _OverlayPositioning.default.BOTTOM_CENTER || positioning == _OverlayPositioning.default.BOTTOM_RIGHT) {
-      if (this.rendered.top_ !== '') {
-        this.rendered.top_ = style.top = '';
-      }
-
-      var bottom = Math.round(mapSize[1] - pixel[1] - offsetY) + 'px';
-
-      if (this.rendered.bottom_ != bottom) {
-        this.rendered.bottom_ = style.bottom = bottom;
-      }
-    } else {
-      if (this.rendered.bottom_ !== '') {
-        this.rendered.bottom_ = style.bottom = '';
-      }
-
-      if (positioning == _OverlayPositioning.default.CENTER_LEFT || positioning == _OverlayPositioning.default.CENTER_CENTER || positioning == _OverlayPositioning.default.CENTER_RIGHT) {
-        offsetY -= this.element.offsetHeight / 2;
-      }
-
-      var top_1 = Math.round(pixel[1] + offsetY) + 'px';
-
-      if (this.rendered.top_ != top_1) {
-        this.rendered.top_ = style.top = top_1;
-      }
-    }
-  };
-  /**
-   * returns the options this Overlay has been created with
-   * @return {Options} overlay options
-   */
-
-
-  Overlay.prototype.getOptions = function () {
-    return this.options;
-  };
-
-  return Overlay;
-}(_Object.default);
-
-var _default = Overlay;
-exports.default = _default;
-},{"./MapEventType.js":"../node_modules/ol/MapEventType.js","./Object.js":"../node_modules/ol/Object.js","./OverlayPositioning.js":"../node_modules/ol/OverlayPositioning.js","./css.js":"../node_modules/ol/css.js","./dom.js":"../node_modules/ol/dom.js","./events.js":"../node_modules/ol/events.js","./extent.js":"../node_modules/ol/extent.js"}],"../node_modules/ol/tilecoord.js":[function(require,module,exports) {
+},{"./PluggableMap.js":"../node_modules/ol/PluggableMap.js","./control.js":"../node_modules/ol/control.js","./interaction.js":"../node_modules/ol/interaction.js","./obj.js":"../node_modules/ol/obj.js","./renderer/Composite.js":"../node_modules/ol/renderer/Composite.js"}],"../node_modules/ol/tilecoord.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -49246,6 +51877,7 @@ function () {
   /**
    * Get the extent for this tile grid, if it was configured.
    * @return {import("../extent.js").Extent} Extent.
+   * @api
    */
 
 
@@ -49886,7 +52518,7 @@ function (_super) {
         (0, _size.toSize)(tileGrid.getTileSize(tileGrid.getMinZoom()), tileSize);
       }
 
-      var canUseScreen = 'screen' in self;
+      var canUseScreen = typeof screen !== 'undefined';
       var width = canUseScreen ? screen.availWidth || screen.width : 1920;
       var height = canUseScreen ? screen.availHeight || screen.height : 1080;
       cacheSize = 4 * Math.ceil(width / tileSize[0]) * Math.ceil(height / tileSize[1]);
@@ -51856,9 +54488,7 @@ function (_super) {
      */
 
     _this.geometryFunction = options.geometryFunction || function (feature) {
-      var geometry =
-      /** @type {Point} */
-      feature.getGeometry();
+      var geometry = feature.getGeometry();
       (0, _asserts.assert)(geometry.getType() == _GeometryType.default.POINT, 10); // The default `geometryFunction` can only handle `Point` geometries
 
       return geometry;
@@ -52007,7 +54637,1127 @@ function (_super) {
 
 var _default = Cluster;
 exports.default = _default;
-},{"../util.js":"../node_modules/ol/util.js","../asserts.js":"../node_modules/ol/asserts.js","../Feature.js":"../node_modules/ol/Feature.js","../geom/GeometryType.js":"../node_modules/ol/geom/GeometryType.js","../coordinate.js":"../node_modules/ol/coordinate.js","../events.js":"../node_modules/ol/events.js","../events/EventType.js":"../node_modules/ol/events/EventType.js","../extent.js":"../node_modules/ol/extent.js","../geom/Point.js":"../node_modules/ol/geom/Point.js","./Vector.js":"../node_modules/ol/source/Vector.js"}],"../node_modules/ol/reproj/Image.js":[function(require,module,exports) {
+},{"../util.js":"../node_modules/ol/util.js","../asserts.js":"../node_modules/ol/asserts.js","../Feature.js":"../node_modules/ol/Feature.js","../geom/GeometryType.js":"../node_modules/ol/geom/GeometryType.js","../coordinate.js":"../node_modules/ol/coordinate.js","../events.js":"../node_modules/ol/events.js","../events/EventType.js":"../node_modules/ol/events/EventType.js","../extent.js":"../node_modules/ol/extent.js","../geom/Point.js":"../node_modules/ol/geom/Point.js","./Vector.js":"../node_modules/ol/source/Vector.js"}],"../node_modules/ol/source/Zoomify.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = exports.CustomTile = void 0;
+
+var _common = require("../tilegrid/common.js");
+
+var _ImageTile = _interopRequireDefault(require("../ImageTile.js"));
+
+var _TileState = _interopRequireDefault(require("../TileState.js"));
+
+var _tileurlfunction = require("../tileurlfunction.js");
+
+var _asserts = require("../asserts.js");
+
+var _dom = require("../dom.js");
+
+var _extent = require("../extent.js");
+
+var _size = require("../size.js");
+
+var _TileImage = _interopRequireDefault(require("./TileImage.js"));
+
+var _TileGrid = _interopRequireDefault(require("../tilegrid/TileGrid.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+/**
+ * @module ol/source/Zoomify
+ */
+
+
+/**
+ * @enum {string}
+ */
+var TierSizeCalculation = {
+  DEFAULT: 'default',
+  TRUNCATED: 'truncated'
+};
+
+var CustomTile =
+/** @class */
+function (_super) {
+  __extends(CustomTile, _super);
+  /**
+   * @param {number} tilePixelRatio Tile pixel ratio to display the tile
+   * @param {import("../tilegrid/TileGrid.js").default} tileGrid TileGrid that the tile belongs to.
+   * @param {import("../tilecoord.js").TileCoord} tileCoord Tile coordinate.
+   * @param {TileState} state State.
+   * @param {string} src Image source URI.
+   * @param {?string} crossOrigin Cross origin.
+   * @param {import("../Tile.js").LoadFunction} tileLoadFunction Tile load function.
+   * @param {import("../Tile.js").Options=} opt_options Tile options.
+   */
+
+
+  function CustomTile(tilePixelRatio, tileGrid, tileCoord, state, src, crossOrigin, tileLoadFunction, opt_options) {
+    var _this = _super.call(this, tileCoord, state, src, crossOrigin, tileLoadFunction, opt_options) || this;
+    /**
+     * @private
+     * @type {HTMLCanvasElement|HTMLImageElement|HTMLVideoElement}
+     */
+
+
+    _this.zoomifyImage_ = null;
+    /**
+     * @private
+     * @type {import("../size.js").Size}
+     */
+
+    _this.tileSize_ = (0, _size.toSize)(tileGrid.getTileSize(tileCoord[0])).map(function (x) {
+      return x * tilePixelRatio;
+    });
+    return _this;
+  }
+  /**
+   * @inheritDoc
+   */
+
+
+  CustomTile.prototype.getImage = function () {
+    if (this.zoomifyImage_) {
+      return this.zoomifyImage_;
+    }
+
+    var image = _super.prototype.getImage.call(this);
+
+    if (this.state == _TileState.default.LOADED) {
+      var tileSize = this.tileSize_;
+
+      if (image.width == tileSize[0] && image.height == tileSize[1]) {
+        this.zoomifyImage_ = image;
+        return image;
+      } else {
+        var context = (0, _dom.createCanvasContext2D)(tileSize[0], tileSize[1]);
+        context.drawImage(image, 0, 0);
+        this.zoomifyImage_ = context.canvas;
+        return context.canvas;
+      }
+    } else {
+      return image;
+    }
+  };
+
+  return CustomTile;
+}(_ImageTile.default);
+
+exports.CustomTile = CustomTile;
+
+/**
+ * @typedef {Object} Options
+ * @property {import("./Source.js").AttributionLike} [attributions] Attributions.
+ * @property {number} [cacheSize] Tile cache size. The default depends on the screen size. Will increase if too small.
+ * @property {null|string} [crossOrigin] The `crossOrigin` attribute for loaded images.  Note that
+ * you must provide a `crossOrigin` value  you want to access pixel data with the Canvas renderer.
+ * See https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_enabled_image for more detail.
+ * @property {import("../proj.js").ProjectionLike} [projection] Projection.
+ * @property {number} [tilePixelRatio] The pixel ratio used by the tile service. For example, if the tile service advertizes 256px by 256px tiles but actually sends 512px by 512px images (for retina/hidpi devices) then `tilePixelRatio` should be set to `2`
+ * @property {number} [reprojectionErrorThreshold=0.5] Maximum allowed reprojection error (in pixels).
+ * Higher values can increase reprojection performance, but decrease precision.
+ * @property {string} [url] URL template or base URL of the Zoomify service.
+ * A base URL is the fixed part
+ * of the URL, excluding the tile group, z, x, and y folder structure, e.g.
+ * `http://my.zoomify.info/IMAGE.TIF/`. A URL template must include
+ * `{TileGroup}`, `{x}`, `{y}`, and `{z}` placeholders, e.g.
+ * `http://my.zoomify.info/IMAGE.TIF/{TileGroup}/{z}-{x}-{y}.jpg`.
+ * Internet Imaging Protocol (IIP) with JTL extension can be also used with
+ * `{tileIndex}` and `{z}` placeholders, e.g.
+ * `http://my.zoomify.info?FIF=IMAGE.TIF&JTL={z},{tileIndex}`.
+ * A `{?-?}` template pattern, for example `subdomain{a-f}.domain.com`, may be
+ * used instead of defining each one separately in the `urls` option.
+ * @property {string} [tierSizeCalculation] Tier size calculation method: `default` or `truncated`.
+ * @property {import("../size.js").Size} [size] Size of the image.
+ * @property {import("../extent.js").Extent} [extent] Extent for the TileGrid that is created.
+ * Default sets the TileGrid in the
+ * fourth quadrant, meaning extent is `[0, -height, width, 0]`. To change the
+ * extent to the first quadrant (the default for OpenLayers 2) set the extent
+ * as `[0, 0, width, height]`.
+ * @property {number} [transition] Duration of the opacity transition for rendering.
+ * To disable the opacity transition, pass `transition: 0`.
+ * @property {number} [tileSize=256] Tile size. Same tile size is used for all zoom levels.
+ * @property {number} [zDirection] Indicate which resolution should be used
+ * by a renderer if the views resolution does not match any resolution of the tile source.
+ * If 0, the nearest resolution will be used. If 1, the nearest lower resolution
+ * will be used. If -1, the nearest higher resolution will be used.
+ */
+
+/**
+ * @classdesc
+ * Layer source for tile data in Zoomify format (both Zoomify and Internet
+ * Imaging Protocol are supported).
+ * @api
+ */
+var Zoomify =
+/** @class */
+function (_super) {
+  __extends(Zoomify, _super);
+  /**
+   * @param {Options=} opt_options Options.
+   */
+
+
+  function Zoomify(opt_options) {
+    var _this = this;
+
+    var options = opt_options || {};
+    var size = options.size;
+    var tierSizeCalculation = options.tierSizeCalculation !== undefined ? options.tierSizeCalculation : TierSizeCalculation.DEFAULT;
+    var imageWidth = size[0];
+    var imageHeight = size[1];
+    var extent = options.extent || [0, -size[1], size[0], 0];
+    var tierSizeInTiles = [];
+    var tileSize = options.tileSize || _common.DEFAULT_TILE_SIZE;
+    var tilePixelRatio = options.tilePixelRatio || 1;
+    var tileSizeForTierSizeCalculation = tileSize;
+
+    switch (tierSizeCalculation) {
+      case TierSizeCalculation.DEFAULT:
+        while (imageWidth > tileSizeForTierSizeCalculation || imageHeight > tileSizeForTierSizeCalculation) {
+          tierSizeInTiles.push([Math.ceil(imageWidth / tileSizeForTierSizeCalculation), Math.ceil(imageHeight / tileSizeForTierSizeCalculation)]);
+          tileSizeForTierSizeCalculation += tileSizeForTierSizeCalculation;
+        }
+
+        break;
+
+      case TierSizeCalculation.TRUNCATED:
+        var width = imageWidth;
+        var height = imageHeight;
+
+        while (width > tileSizeForTierSizeCalculation || height > tileSizeForTierSizeCalculation) {
+          tierSizeInTiles.push([Math.ceil(width / tileSizeForTierSizeCalculation), Math.ceil(height / tileSizeForTierSizeCalculation)]);
+          width >>= 1;
+          height >>= 1;
+        }
+
+        break;
+
+      default:
+        (0, _asserts.assert)(false, 53); // Unknown `tierSizeCalculation` configured
+
+        break;
+    }
+
+    tierSizeInTiles.push([1, 1]);
+    tierSizeInTiles.reverse();
+    var resolutions = [1];
+    var tileCountUpToTier = [0];
+
+    for (var i = 1, ii = tierSizeInTiles.length; i < ii; i++) {
+      resolutions.push(1 << i);
+      tileCountUpToTier.push(tierSizeInTiles[i - 1][0] * tierSizeInTiles[i - 1][1] + tileCountUpToTier[i - 1]);
+    }
+
+    resolutions.reverse();
+    var tileGrid = new _TileGrid.default({
+      tileSize: tileSize,
+      extent: extent,
+      origin: (0, _extent.getTopLeft)(extent),
+      resolutions: resolutions
+    });
+    var url = options.url;
+
+    if (url && url.indexOf('{TileGroup}') == -1 && url.indexOf('{tileIndex}') == -1) {
+      url += '{TileGroup}/{z}-{x}-{y}.jpg';
+    }
+
+    var urls = (0, _tileurlfunction.expandUrl)(url);
+    /**
+     * @param {string} template Template.
+     * @return {import("../Tile.js").UrlFunction} Tile URL function.
+     */
+
+    function createFromTemplate(template) {
+      return (
+        /**
+         * @param {import("../tilecoord.js").TileCoord} tileCoord Tile Coordinate.
+         * @param {number} pixelRatio Pixel ratio.
+         * @param {import("../proj/Projection.js").default} projection Projection.
+         * @return {string|undefined} Tile URL.
+         */
+        function (tileCoord, pixelRatio, projection) {
+          if (!tileCoord) {
+            return undefined;
+          } else {
+            var tileCoordZ = tileCoord[0];
+            var tileCoordX = tileCoord[1];
+            var tileCoordY = tileCoord[2];
+            var tileIndex = tileCoordX + tileCoordY * tierSizeInTiles[tileCoordZ][0];
+            var tileSize_1 = tileGrid.getTileSize(tileCoordZ);
+            var tileWidth = Array.isArray(tileSize_1) ? tileSize_1[0] : tileSize_1;
+            var tileGroup = (tileIndex + tileCountUpToTier[tileCoordZ]) / tileWidth | 0;
+            var localContext_1 = {
+              'z': tileCoordZ,
+              'x': tileCoordX,
+              'y': tileCoordY,
+              'tileIndex': tileIndex,
+              'TileGroup': 'TileGroup' + tileGroup
+            };
+            return template.replace(/\{(\w+?)\}/g, function (m, p) {
+              return localContext_1[p];
+            });
+          }
+        }
+      );
+    }
+
+    var tileUrlFunction = (0, _tileurlfunction.createFromTileUrlFunctions)(urls.map(createFromTemplate));
+    var ZoomifyTileClass = CustomTile.bind(null, tilePixelRatio, tileGrid);
+    _this = _super.call(this, {
+      attributions: options.attributions,
+      cacheSize: options.cacheSize,
+      crossOrigin: options.crossOrigin,
+      projection: options.projection,
+      tilePixelRatio: tilePixelRatio,
+      reprojectionErrorThreshold: options.reprojectionErrorThreshold,
+      tileClass: ZoomifyTileClass,
+      tileGrid: tileGrid,
+      tileUrlFunction: tileUrlFunction,
+      transition: options.transition
+    }) || this;
+    /**
+     * @inheritDoc
+     */
+
+    _this.zDirection = options.zDirection;
+    return _this;
+  }
+
+  return Zoomify;
+}(_TileImage.default);
+
+var _default = Zoomify;
+exports.default = _default;
+},{"../tilegrid/common.js":"../node_modules/ol/tilegrid/common.js","../ImageTile.js":"../node_modules/ol/ImageTile.js","../TileState.js":"../node_modules/ol/TileState.js","../tileurlfunction.js":"../node_modules/ol/tileurlfunction.js","../asserts.js":"../node_modules/ol/asserts.js","../dom.js":"../node_modules/ol/dom.js","../extent.js":"../node_modules/ol/extent.js","../size.js":"../node_modules/ol/size.js","./TileImage.js":"../node_modules/ol/source/TileImage.js","../tilegrid/TileGrid.js":"../node_modules/ol/tilegrid/TileGrid.js"}],"../node_modules/ol/format/IIIFInfo.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Versions = exports.default = void 0;
+
+var _asserts = require("../asserts.js");
+
+/**
+ * @module ol/format/IIIFInfo
+ */
+
+/**
+ * @typedef {Object} PreferredOptions
+ * @property {string} [format] Preferred image format. Will be used if the image information
+ * indicates support for that format.
+ * @property {string} [quality] IIIF image qualitiy.  Will be used if the image information
+ * indicates support for that quality.
+ */
+
+/**
+ * @typedef {Object} SupportedFeatures
+ * @property {Array<string>} [supports] Supported IIIF image size and region
+ * calculation features.
+ * @property {Array<string>} [formats] Supported image formats.
+ * @property {Array<string>} [qualities] Supported IIIF image qualities.
+ */
+
+/**
+ * @typedef {Object} ImageInformationResponse1_0
+ * @property {string} identifier
+ * @property {number} width
+ * @property {number} height
+ * @property {Array<number>} [scale_factors] Resolution scaling factors.
+ * @property {number} [tile_width]
+ * @property {number} [tile_height]
+ * @property {Array<string>} [formats] Supported image formats.
+ * @property {string} [profile] Compliance level URI.
+ */
+
+/**
+ * @typedef {Object} ImageInformationResponse1_1
+ * @property {string} "@id" The base URI of the image service.
+ * @property {string} "@context" JSON-LD context URI.
+ * @property {number} width Full image width.
+ * @property {number} height Full image height.
+ * @property {Array<number>} [scale_factors] Resolution scaling factors.
+ * @property {number} [tile_width]
+ * @property {number} [tile_height]
+ * @property {Array<string>} [formats] Supported image formats.
+ * @property {string} [profile] Compliance level URI.
+ */
+
+/**
+ * @typedef {Object} TileInfo
+ * @property {Array<number>} scaleFactors Supported resolution scaling factors.
+ * @property {number} width Tile width in pixels.
+ * @property {number} [height] Tile height in pixels. Same as tile width if height is
+ * not given.
+ */
+
+/**
+ * @typedef {Object} IiifProfile
+ * @property {Array<string>} [formats] Supported image formats for the image service.
+ * @property {Array<string>} [qualities] Supported IIIF image qualities.
+ * @property {Array<string>} [supports] Supported features.
+ * @property {number} [maxArea] Maximum area (pixels) available for this image service.
+ * @property {number} [maxHeight] Maximum height.
+ * @property {number} [maxWidth] Maximum width.
+ */
+
+/**
+ * @typedef {Object} ImageInformationResponse2
+ * @property {string} "@id" The base URI of the image service.
+ * @property {string} "@context" JSON-LD context IRI
+ * @property {number} width Full image width.
+ * @property {number} height Full image height.
+ * @property {Array<string|IiifProfile>} profile Additional informations about the image
+ * service's capabilities.
+ * @property {Array<Object<string, number>>} [sizes] Supported full image dimensions.
+ * @property {Array<TileInfo>} [tiles] Supported tile sizes and resolution scaling factors.
+ */
+
+/**
+ * @typedef {Object} ImageInformationResponse3
+ * @property {string} id The base URI of the image service.
+ * @property {string} "@context" JSON-LD context IRI
+ * @property {number} width Full image width.
+ * @property {number} height Full image height.
+ * @property {string} profile Compliance level, one of 'level0', 'level1' or 'level2'
+ * @property {Array<Object<string, number>>} [sizes] Supported full image dimensions.
+ * @property {Array<TileInfo>} [tiles] Supported tile sizes and resolution scaling factors.
+ * @property {number} [maxArea] Maximum area (pixels) available for this image service.
+ * @property {number} [maxHeight] Maximum height.
+ * @property {number} [maxWidth] Maximum width.
+ * @property {Array<string>} [extraQualities] IIIF image qualities supported by the
+ * image service additional to the ones indicated by the compliance level.
+ * @property {Array<string>} [extraFormats] Image formats supported by the
+ * image service additional to the ones indicated by the compliance level.
+ * @property {Array<string>} [extraFeatures] Additional supported features whose support
+ * is not indicated by the compliance level.
+ */
+
+/**
+ * Enum representing the major IIIF Image API versions
+ * @enum {string}
+ */
+var Versions = {
+  VERSION1: 'version1',
+  VERSION2: 'version2',
+  VERSION3: 'version3'
+};
+/**
+ * Supported image formats, qualities and supported region / size calculation features
+ * for different image API versions and compliance levels
+ * @const
+ * @type {Object<string, Object<string, SupportedFeatures>>}
+ */
+
+exports.Versions = Versions;
+var IIIF_PROFILE_VALUES = {};
+IIIF_PROFILE_VALUES[Versions.VERSION1] = {
+  'level0': {
+    supports: [],
+    formats: [],
+    qualities: ['native']
+  },
+  'level1': {
+    supports: ['regionByPx', 'sizeByW', 'sizeByH', 'sizeByPct'],
+    formats: ['jpg'],
+    qualities: ['native']
+  },
+  'level2': {
+    supports: ['regionByPx', 'regionByPct', 'sizeByW', 'sizeByH', 'sizeByPct', 'sizeByConfinedWh', 'sizeByWh'],
+    formats: ['jpg', 'png'],
+    qualities: ['native', 'color', 'grey', 'bitonal']
+  }
+};
+IIIF_PROFILE_VALUES[Versions.VERSION2] = {
+  'level0': {
+    supports: [],
+    formats: ['jpg'],
+    qualities: ['default']
+  },
+  'level1': {
+    supports: ['regionByPx', 'sizeByW', 'sizeByH', 'sizeByPct'],
+    formats: ['jpg'],
+    qualities: ['default']
+  },
+  'level2': {
+    supports: ['regionByPx', 'regionByPct', 'sizeByW', 'sizeByH', 'sizeByPct', 'sizeByConfinedWh', 'sizeByDistortedWh', 'sizeByWh'],
+    formats: ['jpg', 'png'],
+    qualities: ['default', 'bitonal']
+  }
+};
+IIIF_PROFILE_VALUES[Versions.VERSION3] = {
+  'level0': {
+    supports: [],
+    formats: ['jpg'],
+    qualities: ['default']
+  },
+  'level1': {
+    supports: ['regionByPx', 'regionSquare', 'sizeByW', 'sizeByH'],
+    formats: ['jpg'],
+    qualities: ['default']
+  },
+  'level2': {
+    supports: ['regionByPx', 'regionSquare', 'regionByPct', 'sizeByW', 'sizeByH', 'sizeByPct', 'sizeByConfinedWh', 'sizeByWh'],
+    formats: ['jpg'],
+    qualities: ['default', 'bitonal']
+  }
+};
+IIIF_PROFILE_VALUES['none'] = {
+  'none': {
+    supports: [],
+    formats: [],
+    qualities: []
+  }
+};
+var COMPLIANCE_VERSION1 = new RegExp('^https?\:\/\/library\.stanford\.edu\/iiif\/image-api\/(1\.1\/)?compliance\.html#level[0-2]$');
+var COMPLIANCE_VERSION2 = new RegExp('^https?\:\/\/iiif\.io\/api\/image\/2\/level[0-2](\.json)?$');
+var COMPLIANCE_VERSION3 = new RegExp('(^https?\:\/\/iiif\.io\/api\/image\/3\/level[0-2](\.json)?$)|(^level[0-2]$)');
+
+function generateVersion1Options(iiifInfo) {
+  var levelProfile = iiifInfo.getComplianceLevelSupportedFeatures(); // Version 1.0 and 1.1 do not require a profile.
+
+  if (levelProfile === undefined) {
+    levelProfile = IIIF_PROFILE_VALUES[Versions.VERSION1]['level0'];
+  }
+
+  return {
+    url: iiifInfo.imageInfo['@id'] === undefined ? undefined : iiifInfo.imageInfo['@id'].replace(/\/?(info.json)?$/g, ''),
+    supports: levelProfile.supports,
+    formats: levelProfile.formats.concat([iiifInfo.imageInfo.formats === undefined ? [] : iiifInfo.imageInfo.formats]),
+    qualities: levelProfile.qualities.concat([iiifInfo.imageInfo.qualities === undefined ? [] : iiifInfo.imageInfo.qualities]),
+    resolutions: iiifInfo.imageInfo.scale_factors,
+    tileSize: iiifInfo.imageInfo.tile_width !== undefined ? iiifInfo.imageInfo.tile_height !== undefined ? [iiifInfo.imageInfo.tile_width, iiifInfo.imageInfo.tile_height] : [iiifInfo.imageInfo.tile_width, iiifInfo.imageInfo.tile_width] : iiifInfo.imageInfo.tile_height != undefined ? [iiifInfo.imageInfo.tile_height, iiifInfo.imageInfo.tile_height] : undefined
+  };
+}
+
+function generateVersion2Options(iiifInfo) {
+  var levelProfile = iiifInfo.getComplianceLevelSupportedFeatures(),
+      additionalProfile = Array.isArray(iiifInfo.imageInfo.profile) && iiifInfo.imageInfo.profile.length > 1,
+      profileSupports = additionalProfile && iiifInfo.imageInfo.profile[1].supports ? iiifInfo.imageInfo.profile[1].supports : [],
+      profileFormats = additionalProfile && iiifInfo.imageInfo.profile[1].formats ? iiifInfo.imageInfo.profile[1].formats : [],
+      profileQualities = additionalProfile && iiifInfo.imageInfo.profile[1].qualities ? iiifInfo.imageInfo.profile[1].qualities : [];
+  return {
+    url: iiifInfo.imageInfo['@id'].replace(/\/?(info.json)?$/g, ''),
+    sizes: iiifInfo.imageInfo.sizes === undefined ? undefined : iiifInfo.imageInfo.sizes.map(function (size) {
+      return [size.width, size.height];
+    }),
+    tileSize: iiifInfo.imageInfo.tiles === undefined ? undefined : [iiifInfo.imageInfo.tiles.map(function (tile) {
+      return tile.width;
+    })[0], iiifInfo.imageInfo.tiles.map(function (tile) {
+      return tile.height === undefined ? tile.width : tile.height;
+    })[0]],
+    resolutions: iiifInfo.imageInfo.tiles === undefined ? undefined : iiifInfo.imageInfo.tiles.map(function (tile) {
+      return tile.scaleFactors;
+    })[0],
+    supports: levelProfile.supports.concat(profileSupports),
+    formats: levelProfile.formats.concat(profileFormats),
+    qualities: levelProfile.qualities.concat(profileQualities)
+  };
+}
+
+function generateVersion3Options(iiifInfo) {
+  var levelProfile = iiifInfo.getComplianceLevelSupportedFeatures();
+  return {
+    url: iiifInfo.imageInfo['id'],
+    sizes: iiifInfo.imageInfo.sizes === undefined ? undefined : iiifInfo.imageInfo.sizes.map(function (size) {
+      return [size.width, size.height];
+    }),
+    tileSize: iiifInfo.imageInfo.tiles === undefined ? undefined : [iiifInfo.imageInfo.tiles.map(function (tile) {
+      return tile.width;
+    })[0], iiifInfo.imageInfo.tiles.map(function (tile) {
+      return tile.height;
+    })[0]],
+    resolutions: iiifInfo.imageInfo.tiles === undefined ? undefined : iiifInfo.imageInfo.tiles.map(function (tile) {
+      return tile.scaleFactors;
+    })[0],
+    supports: iiifInfo.imageInfo.extraFeatures === undefined ? levelProfile.supports : levelProfile.supports.concat(iiifInfo.imageInfo.extraFeatures),
+    formats: iiifInfo.imageInfo.extraFormats === undefined ? levelProfile.formats : levelProfile.formats.concat(iiifInfo.imageInfo.extraFormats),
+    qualities: iiifInfo.imageInfo.extraQualities === undefined ? levelProfile.qualities : levelProfile.supports.concat(iiifInfo.imageInfo.extraQualities),
+    maxWidth: undefined,
+    maxHeight: undefined,
+    maxArea: undefined
+  };
+}
+
+var versionFunctions = {};
+versionFunctions[Versions.VERSION1] = generateVersion1Options;
+versionFunctions[Versions.VERSION2] = generateVersion2Options;
+versionFunctions[Versions.VERSION3] = generateVersion3Options;
+/**
+ * @classdesc
+ * Format for transforming IIIF Image API image information responses into
+ * IIIF tile source ready options
+ *
+ * @api
+ */
+
+var IIIFInfo =
+/** @class */
+function () {
+  /**
+   * @param {string|ImageInformationResponse1_0|ImageInformationResponse1_1|ImageInformationResponse2|ImageInformationResponse3} imageInfo
+   * Deserialized image information JSON response object or JSON response as string
+   */
+  function IIIFInfo(imageInfo) {
+    this.setImageInfo(imageInfo);
+  }
+  /**
+   * @param {string|ImageInformationResponse1_0|ImageInformationResponse1_1|ImageInformationResponse2|ImageInformationResponse3} imageInfo
+   * Deserialized image information JSON response object or JSON response as string
+   * @api
+   */
+
+
+  IIIFInfo.prototype.setImageInfo = function (imageInfo) {
+    if (typeof imageInfo == 'string') {
+      this.imageInfo = JSON.parse(imageInfo);
+    } else {
+      this.imageInfo = imageInfo;
+    }
+  };
+  /**
+   * @returns {Versions} Major IIIF version.
+   * @api
+   */
+
+
+  IIIFInfo.prototype.getImageApiVersion = function () {
+    if (this.imageInfo === undefined) {
+      return;
+    }
+
+    var context = this.imageInfo['@context'] || 'ol-no-context';
+
+    if (typeof context == 'string') {
+      context = [context];
+    }
+
+    for (var i = 0; i < context.length; i++) {
+      switch (context[i]) {
+        case 'http://library.stanford.edu/iiif/image-api/1.1/context.json':
+        case 'http://iiif.io/api/image/1/context.json':
+          return Versions.VERSION1;
+
+        case 'http://iiif.io/api/image/2/context.json':
+          return Versions.VERSION2;
+
+        case 'http://iiif.io/api/image/3/context.json':
+          return Versions.VERSION3;
+
+        case 'ol-no-context':
+          // Image API 1.0 has no '@context'
+          if (this.getComplianceLevelEntryFromProfile(Versions.VERSION1) && this.imageInfo.identifier) {
+            return Versions.VERSION1;
+          }
+
+          break;
+
+        default:
+      }
+    }
+
+    (0, _asserts.assert)(false, 61);
+  };
+  /**
+   * @param {Versions} version Optional IIIF image API version
+   * @returns {string} Compliance level as it appears in the IIIF image information
+   * response.
+   */
+
+
+  IIIFInfo.prototype.getComplianceLevelEntryFromProfile = function (version) {
+    if (this.imageInfo === undefined || this.imageInfo.profile === undefined) {
+      return;
+    }
+
+    if (version === undefined) {
+      version = this.getImageApiVersion();
+    }
+
+    switch (version) {
+      case Versions.VERSION1:
+        if (COMPLIANCE_VERSION1.test(this.imageInfo.profile)) {
+          return this.imageInfo.profile;
+        }
+
+        break;
+
+      case Versions.VERSION3:
+        if (COMPLIANCE_VERSION3.test(this.imageInfo.profile)) {
+          return this.imageInfo.profile;
+        }
+
+        break;
+
+      case Versions.VERSION2:
+        if (typeof this.imageInfo.profile === 'string' && COMPLIANCE_VERSION2.test(this.imageInfo.profile)) {
+          return this.imageInfo.profile;
+        }
+
+        if (Array.isArray(this.imageInfo.profile) && this.imageInfo.profile.length > 0 && typeof this.imageInfo.profile[0] === 'string' && COMPLIANCE_VERSION2.test(this.imageInfo.profile[0])) {
+          return this.imageInfo.profile[0];
+        }
+
+        break;
+
+      default:
+    }
+  };
+  /**
+   * @param {Versions} version Optional IIIF image API version
+   * @returns {string} Compliance level, on of 'level0', 'level1' or 'level2' or undefined
+   */
+
+
+  IIIFInfo.prototype.getComplianceLevelFromProfile = function (version) {
+    var complianceLevel = this.getComplianceLevelEntryFromProfile(version);
+
+    if (complianceLevel === undefined) {
+      return undefined;
+    }
+
+    var level = complianceLevel.match(/level[0-2](\.json)?$/g);
+    return Array.isArray(level) ? level[0].replace('.json', '') : undefined;
+  };
+  /**
+   * @returns {SupportedFeatures} Image formats, qualities and region / size calculation
+   * methods that are supported by the IIIF service.
+   */
+
+
+  IIIFInfo.prototype.getComplianceLevelSupportedFeatures = function () {
+    if (this.imageInfo === undefined) {
+      return;
+    }
+
+    var version = this.getImageApiVersion();
+    var level = this.getComplianceLevelFromProfile(version);
+
+    if (level === undefined) {
+      return IIIF_PROFILE_VALUES['none']['none'];
+    }
+
+    return IIIF_PROFILE_VALUES[version][level];
+  };
+  /**
+   * @param {PreferredOptions} opt_preferredOptions Optional options for preferred format and quality.
+   * @returns {import("../source/IIIF.js").Options} IIIF tile source ready constructor options.
+   * @api
+   */
+
+
+  IIIFInfo.prototype.getTileSourceOptions = function (opt_preferredOptions) {
+    var options = opt_preferredOptions || {},
+        version = this.getImageApiVersion();
+
+    if (version === undefined) {
+      return;
+    }
+
+    var imageOptions = version === undefined ? undefined : versionFunctions[version](this);
+
+    if (imageOptions === undefined) {
+      return;
+    }
+
+    return {
+      url: imageOptions.url,
+      version: version,
+      size: [this.imageInfo.width, this.imageInfo.height],
+      sizes: imageOptions.sizes,
+      format: imageOptions.formats.includes(options.format) ? options.format : 'jpg',
+      supports: imageOptions.supports,
+      quality: options.quality && imageOptions.qualities.includes(options.quality) ? options.quality : imageOptions.qualities.includes('native') ? 'native' : 'default',
+      resolutions: Array.isArray(imageOptions.resolutions) ? imageOptions.resolutions.sort(function (a, b) {
+        return b - a;
+      }) : undefined,
+      tileSize: imageOptions.tileSize
+    };
+  };
+
+  return IIIFInfo;
+}();
+
+var _default = IIIFInfo;
+exports.default = _default;
+},{"../asserts.js":"../node_modules/ol/asserts.js"}],"../node_modules/ol/source/IIIF.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _common = require("../tilegrid/common.js");
+
+var _extent = require("../extent.js");
+
+var _Zoomify = require("./Zoomify.js");
+
+var _IIIFInfo = require("../format/IIIFInfo.js");
+
+var _asserts = require("../asserts.js");
+
+var _TileGrid = _interopRequireDefault(require("../tilegrid/TileGrid.js"));
+
+var _TileImage = _interopRequireDefault(require("./TileImage.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * @module ol/source/IIIF
+ */
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+
+/**
+ * @typedef {Object} Options
+ * @property {import("./Source.js").AttributionLike} [attributions] Attributions.
+ * @property {boolean} [attributionsCollapsible=true] Attributions are collapsible.
+ * @property {number} [cacheSize]
+ * @property {null|string} [crossOrigin]
+ * @property {import("../extent.js").Extent} [extent=[0, -height, width, 0]]
+ * @property {string} [format='jpg'] Requested image format.
+ * @property {import("../proj.js").ProjectionLike} [projection]
+ * @property {string} [quality] Requested IIIF image quality. Default is 'native'
+ * for version 1, 'default' for versions 2 and 3.
+ * @property {number} [reprojectionErrorThreshold=0.5] Maximum allowed reprojection error (in pixels).
+ * Higher values can increase reprojection performance, but decrease precision.
+ * @property {Array<number>} [resolutions] Supported resolutions as given in IIIF 'scaleFactors'
+ * @property {import("../size.js").Size} size Size of the image [width, height].
+ * @property {import("../size.js").Size[]} [sizes] Supported scaled image sizes.
+ * Content of the IIIF info.json 'sizes' property, but as array of Size objects.
+ * @property {import("./State.js").default} [state] Source state.
+ * @property {Array<string>} [supports=[]] Supported IIIF region and size calculation
+ * features.
+ * @property {number} [tilePixelRatio]
+ * @property {number|import("../size.js").Size} [tileSize] Tile size.
+ * Same tile size is used for all zoom levels. If tile size is a number,
+ * a square tile is assumed. If the IIIF image service supports arbitrary
+ * tiling (sizeByH, sizeByW, sizeByWh or sizeByPct as well as regionByPx or regionByPct
+ * are supported), the default tilesize is 256.
+ * @property {number} [transition]
+ * @property {string} [url] Base URL of the IIIF Image service.
+ * This should be the same as the IIIF Image ID.
+ * @property {Versions} [version=Versions.VERSION2] Service's IIIF Image API version.
+ * @property {number} [zDirection] Indicate which resolution should be used
+ * by a renderer if the views resolution does not match any resolution of the tile source.
+ * If 0, the nearest resolution will be used. If 1, the nearest lower resolution
+ * will be used. If -1, the nearest higher resolution will be used.
+ */
+function formatPercentage(percentage) {
+  return percentage.toLocaleString('en', {
+    maximumFractionDigits: 10
+  });
+}
+/**
+ * @classdesc
+ * Layer source for IIIF Image API services.
+ * @api
+ */
+
+
+var IIIF =
+/** @class */
+function (_super) {
+  __extends(IIIF, _super);
+  /**
+   * @param {Options} opt_options Tile source options. Use {@link import("../format/IIIFInfo.js").IIIFInfo}
+   * to parse Image API service information responses into constructor options.
+   * @api
+   */
+
+
+  function IIIF(opt_options) {
+    var _this = this;
+    /**
+     * @type {Partial<Options>} options
+     */
+
+
+    var options = opt_options || {};
+    var baseUrl = options.url || '';
+    baseUrl = baseUrl + (baseUrl.lastIndexOf('/') === baseUrl.length - 1 || baseUrl === '' ? '' : '/');
+    var version = options.version || _IIIFInfo.Versions.VERSION2;
+    var sizes = options.sizes || [];
+    var size = options.size;
+    (0, _asserts.assert)(size != undefined && Array.isArray(size) && size.length == 2 && !isNaN(size[0]) && size[0] > 0 && !isNaN(size[1]) && size[1] > 0, 60);
+    var width = size[0];
+    var height = size[1];
+    var tileSize = options.tileSize;
+    var tilePixelRatio = options.tilePixelRatio || 1;
+    var format = options.format || 'jpg';
+    var quality = options.quality || (options.version == _IIIFInfo.Versions.VERSION1 ? 'native' : 'default');
+    var resolutions = options.resolutions || [];
+    var supports = options.supports || [];
+    var extent = options.extent || [0, -height, width, 0];
+    var supportsListedSizes = sizes != undefined && Array.isArray(sizes) && sizes.length > 0;
+    var supportsListedTiles = tileSize != undefined && (typeof tileSize === 'number' && Number.isInteger(tileSize) && tileSize > 0 || Array.isArray(tileSize) && tileSize.length > 0);
+    var supportsArbitraryTiling = supports != undefined && Array.isArray(supports) && (supports.includes('regionByPx') || supports.includes('regionByPct')) && (supports.includes('sizeByWh') || supports.includes('sizeByH') || supports.includes('sizeByW') || supports.includes('sizeByPct'));
+    var tileWidth, tileHeight, maxZoom;
+    resolutions.sort(function (a, b) {
+      return b - a;
+    });
+
+    if (supportsListedTiles || supportsArbitraryTiling) {
+      if (tileSize != undefined) {
+        if (typeof tileSize === 'number' && Number.isInteger(tileSize) && tileSize > 0) {
+          tileWidth = tileSize;
+          tileHeight = tileSize;
+        } else if (Array.isArray(tileSize) && tileSize.length > 0) {
+          if (tileSize.length == 1 || tileSize[1] == undefined && Number.isInteger(tileSize[0])) {
+            tileWidth = tileSize[0];
+            tileHeight = tileSize[0];
+          }
+
+          if (tileSize.length == 2) {
+            if (Number.isInteger(tileSize[0]) && Number.isInteger(tileSize[1])) {
+              tileWidth = tileSize[0];
+              tileHeight = tileSize[1];
+            } else if (tileSize[0] == undefined && Number.isInteger(tileSize[1])) {
+              tileWidth = tileSize[1];
+              tileHeight = tileSize[1];
+            }
+          }
+        }
+      }
+
+      if (tileWidth === undefined || tileHeight === undefined) {
+        tileWidth = _common.DEFAULT_TILE_SIZE;
+        tileHeight = _common.DEFAULT_TILE_SIZE;
+      }
+
+      if (resolutions.length == 0) {
+        maxZoom = Math.max(Math.ceil(Math.log(width / tileWidth) / Math.LN2), Math.ceil(Math.log(height / tileHeight) / Math.LN2));
+
+        for (var i = maxZoom; i >= 0; i--) {
+          resolutions.push(Math.pow(2, i));
+        }
+      } else {
+        var maxScaleFactor = Math.max.apply(Math, resolutions); // TODO maxScaleFactor might not be a power to 2
+
+        maxZoom = Math.round(Math.log(maxScaleFactor) / Math.LN2);
+      }
+    } else {
+      // No tile support.
+      tileWidth = width;
+      tileHeight = height;
+      resolutions = [];
+
+      if (supportsListedSizes) {
+        /*
+         * 'sizes' provided. Use full region in different resolutions. Every
+         * resolution has only one tile.
+         */
+        sizes.sort(function (a, b) {
+          return a[0] - b[0];
+        });
+        maxZoom = -1;
+        var ignoredSizesIndex = [];
+
+        for (var i = 0; i < sizes.length; i++) {
+          var resolution = width / sizes[i][0];
+
+          if (resolutions.length > 0 && resolutions[resolutions.length - 1] == resolution) {
+            ignoredSizesIndex.push(i);
+            continue;
+          }
+
+          resolutions.push(resolution);
+          maxZoom++;
+        }
+
+        if (ignoredSizesIndex.length > 0) {
+          for (var i = 0; i < ignoredSizesIndex.length; i++) {
+            sizes.splice(ignoredSizesIndex[i] - i, 1);
+          }
+        }
+      } else {
+        // No useful image information at all. Try pseudo tile with full image.
+        resolutions.push(1);
+        sizes.push([width, height]);
+        maxZoom = 0;
+      }
+    }
+
+    var tileGrid = new _TileGrid.default({
+      tileSize: [tileWidth, tileHeight],
+      extent: extent,
+      origin: (0, _extent.getTopLeft)(extent),
+      resolutions: resolutions
+    });
+
+    var tileUrlFunction = function (tileCoord, pixelRatio, projection) {
+      var regionParam, sizeParam;
+      var zoom = tileCoord[0];
+
+      if (zoom > maxZoom) {
+        return;
+      }
+
+      var tileX = tileCoord[1],
+          tileY = tileCoord[2],
+          scale = resolutions[zoom];
+
+      if (tileX === undefined || tileY === undefined || scale === undefined || tileX < 0 || Math.ceil(width / scale / tileWidth) <= tileX || tileY < 0 || Math.ceil(height / scale / tileHeight) <= tileY) {
+        return;
+      }
+
+      if (supportsArbitraryTiling || supportsListedTiles) {
+        var regionX = tileX * tileWidth * scale,
+            regionY = tileY * tileHeight * scale;
+        var regionW = tileWidth * scale,
+            regionH = tileHeight * scale,
+            sizeW = tileWidth,
+            sizeH = tileHeight;
+
+        if (regionX + regionW > width) {
+          regionW = width - regionX;
+        }
+
+        if (regionY + regionH > height) {
+          regionH = height - regionY;
+        }
+
+        if (regionX + tileWidth * scale > width) {
+          sizeW = Math.floor((width - regionX + scale - 1) / scale);
+        }
+
+        if (regionY + tileHeight * scale > height) {
+          sizeH = Math.floor((height - regionY + scale - 1) / scale);
+        }
+
+        if (regionX == 0 && regionW == width && regionY == 0 && regionH == height) {
+          // canonical full image region parameter is 'full', not 'x,y,w,h'
+          regionParam = 'full';
+        } else if (!supportsArbitraryTiling || supports.includes('regionByPx')) {
+          regionParam = regionX + ',' + regionY + ',' + regionW + ',' + regionH;
+        } else if (supports.includes('regionByPct')) {
+          var pctX = formatPercentage(regionX / width * 100),
+              pctY = formatPercentage(regionY / height * 100),
+              pctW = formatPercentage(regionW / width * 100),
+              pctH = formatPercentage(regionH / height * 100);
+          regionParam = 'pct:' + pctX + ',' + pctY + ',' + pctW + ',' + pctH;
+        }
+
+        if (version == _IIIFInfo.Versions.VERSION3 && (!supportsArbitraryTiling || supports.includes('sizeByWh'))) {
+          sizeParam = sizeW + ',' + sizeH;
+        } else if (!supportsArbitraryTiling || supports.includes('sizeByW')) {
+          sizeParam = sizeW + ',';
+        } else if (supports.includes('sizeByH')) {
+          sizeParam = ',' + sizeH;
+        } else if (supports.includes('sizeByWh')) {
+          sizeParam = sizeW + ',' + sizeH;
+        } else if (supports.includes('sizeByPct')) {
+          sizeParam = 'pct:' + formatPercentage(100 / scale);
+        }
+      } else {
+        regionParam = 'full';
+
+        if (supportsListedSizes) {
+          var regionWidth = sizes[zoom][0],
+              regionHeight = sizes[zoom][1];
+
+          if (version == _IIIFInfo.Versions.VERSION3) {
+            if (regionWidth == width && regionHeight == height) {
+              sizeParam = 'max';
+            } else {
+              sizeParam = regionWidth + ',' + regionHeight;
+            }
+          } else {
+            if (regionWidth == width) {
+              sizeParam = 'full';
+            } else {
+              sizeParam = regionWidth + ',';
+            }
+          }
+        } else {
+          sizeParam = version == _IIIFInfo.Versions.VERSION3 ? 'max' : 'full';
+        }
+      }
+
+      return baseUrl + regionParam + '/' + sizeParam + '/0/' + quality + '.' + format;
+    };
+
+    var IiifTileClass = _Zoomify.CustomTile.bind(null, tilePixelRatio, tileGrid);
+
+    _this = _super.call(this, {
+      attributions: options.attributions,
+      attributionsCollapsible: options.attributionsCollapsible,
+      cacheSize: options.cacheSize,
+      crossOrigin: options.crossOrigin,
+      projection: options.projection,
+      reprojectionErrorThreshold: options.reprojectionErrorThreshold,
+      state: options.state,
+      tileClass: IiifTileClass,
+      tileGrid: tileGrid,
+      tilePixelRatio: options.tilePixelRatio,
+      tileUrlFunction: tileUrlFunction,
+      transition: options.transition
+    }) || this;
+    /**
+     * @inheritDoc
+     */
+
+    _this.zDirection = options.zDirection;
+    return _this;
+  }
+
+  return IIIF;
+}(_TileImage.default);
+
+var _default = IIIF;
+exports.default = _default;
+},{"../tilegrid/common.js":"../node_modules/ol/tilegrid/common.js","../extent.js":"../node_modules/ol/extent.js","./Zoomify.js":"../node_modules/ol/source/Zoomify.js","../format/IIIFInfo.js":"../node_modules/ol/format/IIIFInfo.js","../asserts.js":"../node_modules/ol/asserts.js","../tilegrid/TileGrid.js":"../node_modules/ol/tilegrid/TileGrid.js","./TileImage.js":"../node_modules/ol/source/TileImage.js"}],"../node_modules/ol/reproj/Image.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -52683,9 +56433,7 @@ function (_super) {
   function ImageArcGISRest(opt_options) {
     var _this = this;
 
-    var options = opt_options ||
-    /** @type {Options} */
-    {};
+    var options = opt_options ? opt_options : {};
     _this = _super.call(this, {
       attributions: options.attributions,
       projection: options.projection,
@@ -52997,9 +56745,7 @@ function (_super) {
   function ImageCanvasSource(opt_options) {
     var _this = this;
 
-    var options = opt_options ||
-    /** @type {Options} */
-    {};
+    var options = opt_options ? opt_options : {};
     _this = _super.call(this, {
       attributions: options.attributions,
       projection: options.projection,
@@ -53715,9 +57461,7 @@ function (_super) {
   function ImageWMS(opt_options) {
     var _this = this;
 
-    var options = opt_options ||
-    /** @type {Options} */
-    {};
+    var options = opt_options ? opt_options : {};
     _this = _super.call(this, {
       attributions: options.attributions,
       projection: options.projection,
@@ -54640,7 +58384,8 @@ function (_super) {
    */
 
 
-  CanvasImageLayerRenderer.prototype.prepareFrame = function (frameState, layerState) {
+  CanvasImageLayerRenderer.prototype.prepareFrame = function (frameState) {
+    var layerState = frameState.layerStatesArray[frameState.layerIndex];
     var pixelRatio = frameState.pixelRatio;
     var viewState = frameState.viewState;
     var viewResolution = viewState.resolution;
@@ -54677,11 +58422,12 @@ function (_super) {
    */
 
 
-  CanvasImageLayerRenderer.prototype.renderFrame = function (frameState, layerState) {
+  CanvasImageLayerRenderer.prototype.renderFrame = function (frameState, target) {
     var image = this.image_;
     var imageExtent = image.getExtent();
     var imageResolution = image.getResolution();
     var imagePixelRatio = image.getPixelRatio();
+    var layerState = frameState.layerStatesArray[frameState.layerIndex];
     var pixelRatio = frameState.pixelRatio;
     var viewState = frameState.viewState;
     var viewCenter = viewState.center;
@@ -54698,15 +58444,16 @@ function (_super) {
     } // set forward and inverse pixel transforms
 
 
-    (0, _transform.compose)(this.pixelTransform_, frameState.size[0] / 2, frameState.size[1] / 2, 1 / pixelRatio, 1 / pixelRatio, rotation, -width / 2, -height / 2);
-    (0, _transform.makeInverse)(this.inversePixelTransform_, this.pixelTransform_);
+    (0, _transform.compose)(this.pixelTransform, frameState.size[0] / 2, frameState.size[1] / 2, 1 / pixelRatio, 1 / pixelRatio, rotation, -width / 2, -height / 2);
+    (0, _transform.makeInverse)(this.inversePixelTransform, this.pixelTransform);
+    this.useContainer(target, this.pixelTransform, layerState.opacity);
     var context = this.context;
     var canvas = context.canvas;
 
     if (canvas.width != width || canvas.height != height) {
       canvas.width = width;
       canvas.height = height;
-    } else {
+    } else if (!this.containerReused) {
       context.clearRect(0, 0, width, height);
     } // clipped rendering if layer extent is set
 
@@ -54728,7 +58475,19 @@ function (_super) {
     this.preRender(context, frameState);
 
     if (dw >= 0.5 && dh >= 0.5) {
+      var opacity = layerState.opacity;
+      var previousAlpha = void 0;
+
+      if (opacity !== 1) {
+        previousAlpha = this.context.globalAlpha;
+        this.context.globalAlpha = opacity;
+      }
+
       this.context.drawImage(img, 0, 0, +img.width, +img.height, Math.round(dx), Math.round(dy), Math.round(dw), Math.round(dh));
+
+      if (opacity !== 1) {
+        this.context.globalAlpha = previousAlpha;
+      }
     }
 
     this.postRender(context, frameState);
@@ -54737,19 +58496,13 @@ function (_super) {
       context.restore();
     }
 
-    var opacity = layerState.opacity;
-
-    if (opacity !== parseFloat(canvas.style.opacity)) {
-      canvas.style.opacity = opacity;
-    }
-
-    var canvasTransform = (0, _transform.toString)(this.pixelTransform_);
+    var canvasTransform = (0, _transform.toString)(this.pixelTransform);
 
     if (canvasTransform !== canvas.style.transform) {
       canvas.style.transform = canvasTransform;
     }
 
-    return canvas;
+    return this.container;
   };
 
   return CanvasImageLayerRenderer;
@@ -54907,6 +58660,7 @@ var __extends = void 0 && (void 0).__extends || function () {
 
 /**
  * @typedef {Object} Options
+ * @property {string} [className='ol-layer'] A CSS class name to set to the layer element.
  * @property {number} [opacity=1] Opacity (0, 1).
  * @property {boolean} [visible=true] Visibility.
  * @property {import("../extent.js").Extent} [extent] The bounding extent for layer rendering.  The layer will not be
@@ -55039,6 +58793,8 @@ var _extent = require("../../extent.js");
 var _Layer = _interopRequireDefault(require("./Layer.js"));
 
 var _transform = require("../../transform.js");
+
+var _array = require("../../array.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -55203,7 +58959,7 @@ function (_super) {
    */
 
 
-  CanvasTileLayerRenderer.prototype.prepareFrame = function (frameState, layerState) {
+  CanvasTileLayerRenderer.prototype.prepareFrame = function (frameState) {
     return true;
   };
   /**
@@ -55216,8 +58972,8 @@ function (_super) {
    */
 
 
-  CanvasTileLayerRenderer.prototype.renderFrame = function (frameState, layerState) {
-    var context = this.context;
+  CanvasTileLayerRenderer.prototype.renderFrame = function (frameState, target) {
+    var layerState = frameState.layerStatesArray[frameState.layerIndex];
     var viewState = frameState.viewState;
     var projection = viewState.projection;
     var viewResolution = viewState.resolution;
@@ -55299,18 +59055,20 @@ function (_super) {
       }
     }
 
-    var canvas = context.canvas;
     var canvasScale = tileResolution / viewResolution; // set forward and inverse pixel transforms
 
-    (0, _transform.compose)(this.pixelTransform_, frameState.size[0] / 2, frameState.size[1] / 2, 1 / tilePixelRatio, 1 / tilePixelRatio, rotation, -width / 2, -height / 2);
-    (0, _transform.makeInverse)(this.inversePixelTransform_, this.pixelTransform_); // set scale transform for calculating tile positions on the canvas
+    (0, _transform.compose)(this.pixelTransform, frameState.size[0] / 2, frameState.size[1] / 2, 1 / tilePixelRatio, 1 / tilePixelRatio, rotation, -width / 2, -height / 2);
+    this.useContainer(target, this.pixelTransform, layerState.opacity);
+    var context = this.context;
+    var canvas = context.canvas;
+    (0, _transform.makeInverse)(this.inversePixelTransform, this.pixelTransform); // set scale transform for calculating tile positions on the canvas
 
     (0, _transform.compose)(this.tempTransform_, width / 2, height / 2, canvasScale, canvasScale, 0, -width / 2, -height / 2);
 
     if (canvas.width != width || canvas.height != height) {
       canvas.width = width;
       canvas.height = height;
-    } else {
+    } else if (!this.containerReused) {
       context.clearRect(0, 0, width, height);
     }
 
@@ -55323,17 +59081,17 @@ function (_super) {
     /** @type {Array<number>} */
 
     var zs = Object.keys(tilesToDrawByZ).map(Number);
-    zs.sort(function (a, b) {
-      if (a === z) {
-        return 1;
-      } else if (b === z) {
-        return -1;
-      } else {
-        return a > b ? 1 : a < b ? -1 : 0;
-      }
-    });
+    zs.sort(_array.numberSafeCompareFunction);
+    var clips, clipZs, currentClip;
 
-    for (var i = 0, ii = zs.length; i < ii; ++i) {
+    if (layerState.opacity === 1 && (!this.containerReused || tileSource.getOpaque(frameState.viewState.projection))) {
+      zs = zs.reverse();
+    } else {
+      clips = [];
+      clipZs = [];
+    }
+
+    for (var i = zs.length - 1; i >= 0; --i) {
       var currentZ = zs[i];
       var currentTilePixelSize = tileSource.getTilePixelSize(currentZ, pixelRatio, projection);
       var currentResolution = tileGrid.getResolution(currentZ);
@@ -55358,7 +59116,46 @@ function (_super) {
         var y = Math.round(floatY);
         var w = nextX - x;
         var h = nextY - y;
-        this.drawTileImage(tile, frameState, x, y, w, h, tileGutter, z === currentZ);
+        var transition = z === currentZ;
+        var inTransition = transition && tile.getAlpha((0, _util.getUid)(this), frameState.time) !== 1;
+
+        if (!inTransition) {
+          if (clips) {
+            // Clip mask for regions in this tile that already filled by a higher z tile
+            context.save();
+            currentClip = [x, y, x + w, y, x + w, y + h, x, y + h];
+
+            for (var i_1 = 0, ii = clips.length; i_1 < ii; ++i_1) {
+              if (z !== currentZ && currentZ < clipZs[i_1]) {
+                var clip = clips[i_1];
+                context.beginPath(); // counter-clockwise (outer ring) for current tile
+
+                context.moveTo(currentClip[0], currentClip[1]);
+                context.lineTo(currentClip[2], currentClip[3]);
+                context.lineTo(currentClip[4], currentClip[5]);
+                context.lineTo(currentClip[6], currentClip[7]); // clockwise (inner ring) for higher z tile
+
+                context.moveTo(clip[6], clip[7]);
+                context.lineTo(clip[4], clip[5]);
+                context.lineTo(clip[2], clip[3]);
+                context.lineTo(clip[0], clip[1]);
+                context.clip();
+              }
+            }
+
+            clips.push(currentClip);
+            clipZs.push(currentZ);
+          } else {
+            context.clearRect(x, y, w, h);
+          }
+        }
+
+        this.drawTileImage(tile, frameState, x, y, w, h, tileGutter, transition, layerState.opacity);
+
+        if (clips && !inTransition) {
+          context.restore();
+        }
+
         this.renderedTiles.push(tile);
         this.updateUsedTiles(frameState.usedTiles, tileSource, tile);
       }
@@ -55377,19 +59174,13 @@ function (_super) {
       context.restore();
     }
 
-    var opacity = layerState.opacity;
-
-    if (opacity !== parseFloat(canvas.style.opacity)) {
-      canvas.style.opacity = opacity;
-    }
-
-    var canvasTransform = (0, _transform.toString)(this.pixelTransform_);
+    var canvasTransform = (0, _transform.toString)(this.pixelTransform);
 
     if (canvasTransform !== canvas.style.transform) {
       canvas.style.transform = canvasTransform;
     }
 
-    return canvas;
+    return this.container;
   };
   /**
    * @param {import("../../Tile.js").default} tile Tile.
@@ -55400,10 +59191,11 @@ function (_super) {
    * @param {number} h Height of the tile.
    * @param {number} gutter Tile gutter.
    * @param {boolean} transition Apply an alpha transition.
+   * @param {number} opacity Opacity.
    */
 
 
-  CanvasTileLayerRenderer.prototype.drawTileImage = function (tile, frameState, x, y, w, h, gutter, transition) {
+  CanvasTileLayerRenderer.prototype.drawTileImage = function (tile, frameState, x, y, w, h, gutter, transition, opacity) {
     var image = this.getTileImage(tile);
 
     if (!image) {
@@ -55411,16 +59203,7 @@ function (_super) {
     }
 
     var uid = (0, _util.getUid)(this);
-    var alpha = transition ? tile.getAlpha(uid, frameState.time) : 1;
-    var tileLayer =
-    /** @type {import("../../layer/Tile.js").default} */
-    this.getLayer();
-    var tileSource = tileLayer.getSource();
-
-    if (alpha === 1 && !tileSource.getOpaque(frameState.viewState.projection)) {
-      this.context.clearRect(x, y, w, h);
-    }
-
+    var alpha = opacity * (transition ? tile.getAlpha(uid, frameState.time) : 1);
     var alphaChanged = alpha !== this.context.globalAlpha;
 
     if (alphaChanged) {
@@ -55605,7 +59388,7 @@ function (_super) {
 CanvasTileLayerRenderer.prototype.getLayer;
 var _default = CanvasTileLayerRenderer;
 exports.default = _default;
-},{"../../util.js":"../node_modules/ol/util.js","../../TileRange.js":"../node_modules/ol/TileRange.js","../../TileState.js":"../node_modules/ol/TileState.js","../../extent.js":"../node_modules/ol/extent.js","./Layer.js":"../node_modules/ol/renderer/canvas/Layer.js","../../transform.js":"../node_modules/ol/transform.js"}],"../node_modules/ol/layer/Tile.js":[function(require,module,exports) {
+},{"../../util.js":"../node_modules/ol/util.js","../../TileRange.js":"../node_modules/ol/TileRange.js","../../TileState.js":"../node_modules/ol/TileState.js","../../extent.js":"../node_modules/ol/extent.js","./Layer.js":"../node_modules/ol/renderer/canvas/Layer.js","../../transform.js":"../node_modules/ol/transform.js","../../array.js":"../node_modules/ol/array.js"}],"../node_modules/ol/layer/Tile.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -55648,10 +59431,6 @@ var __extends = void 0 && (void 0).__extends || function () {
 
 
 /**
- * @typedef {import("./BaseTile.js").Options} Options
- */
-
-/**
  * @classdesc
  * For layer sources that provide pre-rendered, tiled images in grids that are
  * organized by zoom levels for specific resolutions.
@@ -55666,7 +59445,7 @@ var TileLayer =
 function (_super) {
   __extends(TileLayer, _super);
   /**
-   * @param {Options=} opt_options Tile layer options.
+   * @param {import("./BaseTile.js").Options=} opt_options Tile layer options.
    */
 
 
@@ -55709,7 +59488,7 @@ var _Event = _interopRequireDefault(require("../events/Event.js"));
 
 var _EventType = _interopRequireDefault(require("../events/EventType.js"));
 
-var _index = require("pixelworks/lib/index");
+var _index = require("pixelworks/lib/index.js");
 
 var _extent = require("../extent.js");
 
@@ -55965,6 +59744,7 @@ function (_super) {
       extent: null,
       focus: null,
       index: 0,
+      layerIndex: 0,
       layerStatesArray: getLayerStatesArray(_this.layers_),
       pixelRatio: 1,
       pixelToCoordinateTransform: (0, _transform.create)(),
@@ -55980,7 +59760,8 @@ function (_super) {
         rotation: 0
       },
       viewHints: [],
-      wantedTiles: {}
+      wantedTiles: {},
+      declutterItems: []
     };
 
     _this.setAttributions(function (frameState) {
@@ -56122,7 +59903,8 @@ function (_super) {
     var imageDatas = new Array(len);
 
     for (var i = 0; i < len; ++i) {
-      var imageData = getImageData(this.layers_[i], frameState, frameState.layerStatesArray[i]);
+      frameState.layerIndex = i;
+      var imageData = getImageData(this.layers_[i], frameState);
 
       if (imageData) {
         imageDatas[i] = imageData;
@@ -56197,24 +59979,28 @@ var sharedContext = null;
  * Get image data from a layer.
  * @param {import("../layer/Layer.js").default} layer Layer to render.
  * @param {import("../PluggableMap.js").FrameState} frameState The frame state.
- * @param {import("../layer/Layer.js").State} layerState The layer state.
  * @return {ImageData} The image data.
  */
 
-function getImageData(layer, frameState, layerState) {
+function getImageData(layer, frameState) {
   var renderer = layer.getRenderer();
 
   if (!renderer) {
     throw new Error('Unsupported layer type: ' + layer);
   }
 
-  if (!renderer.prepareFrame(frameState, layerState)) {
+  if (!renderer.prepareFrame(frameState)) {
     return null;
   }
 
   var width = frameState.size[0];
   var height = frameState.size[1];
-  var element = renderer.renderFrame(frameState, layerState);
+  var container = renderer.renderFrame(frameState, null);
+  var element;
+
+  if (container) {
+    element = container.firstElementChild;
+  }
 
   if (!(element instanceof HTMLCanvasElement)) {
     throw new Error('Unsupported rendered element: ' + element);
@@ -56299,7 +60085,7 @@ function createLayer(layerOrSource) {
 
 var _default = RasterSource;
 exports.default = _default;
-},{"../ImageCanvas.js":"../node_modules/ol/ImageCanvas.js","../TileQueue.js":"../node_modules/ol/TileQueue.js","../dom.js":"../node_modules/ol/dom.js","../events.js":"../node_modules/ol/events.js","../events/Event.js":"../node_modules/ol/events/Event.js","../events/EventType.js":"../node_modules/ol/events/EventType.js","pixelworks/lib/index":"../node_modules/pixelworks/lib/index.js","../extent.js":"../node_modules/ol/extent.js","../layer/Image.js":"../node_modules/ol/layer/Image.js","../layer/Tile.js":"../node_modules/ol/layer/Tile.js","../obj.js":"../node_modules/ol/obj.js","../transform.js":"../node_modules/ol/transform.js","./Image.js":"../node_modules/ol/source/Image.js","./Tile.js":"../node_modules/ol/source/Tile.js","./State.js":"../node_modules/ol/source/State.js","./Source.js":"../node_modules/ol/source/Source.js"}],"../node_modules/ol/source/Stamen.js":[function(require,module,exports) {
+},{"../ImageCanvas.js":"../node_modules/ol/ImageCanvas.js","../TileQueue.js":"../node_modules/ol/TileQueue.js","../dom.js":"../node_modules/ol/dom.js","../events.js":"../node_modules/ol/events.js","../events/Event.js":"../node_modules/ol/events/Event.js","../events/EventType.js":"../node_modules/ol/events/EventType.js","pixelworks/lib/index.js":"../node_modules/pixelworks/lib/index.js","../extent.js":"../node_modules/ol/extent.js","../layer/Image.js":"../node_modules/ol/layer/Image.js","../layer/Tile.js":"../node_modules/ol/layer/Tile.js","../obj.js":"../node_modules/ol/obj.js","../transform.js":"../node_modules/ol/transform.js","./Image.js":"../node_modules/ol/source/Image.js","./Tile.js":"../node_modules/ol/source/Tile.js","./State.js":"../node_modules/ol/source/State.js","./Source.js":"../node_modules/ol/source/Source.js"}],"../node_modules/ol/source/Stamen.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -56588,9 +60374,7 @@ function (_super) {
   function TileArcGISRest(opt_options) {
     var _this = this;
 
-    var options = opt_options ||
-    /** @type {Options} */
-    {};
+    var options = opt_options ? opt_options : {};
     _this = _super.call(this, {
       attributions: options.attributions,
       cacheSize: options.cacheSize,
@@ -57002,7 +60786,7 @@ var __extends = void 0 && (void 0).__extends || function () {
   };
 }();
 /**
- * See http://mapbox.com/developers/api/.
+ * See https://mapbox.com/developers/api/.
  */
 
 
@@ -57341,9 +61125,7 @@ function (_super) {
   function TileWMS(opt_options) {
     var _this = this;
 
-    var options = opt_options ||
-    /** @type {Options} */
-    {};
+    var options = opt_options ? opt_options : {};
     var params = options.params || {};
     var transparent = 'TRANSPARENT' in params ? params['TRANSPARENT'] : true;
     _this = _super.call(this, {
@@ -58302,6 +62084,7 @@ var __extends = void 0 && (void 0).__extends || function () {
 /**
  * @typedef {Object} Options
  * @property {import("./Source.js").AttributionLike} [attributions] Attributions.
+ * @property {boolean} [attributionsCollapsible=true] Attributions are collapsible.
  * @property {number} [cacheSize=128] Cache size.
  * @property {import("../extent.js").Extent} [extent]
  * @property {import("../format/Feature.js").default} [format] Feature format for tiles. Used and required by the default.
@@ -58383,6 +62166,7 @@ function (_super) {
     });
     _this = _super.call(this, {
       attributions: options.attributions,
+      attributionsCollapsible: options.attributionsCollapsible,
       cacheSize: options.cacheSize,
       opaque: false,
       projection: projection,
@@ -59539,322 +63323,7 @@ function createFromWMTSTemplate(template) {
     }
   );
 }
-},{"../tileurlfunction.js":"../node_modules/ol/tileurlfunction.js","../array.js":"../node_modules/ol/array.js","../extent.js":"../node_modules/ol/extent.js","../obj.js":"../node_modules/ol/obj.js","../proj.js":"../node_modules/ol/proj.js","./TileImage.js":"../node_modules/ol/source/TileImage.js","./WMTSRequestEncoding.js":"../node_modules/ol/source/WMTSRequestEncoding.js","../tilegrid/WMTS.js":"../node_modules/ol/tilegrid/WMTS.js","../uri.js":"../node_modules/ol/uri.js"}],"../node_modules/ol/source/Zoomify.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = exports.CustomTile = void 0;
-
-var _common = require("../tilegrid/common.js");
-
-var _ImageTile = _interopRequireDefault(require("../ImageTile.js"));
-
-var _TileState = _interopRequireDefault(require("../TileState.js"));
-
-var _tileurlfunction = require("../tileurlfunction.js");
-
-var _asserts = require("../asserts.js");
-
-var _dom = require("../dom.js");
-
-var _extent = require("../extent.js");
-
-var _size = require("../size.js");
-
-var _TileImage = _interopRequireDefault(require("./TileImage.js"));
-
-var _TileGrid = _interopRequireDefault(require("../tilegrid/TileGrid.js"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var __extends = void 0 && (void 0).__extends || function () {
-  var extendStatics = function (d, b) {
-    extendStatics = Object.setPrototypeOf || {
-      __proto__: []
-    } instanceof Array && function (d, b) {
-      d.__proto__ = b;
-    } || function (d, b) {
-      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    };
-
-    return extendStatics(d, b);
-  };
-
-  return function (d, b) {
-    extendStatics(d, b);
-
-    function __() {
-      this.constructor = d;
-    }
-
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-}();
-/**
- * @module ol/source/Zoomify
- */
-
-
-/**
- * @enum {string}
- */
-var TierSizeCalculation = {
-  DEFAULT: 'default',
-  TRUNCATED: 'truncated'
-};
-
-var CustomTile =
-/** @class */
-function (_super) {
-  __extends(CustomTile, _super);
-  /**
-   * @param {import("../tilegrid/TileGrid.js").default} tileGrid TileGrid that the tile belongs to.
-   * @param {import("../tilecoord.js").TileCoord} tileCoord Tile coordinate.
-   * @param {TileState} state State.
-   * @param {string} src Image source URI.
-   * @param {?string} crossOrigin Cross origin.
-   * @param {import("../Tile.js").LoadFunction} tileLoadFunction Tile load function.
-   * @param {import("../Tile.js").Options=} opt_options Tile options.
-   */
-
-
-  function CustomTile(tileGrid, tileCoord, state, src, crossOrigin, tileLoadFunction, opt_options) {
-    var _this = _super.call(this, tileCoord, state, src, crossOrigin, tileLoadFunction, opt_options) || this;
-    /**
-     * @private
-     * @type {HTMLCanvasElement|HTMLImageElement|HTMLVideoElement}
-     */
-
-
-    _this.zoomifyImage_ = null;
-    /**
-     * @private
-     * @type {import("../size.js").Size}
-     */
-
-    _this.tileSize_ = (0, _size.toSize)(tileGrid.getTileSize(tileCoord[0]));
-    return _this;
-  }
-  /**
-   * @inheritDoc
-   */
-
-
-  CustomTile.prototype.getImage = function () {
-    if (this.zoomifyImage_) {
-      return this.zoomifyImage_;
-    }
-
-    var image = _super.prototype.getImage.call(this);
-
-    if (this.state == _TileState.default.LOADED) {
-      var tileSize = this.tileSize_;
-
-      if (image.width == tileSize[0] && image.height == tileSize[1]) {
-        this.zoomifyImage_ = image;
-        return image;
-      } else {
-        var context = (0, _dom.createCanvasContext2D)(tileSize[0], tileSize[1]);
-        context.drawImage(image, 0, 0);
-        this.zoomifyImage_ = context.canvas;
-        return context.canvas;
-      }
-    } else {
-      return image;
-    }
-  };
-
-  return CustomTile;
-}(_ImageTile.default);
-
-exports.CustomTile = CustomTile;
-
-/**
- * @typedef {Object} Options
- * @property {import("./Source.js").AttributionLike} [attributions] Attributions.
- * @property {number} [cacheSize] Tile cache size. The default depends on the screen size. Will increase if too small.
- * @property {null|string} [crossOrigin] The `crossOrigin` attribute for loaded images.  Note that
- * you must provide a `crossOrigin` value  you want to access pixel data with the Canvas renderer.
- * See https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_enabled_image for more detail.
- * @property {import("../proj.js").ProjectionLike} [projection] Projection.
- * @property {number} [tilePixelRatio] The pixel ratio used by the tile service. For example, if the tile service advertizes 256px by 256px tiles but actually sends 512px by 512px images (for retina/hidpi devices) then `tilePixelRatio` should be set to `2`
- * @property {number} [reprojectionErrorThreshold=0.5] Maximum allowed reprojection error (in pixels).
- * Higher values can increase reprojection performance, but decrease precision.
- * @property {string} [url] URL template or base URL of the Zoomify service.
- * A base URL is the fixed part
- * of the URL, excluding the tile group, z, x, and y folder structure, e.g.
- * `http://my.zoomify.info/IMAGE.TIF/`. A URL template must include
- * `{TileGroup}`, `{x}`, `{y}`, and `{z}` placeholders, e.g.
- * `http://my.zoomify.info/IMAGE.TIF/{TileGroup}/{z}-{x}-{y}.jpg`.
- * Internet Imaging Protocol (IIP) with JTL extension can be also used with
- * `{tileIndex}` and `{z}` placeholders, e.g.
- * `http://my.zoomify.info?FIF=IMAGE.TIF&JTL={z},{tileIndex}`.
- * A `{?-?}` template pattern, for example `subdomain{a-f}.domain.com`, may be
- * used instead of defining each one separately in the `urls` option.
- * @property {string} [tierSizeCalculation] Tier size calculation method: `default` or `truncated`.
- * @property {import("../size.js").Size} [size] Size of the image.
- * @property {import("../extent.js").Extent} [extent] Extent for the TileGrid that is created.
- * Default sets the TileGrid in the
- * fourth quadrant, meaning extent is `[0, -height, width, 0]`. To change the
- * extent to the first quadrant (the default for OpenLayers 2) set the extent
- * as `[0, 0, width, height]`.
- * @property {number} [transition] Duration of the opacity transition for rendering.
- * To disable the opacity transition, pass `transition: 0`.
- * @property {number} [tileSize=256] Tile size. Same tile size is used for all zoom levels.
- * @property {number} [zDirection] Indicate which resolution should be used
- * by a renderer if the views resolution does not match any resolution of the tile source.
- * If 0, the nearest resolution will be used. If 1, the nearest lower resolution
- * will be used. If -1, the nearest higher resolution will be used.
- */
-
-/**
- * @classdesc
- * Layer source for tile data in Zoomify format (both Zoomify and Internet
- * Imaging Protocol are supported).
- * @api
- */
-var Zoomify =
-/** @class */
-function (_super) {
-  __extends(Zoomify, _super);
-  /**
-   * @param {Options=} opt_options Options.
-   */
-
-
-  function Zoomify(opt_options) {
-    var _this = this;
-
-    var options = opt_options || {};
-    var size = options.size;
-    var tierSizeCalculation = options.tierSizeCalculation !== undefined ? options.tierSizeCalculation : TierSizeCalculation.DEFAULT;
-    var imageWidth = size[0];
-    var imageHeight = size[1];
-    var extent = options.extent || [0, -size[1], size[0], 0];
-    var tierSizeInTiles = [];
-    var tileSize = options.tileSize || _common.DEFAULT_TILE_SIZE;
-    var tileSizeForTierSizeCalculation = tileSize;
-
-    switch (tierSizeCalculation) {
-      case TierSizeCalculation.DEFAULT:
-        while (imageWidth > tileSizeForTierSizeCalculation || imageHeight > tileSizeForTierSizeCalculation) {
-          tierSizeInTiles.push([Math.ceil(imageWidth / tileSizeForTierSizeCalculation), Math.ceil(imageHeight / tileSizeForTierSizeCalculation)]);
-          tileSizeForTierSizeCalculation += tileSizeForTierSizeCalculation;
-        }
-
-        break;
-
-      case TierSizeCalculation.TRUNCATED:
-        var width = imageWidth;
-        var height = imageHeight;
-
-        while (width > tileSizeForTierSizeCalculation || height > tileSizeForTierSizeCalculation) {
-          tierSizeInTiles.push([Math.ceil(width / tileSizeForTierSizeCalculation), Math.ceil(height / tileSizeForTierSizeCalculation)]);
-          width >>= 1;
-          height >>= 1;
-        }
-
-        break;
-
-      default:
-        (0, _asserts.assert)(false, 53); // Unknown `tierSizeCalculation` configured
-
-        break;
-    }
-
-    tierSizeInTiles.push([1, 1]);
-    tierSizeInTiles.reverse();
-    var resolutions = [1];
-    var tileCountUpToTier = [0];
-
-    for (var i = 1, ii = tierSizeInTiles.length; i < ii; i++) {
-      resolutions.push(1 << i);
-      tileCountUpToTier.push(tierSizeInTiles[i - 1][0] * tierSizeInTiles[i - 1][1] + tileCountUpToTier[i - 1]);
-    }
-
-    resolutions.reverse();
-    var tileGrid = new _TileGrid.default({
-      tileSize: tileSize,
-      extent: extent,
-      origin: (0, _extent.getTopLeft)(extent),
-      resolutions: resolutions
-    });
-    var url = options.url;
-
-    if (url && url.indexOf('{TileGroup}') == -1 && url.indexOf('{tileIndex}') == -1) {
-      url += '{TileGroup}/{z}-{x}-{y}.jpg';
-    }
-
-    var urls = (0, _tileurlfunction.expandUrl)(url);
-    /**
-     * @param {string} template Template.
-     * @return {import("../Tile.js").UrlFunction} Tile URL function.
-     */
-
-    function createFromTemplate(template) {
-      return (
-        /**
-         * @param {import("../tilecoord.js").TileCoord} tileCoord Tile Coordinate.
-         * @param {number} pixelRatio Pixel ratio.
-         * @param {import("../proj/Projection.js").default} projection Projection.
-         * @return {string|undefined} Tile URL.
-         */
-        function (tileCoord, pixelRatio, projection) {
-          if (!tileCoord) {
-            return undefined;
-          } else {
-            var tileCoordZ = tileCoord[0];
-            var tileCoordX = tileCoord[1];
-            var tileCoordY = tileCoord[2];
-            var tileIndex = tileCoordX + tileCoordY * tierSizeInTiles[tileCoordZ][0];
-            var tileSize_1 = tileGrid.getTileSize(tileCoordZ);
-            var tileWidth = Array.isArray(tileSize_1) ? tileSize_1[0] : tileSize_1;
-            var tileGroup = (tileIndex + tileCountUpToTier[tileCoordZ]) / tileWidth | 0;
-            var localContext_1 = {
-              'z': tileCoordZ,
-              'x': tileCoordX,
-              'y': tileCoordY,
-              'tileIndex': tileIndex,
-              'TileGroup': 'TileGroup' + tileGroup
-            };
-            return template.replace(/\{(\w+?)\}/g, function (m, p) {
-              return localContext_1[p];
-            });
-          }
-        }
-      );
-    }
-
-    var tileUrlFunction = (0, _tileurlfunction.createFromTileUrlFunctions)(urls.map(createFromTemplate));
-    var ZoomifyTileClass = CustomTile.bind(null, tileGrid);
-    _this = _super.call(this, {
-      attributions: options.attributions,
-      cacheSize: options.cacheSize,
-      crossOrigin: options.crossOrigin,
-      projection: options.projection,
-      tilePixelRatio: options.tilePixelRatio,
-      reprojectionErrorThreshold: options.reprojectionErrorThreshold,
-      tileClass: ZoomifyTileClass,
-      tileGrid: tileGrid,
-      tileUrlFunction: tileUrlFunction,
-      transition: options.transition
-    }) || this;
-    /**
-     * @inheritDoc
-     */
-
-    _this.zDirection = options.zDirection;
-    return _this;
-  }
-
-  return Zoomify;
-}(_TileImage.default);
-
-var _default = Zoomify;
-exports.default = _default;
-},{"../tilegrid/common.js":"../node_modules/ol/tilegrid/common.js","../ImageTile.js":"../node_modules/ol/ImageTile.js","../TileState.js":"../node_modules/ol/TileState.js","../tileurlfunction.js":"../node_modules/ol/tileurlfunction.js","../asserts.js":"../node_modules/ol/asserts.js","../dom.js":"../node_modules/ol/dom.js","../extent.js":"../node_modules/ol/extent.js","../size.js":"../node_modules/ol/size.js","./TileImage.js":"../node_modules/ol/source/TileImage.js","../tilegrid/TileGrid.js":"../node_modules/ol/tilegrid/TileGrid.js"}],"../node_modules/ol/source.js":[function(require,module,exports) {
+},{"../tileurlfunction.js":"../node_modules/ol/tileurlfunction.js","../array.js":"../node_modules/ol/array.js","../extent.js":"../node_modules/ol/extent.js","../obj.js":"../node_modules/ol/obj.js","../proj.js":"../node_modules/ol/proj.js","./TileImage.js":"../node_modules/ol/source/TileImage.js","./WMTSRequestEncoding.js":"../node_modules/ol/source/WMTSRequestEncoding.js","../tilegrid/WMTS.js":"../node_modules/ol/tilegrid/WMTS.js","../uri.js":"../node_modules/ol/uri.js"}],"../node_modules/ol/source.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -59876,6 +63345,12 @@ Object.defineProperty(exports, "Cluster", {
   enumerable: true,
   get: function () {
     return _Cluster.default;
+  }
+});
+Object.defineProperty(exports, "IIIF", {
+  enumerable: true,
+  get: function () {
+    return _IIIF.default;
   }
 });
 Object.defineProperty(exports, "Image", {
@@ -60023,6 +63498,8 @@ var _CartoDB = _interopRequireDefault(require("./source/CartoDB.js"));
 
 var _Cluster = _interopRequireDefault(require("./source/Cluster.js"));
 
+var _IIIF = _interopRequireDefault(require("./source/IIIF.js"));
+
 var _Image = _interopRequireDefault(require("./source/Image.js"));
 
 var _ImageArcGISRest = _interopRequireDefault(require("./source/ImageArcGISRest.js"));
@@ -60070,21 +63547,176 @@ var _XYZ = _interopRequireDefault(require("./source/XYZ.js"));
 var _Zoomify = _interopRequireDefault(require("./source/Zoomify.js"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-},{"./source/BingMaps.js":"../node_modules/ol/source/BingMaps.js","./source/CartoDB.js":"../node_modules/ol/source/CartoDB.js","./source/Cluster.js":"../node_modules/ol/source/Cluster.js","./source/Image.js":"../node_modules/ol/source/Image.js","./source/ImageArcGISRest.js":"../node_modules/ol/source/ImageArcGISRest.js","./source/ImageCanvas.js":"../node_modules/ol/source/ImageCanvas.js","./source/ImageMapGuide.js":"../node_modules/ol/source/ImageMapGuide.js","./source/ImageStatic.js":"../node_modules/ol/source/ImageStatic.js","./source/ImageWMS.js":"../node_modules/ol/source/ImageWMS.js","./source/OSM.js":"../node_modules/ol/source/OSM.js","./source/Raster.js":"../node_modules/ol/source/Raster.js","./source/Source.js":"../node_modules/ol/source/Source.js","./source/Stamen.js":"../node_modules/ol/source/Stamen.js","./source/Tile.js":"../node_modules/ol/source/Tile.js","./source/TileArcGISRest.js":"../node_modules/ol/source/TileArcGISRest.js","./source/TileDebug.js":"../node_modules/ol/source/TileDebug.js","./source/TileImage.js":"../node_modules/ol/source/TileImage.js","./source/TileJSON.js":"../node_modules/ol/source/TileJSON.js","./source/TileWMS.js":"../node_modules/ol/source/TileWMS.js","./source/UrlTile.js":"../node_modules/ol/source/UrlTile.js","./source/UTFGrid.js":"../node_modules/ol/source/UTFGrid.js","./source/Vector.js":"../node_modules/ol/source/Vector.js","./source/VectorTile.js":"../node_modules/ol/source/VectorTile.js","./source/WMTS.js":"../node_modules/ol/source/WMTS.js","./source/XYZ.js":"../node_modules/ol/source/XYZ.js","./source/Zoomify.js":"../node_modules/ol/source/Zoomify.js"}],"../node_modules/ol/webgl/Buffer.js":[function(require,module,exports) {
+},{"./source/BingMaps.js":"../node_modules/ol/source/BingMaps.js","./source/CartoDB.js":"../node_modules/ol/source/CartoDB.js","./source/Cluster.js":"../node_modules/ol/source/Cluster.js","./source/IIIF.js":"../node_modules/ol/source/IIIF.js","./source/Image.js":"../node_modules/ol/source/Image.js","./source/ImageArcGISRest.js":"../node_modules/ol/source/ImageArcGISRest.js","./source/ImageCanvas.js":"../node_modules/ol/source/ImageCanvas.js","./source/ImageMapGuide.js":"../node_modules/ol/source/ImageMapGuide.js","./source/ImageStatic.js":"../node_modules/ol/source/ImageStatic.js","./source/ImageWMS.js":"../node_modules/ol/source/ImageWMS.js","./source/OSM.js":"../node_modules/ol/source/OSM.js","./source/Raster.js":"../node_modules/ol/source/Raster.js","./source/Source.js":"../node_modules/ol/source/Source.js","./source/Stamen.js":"../node_modules/ol/source/Stamen.js","./source/Tile.js":"../node_modules/ol/source/Tile.js","./source/TileArcGISRest.js":"../node_modules/ol/source/TileArcGISRest.js","./source/TileDebug.js":"../node_modules/ol/source/TileDebug.js","./source/TileImage.js":"../node_modules/ol/source/TileImage.js","./source/TileJSON.js":"../node_modules/ol/source/TileJSON.js","./source/TileWMS.js":"../node_modules/ol/source/TileWMS.js","./source/UrlTile.js":"../node_modules/ol/source/UrlTile.js","./source/UTFGrid.js":"../node_modules/ol/source/UTFGrid.js","./source/Vector.js":"../node_modules/ol/source/Vector.js","./source/VectorTile.js":"../node_modules/ol/source/VectorTile.js","./source/WMTS.js":"../node_modules/ol/source/WMTS.js","./source/XYZ.js":"../node_modules/ol/source/XYZ.js","./source/Zoomify.js":"../node_modules/ol/source/Zoomify.js"}],"../node_modules/ol/webgl.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = void 0;
+exports.getContext = getContext;
+exports.getSupportedExtensions = getSupportedExtensions;
+exports.FLOAT = exports.UNSIGNED_INT = exports.UNSIGNED_SHORT = exports.UNSIGNED_BYTE = exports.DYNAMIC_DRAW = exports.STATIC_DRAW = exports.STREAM_DRAW = exports.ELEMENT_ARRAY_BUFFER = exports.ARRAY_BUFFER = void 0;
+
+/**
+ * @module ol/webgl
+ */
+
+/**
+ * Constants taken from goog.webgl
+ */
+
+/**
+ * Used by {@link module:ol/webgl/Helper~WebGLHelper} for buffers containing vertices data, such as
+ * position, color, texture coordinate, etc. These vertices are then referenced by an index buffer
+ * to be drawn on screen (see {@link module:ol/webgl.ELEMENT_ARRAY_BUFFER}).
+ * @const
+ * @type {number}
+ * @api
+ */
+var ARRAY_BUFFER = 0x8892;
+/**
+ * Used by {@link module:ol/webgl/Helper~WebGLHelper} for buffers containing indices data.
+ * Index buffers are essentially lists of references to vertices defined in a vertex buffer
+ * (see {@link module:ol/webgl.ARRAY_BUFFER}), and define the primitives (triangles) to be drawn.
+ * @const
+ * @type {number}
+ * @api
+ */
+
+exports.ARRAY_BUFFER = ARRAY_BUFFER;
+var ELEMENT_ARRAY_BUFFER = 0x8893;
+/**
+ * Used by {link module:ol/webgl/Buffer~WebGLArrayBuffer}.
+ * @const
+ * @type {number}
+ * @api
+ */
+
+exports.ELEMENT_ARRAY_BUFFER = ELEMENT_ARRAY_BUFFER;
+var STREAM_DRAW = 0x88E0;
+/**
+ * Used by {link module:ol/webgl/Buffer~WebGLArrayBuffer}.
+ * @const
+ * @type {number}
+ * @api
+ */
+
+exports.STREAM_DRAW = STREAM_DRAW;
+var STATIC_DRAW = 0x88E4;
+/**
+ * Used by {link module:ol/webgl/Buffer~WebGLArrayBuffer}.
+ * @const
+ * @type {number}
+ * @api
+ */
+
+exports.STATIC_DRAW = STATIC_DRAW;
+var DYNAMIC_DRAW = 0x88E8;
+/**
+ * @const
+ * @type {number}
+ */
+
+exports.DYNAMIC_DRAW = DYNAMIC_DRAW;
+var UNSIGNED_BYTE = 0x1401;
+/**
+ * @const
+ * @type {number}
+ */
+
+exports.UNSIGNED_BYTE = UNSIGNED_BYTE;
+var UNSIGNED_SHORT = 0x1403;
+/**
+ * @const
+ * @type {number}
+ */
+
+exports.UNSIGNED_SHORT = UNSIGNED_SHORT;
+var UNSIGNED_INT = 0x1405;
+/**
+ * @const
+ * @type {number}
+ */
+
+exports.UNSIGNED_INT = UNSIGNED_INT;
+var FLOAT = 0x1406;
+/** end of goog.webgl constants
+ */
+
+/**
+ * @const
+ * @type {Array<string>}
+ */
+
+exports.FLOAT = FLOAT;
+var CONTEXT_IDS = ['experimental-webgl', 'webgl', 'webkit-3d', 'moz-webgl'];
+/**
+ * @param {HTMLCanvasElement} canvas Canvas.
+ * @param {Object=} opt_attributes Attributes.
+ * @return {WebGLRenderingContext} WebGL rendering context.
+ */
+
+function getContext(canvas, opt_attributes) {
+  var ii = CONTEXT_IDS.length;
+
+  for (var i = 0; i < ii; ++i) {
+    try {
+      var context = canvas.getContext(CONTEXT_IDS[i], opt_attributes);
+
+      if (context) {
+        return (
+          /** @type {!WebGLRenderingContext} */
+          context
+        );
+      }
+    } catch (e) {// pass
+    }
+  }
+
+  return null;
+}
+/**
+ * @type {Array<string>}
+ */
+
+
+var supportedExtensions;
+/**
+ * @return {Array<string>} List of supported WebGL extensions.
+ */
+
+function getSupportedExtensions() {
+  if (!supportedExtensions) {
+    var canvas = document.createElement('canvas');
+    var gl = getContext(canvas);
+
+    if (gl) {
+      supportedExtensions = gl.getSupportedExtensions();
+    }
+  }
+
+  return supportedExtensions;
+}
+},{}],"../node_modules/ol/webgl/Buffer.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.getArrayClassForType = getArrayClassForType;
+exports.default = exports.BufferUsage = void 0;
 
 var _webgl = require("../webgl.js");
+
+var _asserts = require("../asserts.js");
 
 /**
  * @module ol/webgl/Buffer
  */
 
 /**
+ * Used to describe the intended usage for the data: `STATIC_DRAW`, `STREAM_DRAW`
+ * or `DYNAMIC_DRAW`.
  * @enum {number}
  */
 var BufferUsage = {
@@ -60092,34 +63724,96 @@ var BufferUsage = {
   STREAM_DRAW: _webgl.STREAM_DRAW,
   DYNAMIC_DRAW: _webgl.DYNAMIC_DRAW
 };
+/**
+ * @classdesc
+ * Object used to store an array of data as well as usage information for that data.
+ * Stores typed arrays internally, either Float32Array or Uint16/32Array depending on
+ * the buffer type (ARRAY_BUFFER or ELEMENT_ARRAY_BUFFER) and available extensions.
+ *
+ * To populate the array, you can either use:
+ * * A size using `#ofSize(buffer)`
+ * * An `ArrayBuffer` object using `#fromArrayBuffer(buffer)`
+ * * A plain array using `#fromArray(array)`
+ *
+ * Note:
+ * See the documentation of [WebGLRenderingContext.bufferData](https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/bufferData)
+ * for more info on buffer usage.
+ * @api
+ */
+
+exports.BufferUsage = BufferUsage;
 
 var WebGLArrayBuffer =
 /** @class */
 function () {
   /**
-   * @param {Array<number>=} opt_arr Array.
-   * @param {number=} opt_usage Usage.
+   * @param {number} type Buffer type, either ARRAY_BUFFER or ELEMENT_ARRAY_BUFFER.
+   * @param {number=} opt_usage Intended usage, either `STATIC_DRAW`, `STREAM_DRAW` or `DYNAMIC_DRAW`.
+   * Default is `DYNAMIC_DRAW`.
    */
-  function WebGLArrayBuffer(opt_arr, opt_usage) {
+  function WebGLArrayBuffer(type, opt_usage) {
     /**
      * @private
-     * @type {Array<number>}
+     * @type {Float32Array|Uint32Array}
      */
-    this.arr_ = opt_arr !== undefined ? opt_arr : [];
+    this.array = null;
     /**
      * @private
      * @type {number}
      */
 
-    this.usage_ = opt_usage !== undefined ? opt_usage : BufferUsage.STATIC_DRAW;
+    this.type = type;
+    (0, _asserts.assert)(type === _webgl.ARRAY_BUFFER || type === _webgl.ELEMENT_ARRAY_BUFFER, 62);
+    /**
+     * @private
+     * @type {number}
+     */
+
+    this.usage = opt_usage !== undefined ? opt_usage : BufferUsage.STATIC_DRAW;
   }
   /**
-   * @return {Array<number>} Array.
+   * Populates the buffer with an array of the given size (all values will be zeroes).
+   * @param {number} size Array size
+   */
+
+
+  WebGLArrayBuffer.prototype.ofSize = function (size) {
+    this.array = new (getArrayClassForType(this.type))(size);
+  };
+  /**
+   * Populates the buffer with an array of the given size (all values will be zeroes).
+   * @param {Array<number>} array Numerical array
+   */
+
+
+  WebGLArrayBuffer.prototype.fromArray = function (array) {
+    this.array = getArrayClassForType(this.type).from(array);
+  };
+  /**
+   * Populates the buffer with a raw binary array buffer.
+   * @param {ArrayBuffer} buffer Raw binary buffer to populate the array with. Note that this buffer must have been
+   * initialized for the same typed array class.
+   */
+
+
+  WebGLArrayBuffer.prototype.fromArrayBuffer = function (buffer) {
+    this.array = new (getArrayClassForType(this.type))(buffer);
+  };
+  /**
+   * @return {number} Buffer type.
+   */
+
+
+  WebGLArrayBuffer.prototype.getType = function () {
+    return this.type;
+  };
+  /**
+   * @return {Float32Array|Uint32Array} Array.
    */
 
 
   WebGLArrayBuffer.prototype.getArray = function () {
-    return this.arr_;
+    return this.array;
   };
   /**
    * @return {number} Usage.
@@ -60127,15 +63821,34 @@ function () {
 
 
   WebGLArrayBuffer.prototype.getUsage = function () {
-    return this.usage_;
+    return this.usage;
   };
 
   return WebGLArrayBuffer;
 }();
+/**
+ * Returns a typed array constructor based on the given buffer type
+ * @param {number} type Buffer type, either ARRAY_BUFFER or ELEMENT_ARRAY_BUFFER.
+ * @returns {Float32ArrayConstructor|Uint32ArrayConstructor} The typed array class to use for this buffer.
+ */
+
+
+function getArrayClassForType(type) {
+  switch (type) {
+    case _webgl.ARRAY_BUFFER:
+      return Float32Array;
+
+    case _webgl.ELEMENT_ARRAY_BUFFER:
+      return Uint32Array;
+
+    default:
+      return Float32Array;
+  }
+}
 
 var _default = WebGLArrayBuffer;
 exports.default = _default;
-},{"../webgl.js":"../node_modules/ol/webgl.js"}],"../node_modules/ol/webgl/ContextEventType.js":[function(require,module,exports) {
+},{"../webgl.js":"../node_modules/ol/webgl.js","../asserts.js":"../node_modules/ol/asserts.js"}],"../node_modules/ol/webgl/ContextEventType.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -60169,7 +63882,7 @@ exports.fromTransform = fromTransform;
  */
 
 /**
- * @return {Array<number>} 4x4 matrix representing a 3D identity transform.
+ * @return {Array<number>} "4x4 matrix representing a 3D identity transform."
  */
 function create() {
   return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
@@ -60177,7 +63890,7 @@ function create() {
 /**
  * @param {Array<number>} mat4 Flattened 4x4 matrix receiving the result.
  * @param {import("../transform.js").Transform} transform Transformation matrix.
- * @return {Array<number>} 2D transformation matrix as flattened 4x4 matrix.
+ * @return {Array<number>} "2D transformation matrix as flattened 4x4 matrix."
  */
 
 
@@ -60473,11 +64186,7 @@ exports.default = exports.DefaultAttrib = exports.DefaultUniform = exports.Shade
 
 var _util = require("../util.js");
 
-var _webgl = require("../webgl.js");
-
 var _Disposable = _interopRequireDefault(require("../Disposable.js"));
-
-var _array = require("../array.js");
 
 var _events = require("../events.js");
 
@@ -60485,13 +64194,17 @@ var _obj = require("../obj.js");
 
 var _ContextEventType = _interopRequireDefault(require("../webgl/ContextEventType.js"));
 
-var _transform = require("../transform");
+var _transform = require("../transform.js");
 
-var _mat = require("../vec/mat4");
+var _mat = require("../vec/mat4.js");
 
-var _PostProcessingPass = _interopRequireDefault(require("./PostProcessingPass"));
+var _PostProcessingPass = _interopRequireDefault(require("./PostProcessingPass.js"));
 
-var _webgl2 = require("../webgl");
+var _webgl = require("../webgl.js");
+
+var _array = require("../array.js");
+
+var _asserts = require("../asserts.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -60530,7 +64243,7 @@ var __extends = void 0 && (void 0).__extends || function () {
  */
 
 /**
- * Shader types, either `FRAGMENT_SHADER` or `VERTEX_SHADER`
+ * Shader types, either `FRAGMENT_SHADER` or `VERTEX_SHADER`.
  * @enum {number}
  */
 var ShaderType = {
@@ -60538,9 +64251,9 @@ var ShaderType = {
   VERTEX_SHADER: 0x8B31
 };
 /**
- * Uniform names used in the default shaders.
- * @const
- * @type {Object.<string,string>}
+ * Uniform names used in the default shaders: `PROJECTION_MATRIX`, `OFFSET_SCALE_MATRIX`.
+ * and `OFFSET_ROTATION_MATRIX`.
+ * @enum {string}
  */
 
 exports.ShaderType = ShaderType;
@@ -60550,9 +64263,9 @@ var DefaultUniform = {
   OFFSET_ROTATION_MATRIX: 'u_offsetRotateMatrix'
 };
 /**
- * Attribute names used in the default shaders.
- * @const
- * @type {Object.<string,string>}
+ * Attribute names used in the default shaders: `POSITION`, `TEX_COORD`, `OPACITY`,
+ * `ROTATE_WITH_VIEW`, `OFFSETS` and `COLOR`
+ * @enum {string}
  */
 
 exports.DefaultUniform = DefaultUniform;
@@ -60565,7 +64278,7 @@ var DefaultAttrib = {
   COLOR: 'a_color'
 };
 /**
- * @typedef {number|Array<number>|HTMLCanvasElement|HTMLImageElement|ImageData} UniformLiteralValue
+ * @typedef {number|Array<number>|HTMLCanvasElement|HTMLImageElement|ImageData|import("../transform").Transform} UniformLiteralValue
  */
 
 /**
@@ -60577,7 +64290,7 @@ var DefaultAttrib = {
 /**
  * @typedef {Object} PostProcessesOptions
  * @property {number} [scaleRatio] Scale ratio; if < 1, the post process will render to a texture smaller than
- * the main canvas that will then be sampled up (useful for saving resource on blur steps).
+ * the main canvas which will then be sampled up (useful for saving resource on blur steps).
  * @property {string} [vertexShader] Vertex shader source
  * @property {string} [fragmentShader] Fragment shader source
  * @property {Object.<string,UniformValue>} [uniforms] Uniform definitions for the post process step
@@ -60585,7 +64298,7 @@ var DefaultAttrib = {
 
 /**
  * @typedef {Object} Options
- * @property {Object.<string,UniformValue>} [uniforms] Uniform definitions; property namesmust math the uniform
+ * @property {Object.<string,UniformValue>} [uniforms] Uniform definitions; property names must match the uniform
  * names in the provided or default shaders.
  * @property {Array<PostProcessesOptions>} [postProcesses] Post-processes definitions
  */
@@ -60593,7 +64306,7 @@ var DefaultAttrib = {
 /**
  * @typedef {Object} UniformInternalDescription
  * @property {string} name Name
- * @property {UniformLiteralValue=} value Value
+ * @property {UniformValue=} value Value
  * @property {WebGLTexture} [texture] Texture
  * @private
  */
@@ -60616,7 +64329,7 @@ var DefaultAttrib = {
  *
  *   * Varyings usually prefixed with `v_` are passed on to the fragment shader
  *
- *   Fragment shaders are used to control the actual color of the pixels rawn on screen. Their only output is `gl_FragColor`.
+ *   Fragment shaders are used to control the actual color of the pixels drawn on screen. Their only output is `gl_FragColor`.
  *
  *   Both shaders can take *uniforms* or *attributes* as input. Attributes are explained later. Uniforms are common, read-only values that
  *   can be changed at every frame and can be of type float, arrays of float or images.
@@ -60653,16 +64366,16 @@ var DefaultAttrib = {
  *
  *   The {@link module:ol/webgl/PostProcessingPass~WebGLPostProcessingPass} class is used internally, refer to its documentation for more info.
  *
- * ### Binding WebGL buffers and flushing data into them:
+ * ### Binding WebGL buffers and flushing data into them
  *
- *   Data that must be passed to the GPU has to be transferred using `WebGLArrayBuffer` objects.
- *   A buffer has to be created only once, but must be bound everytime the buffer content should be used for rendering.
- *   This is done using `WebGLHelper.bindBuffer`.
+ *   Data that must be passed to the GPU has to be transferred using {@link module:ol/webgl/Buffer~WebGLArrayBuffer} objects.
+ *   A buffer has to be created only once, but must be bound every time the buffer content will be used for rendering.
+ *   This is done using {@link bindBuffer}.
  *   When the buffer's array content has changed, the new data has to be flushed to the GPU memory; this is done using
- *   `WebGLHelper.flushBufferData`. Note: this operation is expensive and should be done as infrequently as possible.
+ *   {@link flushBufferData}. Note: this operation is expensive and should be done as infrequently as possible.
  *
- *   When binding a `WebGLArrayBuffer`, a `target` parameter must be given: it should be either {@link module:ol/webgl~ARRAY_BUFFER}
- *   (if the buffer contains vertices data) or {@link module:ol/webgl~ELEMENT_ARRAY_BUFFER} (if the buffer contains indices data).
+ *   When binding an array buffer, a `target` parameter must be given: it should be either {@link module:ol/webgl.ARRAY_BUFFER}
+ *   (if the buffer contains vertices data) or {@link module:ol/webgl.ELEMENT_ARRAY_BUFFER} (if the buffer contains indices data).
  *
  *   Examples below:
  *   ```js
@@ -60682,8 +64395,8 @@ var DefaultAttrib = {
  * ### Specifying attributes
  *
  *   The GPU only receives the data as arrays of numbers. These numbers must be handled differently depending on what it describes (position, texture coordinate...).
- *   Attributes are used to specify these uses. Use `WebGLHelper.enableAttributeArray` and either
- *   the default attribute names in {@link module:ol/webgl/Helper~DefaultAttrib} or custom ones.
+ *   Attributes are used to specify these uses. Use {@link enableAttributeArray} and either
+ *   the default attribute names in {@link module:ol/webgl/Helper.DefaultAttrib} or custom ones.
  *
  *   Please note that you will have to specify the type and offset of the attributes in the data array. You can refer to the documentation of [WebGLRenderingContext.vertexAttribPointer](https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer) for more explanation.
  *   ```js
@@ -60697,7 +64410,7 @@ var DefaultAttrib = {
  *
  * ### Rendering primitives
  *
- *   Once all the steps above have been achieved, rendering primitives to the screen is done using `WebGLHelper.prepareDraw` `drawElements` and `finalizeDraw`.
+ *   Once all the steps above have been achieved, rendering primitives to the screen is done using {@link prepareDraw}, {@link drawElements} and {@link finalizeDraw}.
  *   ```js
  *   // frame preparation step
  *   this.context.prepareDraw(frameState);
@@ -60742,7 +64455,7 @@ function (_super) {
      * @type {WebGLRenderingContext}
      */
 
-    _this.gl_ = (0, _webgl2.getContext)(_this.canvas_);
+    _this.gl_ = (0, _webgl.getContext)(_this.canvas_);
 
     var gl = _this.getGL();
     /**
@@ -60770,24 +64483,10 @@ function (_super) {
      */
 
     _this.currentProgram_ = null;
-    /**
-     * @type {boolean}
-     */
-
-    _this.hasOESElementIndexUint = (0, _array.includes)(_webgl.EXTENSIONS, 'OES_element_index_uint'); // use the OES_element_index_uint extension if available
-
-    if (_this.hasOESElementIndexUint) {
-      gl.getExtension('OES_element_index_uint');
-    }
-
+    (0, _asserts.assert)((0, _array.includes)((0, _webgl.getSupportedExtensions)(), 'OES_element_index_uint'), 63);
+    gl.getExtension('OES_element_index_uint');
     (0, _events.listen)(_this.canvas_, _ContextEventType.default.LOST, _this.handleWebGLContextLost, _this);
     (0, _events.listen)(_this.canvas_, _ContextEventType.default.RESTORED, _this.handleWebGLContextRestored, _this);
-    /**
-     * @private
-     * @type {import("../transform.js").Transform}
-     */
-
-    _this.projectionMatrix_ = (0, _transform.create)();
     /**
      * @private
      * @type {import("../transform.js").Transform}
@@ -60826,12 +64525,15 @@ function (_super) {
      */
 
     _this.uniforms_ = [];
-    options.uniforms && Object.keys(options.uniforms).forEach(function (name) {
-      this.uniforms_.push({
-        name: name,
-        value: options.uniforms[name]
-      });
-    }.bind(_this));
+
+    if (options.uniforms) {
+      for (var name_1 in options.uniforms) {
+        _this.uniforms_.push({
+          name: name_1,
+          value: options.uniforms[name_1]
+        });
+      }
+    }
     /**
      * An array of PostProcessingPass objects is kept in this variable, built from the steps provided in the
      * options. If no post process was given, a default one is used (so as not to have to make an exception to
@@ -60839,6 +64541,7 @@ function (_super) {
      * @type {Array<WebGLPostProcessingPass>}
      * @private
      */
+
 
     _this.postProcessPasses_ = options.postProcesses ? options.postProcesses.map(function (options) {
       return new _PostProcessingPass.default({
@@ -60863,13 +64566,12 @@ function (_super) {
    * Just bind the buffer if it's in the cache. Otherwise create
    * the WebGL buffer, bind it, populate it, and add an entry to
    * the cache.
-   * @param {number} target Target, either ARRAY_BUFFER or ELEMENT_ARRAY_BUFFER.
    * @param {import("./Buffer").default} buffer Buffer.
    * @api
    */
 
 
-  WebGLHelper.prototype.bindBuffer = function (target, buffer) {
+  WebGLHelper.prototype.bindBuffer = function (buffer) {
     var gl = this.getGL();
     var bufferKey = (0, _util.getUid)(buffer);
     var bufferCache = this.bufferCache_[bufferKey];
@@ -60882,32 +64584,20 @@ function (_super) {
       };
     }
 
-    gl.bindBuffer(target, bufferCache.webGlBuffer);
+    gl.bindBuffer(buffer.getType(), bufferCache.webGlBuffer);
   };
   /**
    * Update the data contained in the buffer array; this is required for the
    * new data to be rendered
-   * @param {number} target Target, either ARRAY_BUFFER or ELEMENT_ARRAY_BUFFER.
    * @param {import("./Buffer").default} buffer Buffer.
    * @api
    */
 
 
-  WebGLHelper.prototype.flushBufferData = function (target, buffer) {
+  WebGLHelper.prototype.flushBufferData = function (buffer) {
     var gl = this.getGL();
-    var arr = buffer.getArray();
-    this.bindBuffer(target, buffer);
-    var
-    /** @type {ArrayBufferView} */
-    arrayBuffer;
-
-    if (target == _webgl.ARRAY_BUFFER) {
-      arrayBuffer = new Float32Array(arr);
-    } else if (target == _webgl.ELEMENT_ARRAY_BUFFER) {
-      arrayBuffer = this.hasOESElementIndexUint ? new Uint32Array(arr) : new Uint16Array(arr);
-    }
-
-    gl.bufferData(target, arrayBuffer, buffer.getUsage());
+    this.bindBuffer(buffer);
+    gl.bufferData(buffer.getType(), buffer.getArray(), buffer.getUsage());
   };
   /**
    * @param {import("./Buffer.js").default} buf Buffer.
@@ -60990,8 +64680,8 @@ function (_super) {
 
   WebGLHelper.prototype.drawElements = function (start, end) {
     var gl = this.getGL();
-    var elementType = this.hasOESElementIndexUint ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT;
-    var elementSize = this.hasOESElementIndexUint ? 4 : 2;
+    var elementType = gl.UNSIGNED_INT;
+    var elementSize = 4;
     var numItems = end - start;
     var offsetInBytes = start * elementSize;
     gl.drawElements(gl.TRIANGLES, numItems, elementType, offsetInBytes);
@@ -61038,13 +64728,6 @@ function (_super) {
   WebGLHelper.prototype.applyFrameState = function (frameState) {
     var size = frameState.size;
     var rotation = frameState.viewState.rotation;
-    var resolution = frameState.viewState.resolution;
-    var center = frameState.viewState.center; // set the "uniform" values (coordinates 0,0 are the center of the view)
-
-    var projectionMatrix = (0, _transform.reset)(this.projectionMatrix_);
-    (0, _transform.scale)(projectionMatrix, 2 / (resolution * size[0]), 2 / (resolution * size[1]));
-    (0, _transform.rotate)(projectionMatrix, -rotation);
-    (0, _transform.translate)(projectionMatrix, -center[0], -center[1]);
     var offsetScaleMatrix = (0, _transform.reset)(this.offsetScaleMatrix_);
     (0, _transform.scale)(offsetScaleMatrix, 2 / size[0], 2 / size[1]);
     var offsetRotateMatrix = (0, _transform.reset)(this.offsetRotateMatrix_);
@@ -61053,7 +64736,6 @@ function (_super) {
       (0, _transform.rotate)(offsetRotateMatrix, -rotation);
     }
 
-    this.setUniformMatrixValue(DefaultUniform.PROJECTION_MATRIX, (0, _mat.fromTransform)(this.tmpMat4_, projectionMatrix));
     this.setUniformMatrixValue(DefaultUniform.OFFSET_SCALE_MATRIX, (0, _mat.fromTransform)(this.tmpMat4_, offsetScaleMatrix));
     this.setUniformMatrixValue(DefaultUniform.OFFSET_ROTATION_MATRIX, (0, _mat.fromTransform)(this.tmpMat4_, offsetRotateMatrix));
   };
@@ -61085,7 +64767,9 @@ function (_super) {
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, value); // fill texture slots by increasing index
 
         gl.uniform1i(this.getUniformLocation(uniform.name), textureSlot++);
-      } else if (Array.isArray(value)) {
+      } else if (Array.isArray(value) && value.length === 6) {
+        this.setUniformMatrixValue(uniform.name, (0, _mat.fromTransform)(this.tmpMat4_, value));
+      } else if (Array.isArray(value) && value.length <= 4) {
         switch (value.length) {
           case 2:
             gl.uniform2f(this.getUniformLocation(uniform.name), value[0], value[1]);
@@ -61218,6 +64902,25 @@ function (_super) {
     return this.attribLocations_[name];
   };
   /**
+   * Modifies the given transform to apply the rotation/translation/scaling of the given frame state.
+   * The resulting transform can be used to convert world space coordinates to view coordinates.
+   * @param {import("../PluggableMap.js").FrameState} frameState Frame state.
+   * @param {import("../transform").Transform} transform Transform to update.
+   * @return {import("../transform").Transform} The updated transform object.
+   * @api
+   */
+
+
+  WebGLHelper.prototype.makeProjectionTransform = function (frameState, transform) {
+    var size = frameState.size;
+    var rotation = frameState.viewState.rotation;
+    var resolution = frameState.viewState.resolution;
+    var center = frameState.viewState.center;
+    (0, _transform.reset)(transform);
+    (0, _transform.compose)(transform, 0, 0, 2 / (resolution * size[0]), 2 / (resolution * size[1]), -rotation, -center[0], -center[1]);
+    return transform;
+  };
+  /**
    * Give a value for a standard float uniform
    * @param {string} uniform Uniform name
    * @param {number} value Value
@@ -61296,11 +64999,11 @@ function (_super) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 
     if (opt_wrapS !== undefined) {
-      gl.texParameteri(_webgl.TEXTURE_2D, _webgl.TEXTURE_WRAP_S, opt_wrapS);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, opt_wrapS);
     }
 
     if (opt_wrapT !== undefined) {
-      gl.texParameteri(_webgl.TEXTURE_2D, _webgl.TEXTURE_WRAP_T, opt_wrapT);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, opt_wrapT);
     }
 
     return texture;
@@ -61342,7 +65045,315 @@ function (_super) {
 
 var _default = WebGLHelper;
 exports.default = _default;
-},{"../util.js":"../node_modules/ol/util.js","../webgl.js":"../node_modules/ol/webgl.js","../Disposable.js":"../node_modules/ol/Disposable.js","../array.js":"../node_modules/ol/array.js","../events.js":"../node_modules/ol/events.js","../obj.js":"../node_modules/ol/obj.js","../webgl/ContextEventType.js":"../node_modules/ol/webgl/ContextEventType.js","../transform":"../node_modules/ol/transform.js","../vec/mat4":"../node_modules/ol/vec/mat4.js","./PostProcessingPass":"../node_modules/ol/webgl/PostProcessingPass.js","../webgl":"../node_modules/ol/webgl.js"}],"../node_modules/ol/renderer/webgl/PointsLayer.js":[function(require,module,exports) {
+},{"../util.js":"../node_modules/ol/util.js","../Disposable.js":"../node_modules/ol/Disposable.js","../events.js":"../node_modules/ol/events.js","../obj.js":"../node_modules/ol/obj.js","../webgl/ContextEventType.js":"../node_modules/ol/webgl/ContextEventType.js","../transform.js":"../node_modules/ol/transform.js","../vec/mat4.js":"../node_modules/ol/vec/mat4.js","./PostProcessingPass.js":"../node_modules/ol/webgl/PostProcessingPass.js","../webgl.js":"../node_modules/ol/webgl.js","../array.js":"../node_modules/ol/array.js","../asserts.js":"../node_modules/ol/asserts.js"}],"../node_modules/ol/renderer/webgl/Layer.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.writePointFeatureInstructions = writePointFeatureInstructions;
+exports.writePointFeatureToBuffers = writePointFeatureToBuffers;
+exports.getBlankTexture = getBlankTexture;
+exports.default = exports.POINT_VERTEX_STRIDE = exports.POINT_INSTRUCTIONS_COUNT = exports.WebGLWorkerMessageType = void 0;
+
+var _Layer = _interopRequireDefault(require("../Layer.js"));
+
+var _Helper = _interopRequireDefault(require("../../webgl/Helper.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+/**
+ * @module ol/renderer/webgl/Layer
+ */
+
+
+/**
+ * @enum {string}
+ */
+var WebGLWorkerMessageType = {
+  GENERATE_BUFFERS: 'GENERATE_BUFFERS'
+};
+/**
+ * @typedef {Object} WebGLWorkerGenerateBuffersMessage
+ * This message will trigger the generation of a vertex and an index buffer based on the given render instructions.
+ * When the buffers are generated, the worked will send a message of the same type to the main thread, with
+ * the generated buffers in it.
+ * Note that any addition properties present in the message *will* be sent back to the main thread.
+ * @property {WebGLWorkerMessageType} type Message type
+ * @property {ArrayBuffer} renderInstructions Render instructions raw binary buffer.
+ * @property {ArrayBuffer} [vertexBuffer] Vertices array raw binary buffer (sent by the worker).
+ * @property {ArrayBuffer} [indexBuffer] Indices array raw binary buffer (sent by the worker).
+ * @property {number} [customAttributesCount] Amount of custom attributes count in the render instructions.
+ */
+
+/**
+ * @typedef {Object} PostProcessesOptions
+ * @property {number} [scaleRatio] Scale ratio; if < 1, the post process will render to a texture smaller than
+ * the main canvas that will then be sampled up (useful for saving resource on blur steps).
+ * @property {string} [vertexShader] Vertex shader source
+ * @property {string} [fragmentShader] Fragment shader source
+ * @property {Object.<string,import("../../webgl/Helper").UniformValue>} [uniforms] Uniform definitions for the post process step
+ */
+
+/**
+ * @typedef {Object} Options
+ * @property {Object.<string,import("../../webgl/Helper").UniformValue>} [uniforms] Uniform definitions for the post process steps
+ * @property {Array<PostProcessesOptions>} [postProcesses] Post-processes definitions
+ */
+
+/**
+ * @classdesc
+ * Base WebGL renderer class.
+ * Holds all logic related to data manipulation & some common rendering logic
+ */
+
+exports.WebGLWorkerMessageType = WebGLWorkerMessageType;
+
+var WebGLLayerRenderer =
+/** @class */
+function (_super) {
+  __extends(WebGLLayerRenderer, _super);
+  /**
+   * @param {import("../../layer/Layer.js").default} layer Layer.
+   * @param {Options=} [opt_options] Options.
+   */
+
+
+  function WebGLLayerRenderer(layer, opt_options) {
+    var _this = _super.call(this, layer) || this;
+
+    var options = opt_options || {};
+    /**
+     * @type {WebGLHelper}
+     * @protected
+     */
+
+    _this.helper = new _Helper.default({
+      postProcesses: options.postProcesses,
+      uniforms: options.uniforms
+    });
+    return _this;
+  }
+  /**
+   * @inheritDoc
+   */
+
+
+  WebGLLayerRenderer.prototype.disposeInternal = function () {
+    _super.prototype.disposeInternal.call(this);
+  };
+  /**
+   * Will return the last shader compilation errors. If no error happened, will return null;
+   * @return {string|null} Errors, or null if last compilation was successful
+   * @api
+   */
+
+
+  WebGLLayerRenderer.prototype.getShaderCompileErrors = function () {
+    return this.helper.getShaderCompileErrors();
+  };
+
+  return WebGLLayerRenderer;
+}(_Layer.default);
+/**
+ * @param {Float32Array} instructions Instructons array in which to write.
+ * @param {number} elementIndex Index from which render instructions will be written.
+ * @param {number} x Point center X coordinate
+ * @param {number} y Point center Y coordinate
+ * @param {number} u0 Left texture coordinate
+ * @param {number} v0 Bottom texture coordinate
+ * @param {number} u1 Right texture coordinate
+ * @param {number} v1 Top texture coordinate
+ * @param {number} size Radius of the point
+ * @param {number} opacity Opacity
+ * @param {boolean} rotateWithView If true, the point will stay aligned with the view
+ * @param {Array<number>} color Array holding red, green, blue, alpha values
+ * @return {number} Index from which the next element should be written
+ * @private
+ */
+
+
+function writePointFeatureInstructions(instructions, elementIndex, x, y, u0, v0, u1, v1, size, opacity, rotateWithView, color) {
+  var i = elementIndex;
+  instructions[i++] = x;
+  instructions[i++] = y;
+  instructions[i++] = u0;
+  instructions[i++] = v0;
+  instructions[i++] = u1;
+  instructions[i++] = v1;
+  instructions[i++] = size;
+  instructions[i++] = opacity;
+  instructions[i++] = rotateWithView ? 1 : 0;
+  instructions[i++] = color[0];
+  instructions[i++] = color[1];
+  instructions[i++] = color[2];
+  instructions[i++] = color[3];
+  return i;
+}
+
+var tmpArray_ = [];
+var bufferPositions_ = {
+  vertexPosition: 0,
+  indexPosition: 0
+};
+var POINT_INSTRUCTIONS_COUNT = 13;
+exports.POINT_INSTRUCTIONS_COUNT = POINT_INSTRUCTIONS_COUNT;
+var POINT_VERTEX_STRIDE = 12;
+exports.POINT_VERTEX_STRIDE = POINT_VERTEX_STRIDE;
+
+function writePointVertex(buffer, pos, x, y, offsetX, offsetY, u, v, opacity, rotateWithView, red, green, blue, alpha) {
+  buffer[pos + 0] = x;
+  buffer[pos + 1] = y;
+  buffer[pos + 2] = offsetX;
+  buffer[pos + 3] = offsetY;
+  buffer[pos + 4] = u;
+  buffer[pos + 5] = v;
+  buffer[pos + 6] = opacity;
+  buffer[pos + 7] = rotateWithView;
+  buffer[pos + 8] = red;
+  buffer[pos + 9] = green;
+  buffer[pos + 10] = blue;
+  buffer[pos + 11] = alpha;
+}
+
+function writeCustomAttrs(buffer, pos, customAttrs) {
+  if (customAttrs.length) {
+    buffer.set(customAttrs, pos);
+  }
+}
+/**
+ * An object holding positions both in an index and a vertex buffer.
+ * @typedef {Object} BufferPositions
+ * @property {number} vertexPosition Position in the vertex buffer
+ * @property {number} indexPosition Position in the index buffer
+ */
+
+/**
+ * Pushes a quad (two triangles) based on a point geometry
+ * @param {Float32Array} instructions Array of render instructions for points.
+ * @param {number} elementIndex Index from which render instructions will be read.
+ * @param {Float32Array} vertexBuffer Buffer in the form of a typed array.
+ * @param {Uint32Array} indexBuffer Buffer in the form of a typed array.
+ * @param {BufferPositions} [bufferPositions] Buffer write positions; if not specified, positions will be set at 0.
+ * @param {number} [count] Amount of render instructions that will be read. Default value is POINT_INSTRUCTIONS_COUNT
+ * but a higher value can be provided; all values beyond the default count will be put in the vertices buffer as
+ * is, thus allowing specifying custom attributes. Please note: this value should not vary inside the same buffer or
+ * rendering will break.
+ * @return {BufferPositions} New buffer positions where to write next
+ * @property {number} vertexPosition New position in the vertex buffer where future writes should start.
+ * @property {number} indexPosition New position in the index buffer where future writes should start.
+ * @private
+ */
+
+
+function writePointFeatureToBuffers(instructions, elementIndex, vertexBuffer, indexBuffer, bufferPositions, count) {
+  var count_ = count > POINT_INSTRUCTIONS_COUNT ? count : POINT_INSTRUCTIONS_COUNT;
+  var x = instructions[elementIndex + 0];
+  var y = instructions[elementIndex + 1];
+  var u0 = instructions[elementIndex + 2];
+  var v0 = instructions[elementIndex + 3];
+  var u1 = instructions[elementIndex + 4];
+  var v1 = instructions[elementIndex + 5];
+  var size = instructions[elementIndex + 6];
+  var opacity = instructions[elementIndex + 7];
+  var rotateWithView = instructions[elementIndex + 8];
+  var red = instructions[elementIndex + 9];
+  var green = instructions[elementIndex + 10];
+  var blue = instructions[elementIndex + 11];
+  var alpha = instructions[elementIndex + 12]; // the default vertex buffer stride is 12, plus additional custom values if any
+
+  var baseStride = POINT_VERTEX_STRIDE;
+  var stride = baseStride + count_ - POINT_INSTRUCTIONS_COUNT; // read custom numerical attributes on the feature
+
+  var customAttrs = tmpArray_;
+  customAttrs.length = count_ - POINT_INSTRUCTIONS_COUNT;
+
+  for (var i = 0; i < customAttrs.length; i++) {
+    customAttrs[i] = instructions[elementIndex + POINT_INSTRUCTIONS_COUNT + i];
+  }
+
+  var vPos = bufferPositions ? bufferPositions.vertexPosition : 0;
+  var iPos = bufferPositions ? bufferPositions.indexPosition : 0;
+  var baseIndex = vPos / stride; // push vertices for each of the four quad corners (first standard then custom attributes)
+
+  writePointVertex(vertexBuffer, vPos, x, y, -size / 2, -size / 2, u0, v0, opacity, rotateWithView, red, green, blue, alpha);
+  writeCustomAttrs(vertexBuffer, vPos + baseStride, customAttrs);
+  vPos += stride;
+  writePointVertex(vertexBuffer, vPos, x, y, +size / 2, -size / 2, u1, v0, opacity, rotateWithView, red, green, blue, alpha);
+  writeCustomAttrs(vertexBuffer, vPos + baseStride, customAttrs);
+  vPos += stride;
+  writePointVertex(vertexBuffer, vPos, x, y, +size / 2, +size / 2, u1, v1, opacity, rotateWithView, red, green, blue, alpha);
+  writeCustomAttrs(vertexBuffer, vPos + baseStride, customAttrs);
+  vPos += stride;
+  writePointVertex(vertexBuffer, vPos, x, y, -size / 2, +size / 2, u0, v1, opacity, rotateWithView, red, green, blue, alpha);
+  writeCustomAttrs(vertexBuffer, vPos + baseStride, customAttrs);
+  vPos += stride;
+  indexBuffer[iPos++] = baseIndex;
+  indexBuffer[iPos++] = baseIndex + 1;
+  indexBuffer[iPos++] = baseIndex + 3;
+  indexBuffer[iPos++] = baseIndex + 1;
+  indexBuffer[iPos++] = baseIndex + 2;
+  indexBuffer[iPos++] = baseIndex + 3;
+  bufferPositions_.vertexPosition = vPos;
+  bufferPositions_.indexPosition = iPos;
+  return bufferPositions_;
+}
+/**
+ * Returns a texture of 1x1 pixel, white
+ * @private
+ * @return {ImageData} Image data.
+ */
+
+
+function getBlankTexture() {
+  var canvas = document.createElement('canvas');
+  var image = canvas.getContext('2d').createImageData(1, 1);
+  image.data[0] = image.data[1] = image.data[2] = image.data[3] = 255;
+  return image;
+}
+
+var _default = WebGLLayerRenderer;
+exports.default = _default;
+},{"../Layer.js":"../node_modules/ol/renderer/Layer.js","../../webgl/Helper.js":"../node_modules/ol/webgl/Helper.js"}],"../node_modules/ol/worker/webgl.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.create = create;
+var source = "var n=\"function\"==typeof Object.assign?Object.assign:function(n,e){if(null==n)throw new TypeError(\"Cannot convert undefined or null to object\");for(var r=Object(n),t=1,o=arguments.length;t<o;++t){var i=arguments[t];if(null!=i)for(var f in i)i.hasOwnProperty(f)&&(r[f]=i[f])}return r};var e=\"GENERATE_BUFFERS\",r=[],t={vertexPosition:0,indexPosition:0},o=13,i=12;function f(n,e,r,t,o,i,f,u,a,s,l,v,c,b){n[e+0]=r,n[e+1]=t,n[e+2]=o,n[e+3]=i,n[e+4]=f,n[e+5]=u,n[e+6]=a,n[e+7]=s,n[e+8]=l,n[e+9]=v,n[e+10]=c,n[e+11]=b}function u(n,e,r){r.length&&n.set(r,e)}function a(n,e,a,s,l,v){var c=v>o?v:o,b=n[e+0],g=n[e+1],d=n[e+2],h=n[e+3],x=n[e+4],y=n[e+5],P=n[e+6],w=n[e+7],p=n[e+8],A=n[e+9],E=n[e+10],j=n[e+11],F=n[e+12],O=i,B=O+c-o,m=r;m.length=c-o;for(var C=0;C<m.length;C++)m[C]=n[e+o+C];var I=l?l.vertexPosition:0,R=l?l.indexPosition:0,T=I/B;return f(a,I,b,g,-P/2,-P/2,d,h,w,p,A,E,j,F),u(a,I+O,m),f(a,I+=B,b,g,+P/2,-P/2,x,h,w,p,A,E,j,F),u(a,I+O,m),f(a,I+=B,b,g,+P/2,+P/2,x,y,w,p,A,E,j,F),u(a,I+O,m),f(a,I+=B,b,g,-P/2,+P/2,d,y,w,p,A,E,j,F),u(a,I+O,m),I+=B,s[R++]=T,s[R++]=T+1,s[R++]=T+3,s[R++]=T+1,s[R++]=T+2,s[R++]=T+3,t.vertexPosition=I,t.indexPosition=R,t}onmessage=function(r){var t=r.data;if(t.type===e){for(var f=new Float32Array(t.renderInstructions),u=t.customAttributesCount||0,s=o+u,l=f.length/s,v=4*l*(i+u),c=new Uint32Array(6*l),b=new Float32Array(v),g=null,d=0;d<f.length;d+=s)g=a(f,d,b,c,g,s);var h=n({vertexBuffer:b.buffer,indexBuffer:c.buffer,renderInstructions:f.buffer},t);postMessage(h,[b.buffer,c.buffer,f.buffer])}};";
+var blob = new Blob([source], {
+  type: 'application/javascript'
+});
+var url = URL.createObjectURL(blob);
+
+function create() {
+  return new Worker(url);
+}
+},{}],"../node_modules/ol/renderer/webgl/PointsLayer.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -61350,15 +65361,23 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _Layer = _interopRequireDefault(require("../Layer"));
+var _Buffer = _interopRequireDefault(require("../../webgl/Buffer.js"));
 
-var _Buffer = _interopRequireDefault(require("../../webgl/Buffer"));
+var _webgl = require("../../webgl.js");
 
-var _webgl = require("../../webgl");
+var _Helper = require("../../webgl/Helper.js");
 
-var _Helper = _interopRequireWildcard(require("../../webgl/Helper"));
+var _GeometryType = _interopRequireDefault(require("../../geom/GeometryType.js"));
 
-var _GeometryType = _interopRequireDefault(require("../../geom/GeometryType"));
+var _Layer = _interopRequireWildcard(require("./Layer.js"));
+
+var _ViewHint = _interopRequireDefault(require("../../ViewHint.js"));
+
+var _extent = require("../../extent.js");
+
+var _transform = require("../../transform.js");
+
+var _webgl2 = require("../../worker/webgl.js");
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
@@ -61392,17 +65411,8 @@ var __extends = void 0 && (void 0).__extends || function () {
  */
 
 
-var VERTEX_SHADER = "\n  precision mediump float;\n  attribute vec2 a_position;\n  attribute vec2 a_texCoord;\n  attribute float a_rotateWithView;\n  attribute vec2 a_offsets;\n  attribute float a_opacity;\n  attribute vec4 a_color;\n  \n  uniform mat4 u_projectionMatrix;\n  uniform mat4 u_offsetScaleMatrix;\n  uniform mat4 u_offsetRotateMatrix;\n  \n  varying vec2 v_texCoord;\n  varying float v_opacity;\n  varying vec4 v_color;\n  \n  void main(void) {\n    mat4 offsetMatrix = u_offsetScaleMatrix;\n    if (a_rotateWithView == 1.0) {\n      offsetMatrix = u_offsetScaleMatrix * u_offsetRotateMatrix;\n    }\n    vec4 offsets = offsetMatrix * vec4(a_offsets, 0.0, 0.0);\n    gl_Position = u_projectionMatrix * vec4(a_position, 0.0, 1.0) + offsets;\n    v_texCoord = a_texCoord;\n    v_opacity = a_opacity;\n    v_color = a_color;\n  }";
-var FRAGMENT_SHADER = "\n  precision mediump float;\n  \n  uniform sampler2D u_texture;\n\n  varying vec2 v_texCoord;\n  varying float v_opacity;\n  varying vec4 v_color;\n  \n  void main(void) {\n    if (v_opacity == 0.0) {\n      discard;\n    }\n    vec4 textureColor = texture2D(u_texture, v_texCoord);\n    gl_FragColor = v_color * textureColor;\n    gl_FragColor.a *= v_opacity;\n    gl_FragColor.rgb *= gl_FragColor.a;\n  }";
-/**
- * @typedef {Object} PostProcessesOptions
- * @property {number} [scaleRatio] Scale ratio; if < 1, the post process will render to a texture smaller than
- * the main canvas that will then be sampled up (useful for saving resource on blur steps).
- * @property {string} [vertexShader] Vertex shader source
- * @property {string} [fragmentShader] Fragment shader source
- * @property {Object.<string,import("../../webgl/Helper").UniformValue>} [uniforms] Uniform definitions for the post process step
- */
-
+var VERTEX_SHADER = "\n  precision mediump float;\n  attribute vec2 a_position;\n  attribute vec2 a_texCoord;\n  attribute float a_rotateWithView;\n  attribute vec2 a_offsets;\n  attribute float a_opacity;\n  attribute vec4 a_color;\n\n  uniform mat4 u_projectionMatrix;\n  uniform mat4 u_offsetScaleMatrix;\n  uniform mat4 u_offsetRotateMatrix;\n\n  varying vec2 v_texCoord;\n  varying float v_opacity;\n  varying vec4 v_color;\n\n  void main(void) {\n    mat4 offsetMatrix = u_offsetScaleMatrix;\n    if (a_rotateWithView == 1.0) {\n      offsetMatrix = u_offsetScaleMatrix * u_offsetRotateMatrix;\n    }\n    vec4 offsets = offsetMatrix * vec4(a_offsets, 0.0, 0.0);\n    gl_Position = u_projectionMatrix * vec4(a_position, 0.0, 1.0) + offsets;\n    v_texCoord = a_texCoord;\n    v_opacity = a_opacity;\n    v_color = a_color;\n  }";
+var FRAGMENT_SHADER = "\n  precision mediump float;\n\n  uniform sampler2D u_texture;\n\n  varying vec2 v_texCoord;\n  varying float v_opacity;\n  varying vec4 v_color;\n\n  void main(void) {\n    if (v_opacity == 0.0) {\n      discard;\n    }\n    vec4 textureColor = texture2D(u_texture, v_texCoord);\n    gl_FragColor = v_color * textureColor;\n    gl_FragColor.a *= v_opacity;\n    gl_FragColor.rgb *= gl_FragColor.a;\n  }";
 /**
  * @typedef {Object} Options
  * @property {function(import("../../Feature").default):number} [sizeCallback] Will be called on every feature in the
@@ -61413,11 +65423,11 @@ var FRAGMENT_SHADER = "\n  precision mediump float;\n  \n  uniform sampler2D u_t
  * @property {function(import("../../Feature").default, number):number} [texCoordCallback] Will be called on every feature in the
  * source to compute the texture coordinates of each corner of the quad (without effect if no `texture` option defined). This is only done on source change.
  * The second argument is 0 for `u0` component, 1 for `v0`, 2 for `u1`, and 3 for `v1`.
- * @property {function(import("../../Feature").default, number, number):number} [colorCallback] Will be called on every feature in the
- * source to compute the color of each corner of the quad. This is only done on source change.
- * The second argument is 0 for bottom left, 1 for bottom right, 2 for top right and 3 for top left
- * The third argument is 0 for red, 1 for green, 2 for blue and 3 for alpha
- * The return value should be between 0 and 1.
+ * @property {function(import("../../Feature").default, Array<number>=):Array<number>} [colorCallback] Will be called on every feature in the
+ * source to compute the color for use in the fragment shader (available as the `v_color` varying). This is only done on source change.
+ * The return value should be between an array of R, G, B, A values between 0 and 1.  To reduce unnecessary
+ * allocation, the function is called with a reusable array that can serve as the return value after updating
+ * the R, G, B, and A values.
  * @property {function(import("../../Feature").default):number} [opacityCallback] Will be called on every feature in the
  * source to compute the opacity of the quad on screen (from 0 to 1). This is only done on source change.
  * Note: this is multiplied with the color of the point which can also have an alpha value < 1.
@@ -61430,7 +65440,7 @@ var FRAGMENT_SHADER = "\n  precision mediump float;\n  \n  uniform sampler2D u_t
  * @property {string} [fragmentShader] Fragment shader source
  * @property {Object.<string,import("../../webgl/Helper").UniformValue>} [uniforms] Uniform definitions for the post process steps
  * Please note that `u_texture` is reserved for the main texture slot.
- * @property {Array<PostProcessesOptions>} [postProcesses] Post-processes definitions
+ * @property {Array<import("./Layer").PostProcessesOptions>} [postProcesses] Post-processes definitions
  */
 
 /**
@@ -61453,6 +65463,7 @@ var FRAGMENT_SHADER = "\n  precision mediump float;\n  \n  uniform sampler2D u_t
  *
  * Points are rendered as quads with the following structure:
  *
+ * ```
  *   (u0, v1)      (u1, v1)
  *  [3]----------[2]
  *   |`           |
@@ -61463,6 +65474,7 @@ var FRAGMENT_SHADER = "\n  precision mediump float;\n  \n  uniform sampler2D u_t
  *   |          ` |
  *  [0]----------[1]
  *   (u0, v0)      (u1, v0)
+ *  ```
  *
  * This uses {@link module:ol/webgl/Helper~WebGLHelper} internally.
  *
@@ -61535,30 +65547,30 @@ function (_super) {
 
 
   function WebGLPointsLayerRenderer(vectorLayer, opt_options) {
-    var _this = _super.call(this, vectorLayer) || this;
+    var _this = this;
 
     var options = opt_options || {};
     var uniforms = options.uniforms || {};
-    uniforms.u_texture = options.texture || _this.getDefaultTexture();
-    _this.helper_ = new _Helper.default({
-      postProcesses: options.postProcesses,
-      uniforms: uniforms
-    });
+    uniforms.u_texture = options.texture || (0, _Layer.getBlankTexture)();
+    var projectionMatrixTransform = (0, _transform.create)();
+    uniforms[_Helper.DefaultUniform.PROJECTION_MATRIX] = projectionMatrixTransform;
+    _this = _super.call(this, vectorLayer, {
+      uniforms: uniforms,
+      postProcesses: options.postProcesses
+    }) || this;
     _this.sourceRevision_ = -1;
-    _this.verticesBuffer_ = new _Buffer.default([], _webgl.DYNAMIC_DRAW);
-    _this.indicesBuffer_ = new _Buffer.default([], _webgl.DYNAMIC_DRAW);
-    _this.program_ = _this.helper_.getProgram(options.fragmentShader || FRAGMENT_SHADER, options.vertexShader || VERTEX_SHADER);
+    _this.verticesBuffer_ = new _Buffer.default(_webgl.ARRAY_BUFFER, _webgl.DYNAMIC_DRAW);
+    _this.indicesBuffer_ = new _Buffer.default(_webgl.ELEMENT_ARRAY_BUFFER, _webgl.DYNAMIC_DRAW);
+    _this.program_ = _this.helper.getProgram(options.fragmentShader || FRAGMENT_SHADER, options.vertexShader || VERTEX_SHADER);
 
-    _this.helper_.useProgram(_this.program_);
+    _this.helper.useProgram(_this.program_);
 
     _this.sizeCallback_ = options.sizeCallback || function () {
       return 1;
     };
 
     _this.coordCallback_ = options.coordCallback || function (feature, index) {
-      var geom =
-      /** @type {import("../../geom/Point").default} */
-      feature.getGeometry();
+      var geom = feature.getGeometry();
       return geom.getCoordinates()[index];
     };
 
@@ -61570,13 +65582,62 @@ function (_super) {
       return index < 2 ? 0 : 1;
     };
 
-    _this.colorCallback_ = options.colorCallback || function (feature, index, component) {
-      return 1;
+    _this.colorArray_ = [1, 1, 1, 1];
+
+    _this.colorCallback_ = options.colorCallback || function (feature, color) {
+      return this.colorArray_;
     };
 
     _this.rotateWithViewCallback_ = options.rotateWithViewCallback || function () {
       return false;
     };
+
+    _this.previousExtent_ = (0, _extent.createEmpty)();
+    /**
+     * This transform is updated on every frame and is the composition of:
+     * - invert of the world->screen transform that was used when rebuilding buffers (see `this.renderTransform_`)
+     * - current world->screen transform
+     * @type {import("../../transform.js").Transform}
+     * @private
+     */
+
+    _this.currentTransform_ = projectionMatrixTransform;
+    /**
+     * This transform is updated when buffers are rebuilt and converts world space coordinates to screen space
+     * @type {import("../../transform.js").Transform}
+     * @private
+     */
+
+    _this.renderTransform_ = (0, _transform.create)();
+    /**
+     * @type {import("../../transform.js").Transform}
+     * @private
+     */
+
+    _this.invertRenderTransform_ = (0, _transform.create)();
+    /**
+     * @type {Float32Array}
+     * @private
+     */
+
+    _this.renderInstructions_ = new Float32Array(0);
+    _this.worker_ = (0, _webgl2.create)();
+
+    _this.worker_.addEventListener('message', function (event) {
+      var received = event.data;
+
+      if (received.type === _Layer.WebGLWorkerMessageType.GENERATE_BUFFERS) {
+        var projectionTransform = received.projectionTransform;
+        this.verticesBuffer_.fromArrayBuffer(received.vertexBuffer);
+        this.indicesBuffer_.fromArrayBuffer(received.indexBuffer);
+        this.helper.flushBufferData(this.verticesBuffer_);
+        this.helper.flushBufferData(this.indicesBuffer_); // saves the projection transform for the current frame state
+
+        this.renderTransform_ = projectionTransform;
+        (0, _transform.makeInverse)(this.invertRenderTransform_, this.renderTransform_);
+        this.renderInstructions_ = new Float32Array(event.data.renderInstructions);
+      }
+    }.bind(_this));
 
     return _this;
   }
@@ -61593,10 +65654,12 @@ function (_super) {
    */
 
 
-  WebGLPointsLayerRenderer.prototype.renderFrame = function (frameState, layerState) {
-    this.helper_.drawElements(0, this.indicesBuffer_.getArray().length);
-    this.helper_.finalizeDraw(frameState);
-    var canvas = this.helper_.getCanvas();
+  WebGLPointsLayerRenderer.prototype.renderFrame = function (frameState) {
+    var renderCount = this.indicesBuffer_.getArray() ? this.indicesBuffer_.getArray().length : 0;
+    this.helper.drawElements(0, renderCount);
+    this.helper.finalizeDraw(frameState);
+    var canvas = this.helper.getCanvas();
+    var layerState = frameState.layerStatesArray[frameState.layerIndex];
     var opacity = layerState.opacity;
 
     if (opacity !== parseFloat(canvas.style.opacity)) {
@@ -61611,123 +65674,97 @@ function (_super) {
 
 
   WebGLPointsLayerRenderer.prototype.prepareFrame = function (frameState) {
-    var _this = this;
-
     var vectorLayer =
     /** @type {import("../../layer/Vector.js").default} */
     this.getLayer();
     var vectorSource = vectorLayer.getSource();
-    var stride = 12;
-    this.helper_.prepareDraw(frameState);
+    var viewState = frameState.viewState;
+    var stride = _Layer.POINT_VERTEX_STRIDE; // the source has changed: clear the feature cache & reload features
 
-    if (this.sourceRevision_ < vectorSource.getRevision()) {
+    var sourceChanged = this.sourceRevision_ < vectorSource.getRevision();
+
+    if (sourceChanged) {
       this.sourceRevision_ = vectorSource.getRevision();
-      this.verticesBuffer_.getArray().length = 0;
-      this.indicesBuffer_.getArray().length = 0;
-      var viewState = frameState.viewState;
+      this.geojsonFeatureCache_ = {};
       var projection = viewState.projection;
-      var resolution = viewState.resolution; // loop on features to fill the buffer
-
+      var resolution = viewState.resolution;
       vectorSource.loadFeatures([-Infinity, -Infinity, Infinity, Infinity], resolution, projection);
-      vectorSource.forEachFeature(function (feature) {
-        if (!feature.getGeometry() || feature.getGeometry().getType() !== _GeometryType.default.POINT) {
-          return;
-        }
+    }
 
-        var x = _this.coordCallback_(feature, 0);
+    var viewNotMoving = !frameState.viewHints[_ViewHint.default.ANIMATING] && !frameState.viewHints[_ViewHint.default.INTERACTING];
+    var extentChanged = !(0, _extent.equals)(this.previousExtent_, frameState.extent);
 
-        var y = _this.coordCallback_(feature, 1);
-
-        var u0 = _this.texCoordCallback_(feature, 0);
-
-        var v0 = _this.texCoordCallback_(feature, 1);
-
-        var u1 = _this.texCoordCallback_(feature, 2);
-
-        var v1 = _this.texCoordCallback_(feature, 3);
-
-        var size = _this.sizeCallback_(feature);
-
-        var opacity = _this.opacityCallback_(feature);
-
-        var rotateWithView = _this.rotateWithViewCallback_(feature) ? 1 : 0;
-
-        var v0_r = _this.colorCallback_(feature, 0, 0);
-
-        var v0_g = _this.colorCallback_(feature, 0, 1);
-
-        var v0_b = _this.colorCallback_(feature, 0, 2);
-
-        var v0_a = _this.colorCallback_(feature, 0, 3);
-
-        var v1_r = _this.colorCallback_(feature, 1, 0);
-
-        var v1_g = _this.colorCallback_(feature, 1, 1);
-
-        var v1_b = _this.colorCallback_(feature, 1, 2);
-
-        var v1_a = _this.colorCallback_(feature, 1, 3);
-
-        var v2_r = _this.colorCallback_(feature, 2, 0);
-
-        var v2_g = _this.colorCallback_(feature, 2, 1);
-
-        var v2_b = _this.colorCallback_(feature, 2, 2);
-
-        var v2_a = _this.colorCallback_(feature, 2, 3);
-
-        var v3_r = _this.colorCallback_(feature, 3, 0);
-
-        var v3_g = _this.colorCallback_(feature, 3, 1);
-
-        var v3_b = _this.colorCallback_(feature, 3, 2);
-
-        var v3_a = _this.colorCallback_(feature, 3, 3);
-
-        var baseIndex = _this.verticesBuffer_.getArray().length / stride;
-
-        _this.verticesBuffer_.getArray().push(x, y, -size / 2, -size / 2, u0, v0, opacity, rotateWithView, v0_r, v0_g, v0_b, v0_a, x, y, +size / 2, -size / 2, u1, v0, opacity, rotateWithView, v1_r, v1_g, v1_b, v1_a, x, y, +size / 2, +size / 2, u1, v1, opacity, rotateWithView, v2_r, v2_g, v2_b, v2_a, x, y, -size / 2, +size / 2, u0, v1, opacity, rotateWithView, v3_r, v3_g, v3_b, v3_a);
-
-        _this.indicesBuffer_.getArray().push(baseIndex, baseIndex + 1, baseIndex + 3, baseIndex + 1, baseIndex + 2, baseIndex + 3);
-      });
-      this.helper_.flushBufferData(_webgl.ARRAY_BUFFER, this.verticesBuffer_);
-      this.helper_.flushBufferData(_webgl.ELEMENT_ARRAY_BUFFER, this.indicesBuffer_);
-    } // write new data
+    if ((sourceChanged || extentChanged) && viewNotMoving) {
+      this.rebuildBuffers_(frameState);
+      this.previousExtent_ = frameState.extent.slice();
+    } // apply the current projection transform with the invert of the one used to fill buffers
 
 
-    this.helper_.bindBuffer(_webgl.ARRAY_BUFFER, this.verticesBuffer_);
-    this.helper_.bindBuffer(_webgl.ELEMENT_ARRAY_BUFFER, this.indicesBuffer_);
+    this.helper.makeProjectionTransform(frameState, this.currentTransform_);
+    (0, _transform.multiply)(this.currentTransform_, this.invertRenderTransform_);
+    this.helper.prepareDraw(frameState); // write new data
+
+    this.helper.bindBuffer(this.verticesBuffer_);
+    this.helper.bindBuffer(this.indicesBuffer_);
     var bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
-    this.helper_.enableAttributeArray(_Helper.DefaultAttrib.POSITION, 2, _webgl.FLOAT, bytesPerFloat * stride, 0);
-    this.helper_.enableAttributeArray(_Helper.DefaultAttrib.OFFSETS, 2, _webgl.FLOAT, bytesPerFloat * stride, bytesPerFloat * 2);
-    this.helper_.enableAttributeArray(_Helper.DefaultAttrib.TEX_COORD, 2, _webgl.FLOAT, bytesPerFloat * stride, bytesPerFloat * 4);
-    this.helper_.enableAttributeArray(_Helper.DefaultAttrib.OPACITY, 1, _webgl.FLOAT, bytesPerFloat * stride, bytesPerFloat * 6);
-    this.helper_.enableAttributeArray(_Helper.DefaultAttrib.ROTATE_WITH_VIEW, 1, _webgl.FLOAT, bytesPerFloat * stride, bytesPerFloat * 7);
-    this.helper_.enableAttributeArray(_Helper.DefaultAttrib.COLOR, 4, _webgl.FLOAT, bytesPerFloat * stride, bytesPerFloat * 8);
+    this.helper.enableAttributeArray(_Helper.DefaultAttrib.POSITION, 2, _webgl.FLOAT, bytesPerFloat * stride, 0);
+    this.helper.enableAttributeArray(_Helper.DefaultAttrib.OFFSETS, 2, _webgl.FLOAT, bytesPerFloat * stride, bytesPerFloat * 2);
+    this.helper.enableAttributeArray(_Helper.DefaultAttrib.TEX_COORD, 2, _webgl.FLOAT, bytesPerFloat * stride, bytesPerFloat * 4);
+    this.helper.enableAttributeArray(_Helper.DefaultAttrib.OPACITY, 1, _webgl.FLOAT, bytesPerFloat * stride, bytesPerFloat * 6);
+    this.helper.enableAttributeArray(_Helper.DefaultAttrib.ROTATE_WITH_VIEW, 1, _webgl.FLOAT, bytesPerFloat * stride, bytesPerFloat * 7);
+    this.helper.enableAttributeArray(_Helper.DefaultAttrib.COLOR, 4, _webgl.FLOAT, bytesPerFloat * stride, bytesPerFloat * 8);
     return true;
   };
   /**
-   * Will return the last shader compilation errors. If no error happened, will return null;
-   * @return {string|null} Errors, or null if last compilation was successful
-   * @api
-   */
-
-
-  WebGLPointsLayerRenderer.prototype.getShaderCompileErrors = function () {
-    return this.helper_.getShaderCompileErrors();
-  };
-  /**
-   * Returns a texture of 1x1 pixel, white
+   * Rebuild internal webgl buffers based on current view extent; costly, should not be called too much
+   * @param {import("../../PluggableMap").FrameState} frameState Frame state.
    * @private
-   * @return {ImageData} Image data.
    */
 
 
-  WebGLPointsLayerRenderer.prototype.getDefaultTexture = function () {
-    var canvas = document.createElement('canvas');
-    var image = canvas.getContext('2d').createImageData(1, 1);
-    image.data[0] = image.data[1] = image.data[2] = image.data[3] = 255;
-    return image;
+  WebGLPointsLayerRenderer.prototype.rebuildBuffers_ = function (frameState) {
+    var vectorLayer =
+    /** @type {import("../../layer/Vector.js").default} */
+    this.getLayer();
+    var vectorSource = vectorLayer.getSource(); // saves the projection transform for the current frame state
+
+    var projectionTransform = (0, _transform.create)();
+    this.helper.makeProjectionTransform(frameState, projectionTransform);
+    var features = vectorSource.getFeatures();
+    var totalInstructionsCount = _Layer.POINT_INSTRUCTIONS_COUNT * features.length;
+
+    if (!this.renderInstructions_ || this.renderInstructions_.length !== totalInstructionsCount) {
+      this.renderInstructions_ = new Float32Array(totalInstructionsCount);
+    } // loop on features to fill the buffer
+
+
+    var feature;
+    var tmpCoords = [];
+    var elementIndex = 0;
+
+    for (var i = 0; i < features.length; i++) {
+      feature = features[i];
+
+      if (!feature.getGeometry() || feature.getGeometry().getType() !== _GeometryType.default.POINT) {
+        continue;
+      }
+
+      tmpCoords[0] = this.coordCallback_(feature, 0);
+      tmpCoords[1] = this.coordCallback_(feature, 1);
+      (0, _transform.apply)(projectionTransform, tmpCoords);
+      elementIndex = (0, _Layer.writePointFeatureInstructions)(this.renderInstructions_, elementIndex, tmpCoords[0], tmpCoords[1], this.texCoordCallback_(feature, 0), this.texCoordCallback_(feature, 1), this.texCoordCallback_(feature, 2), this.texCoordCallback_(feature, 3), this.sizeCallback_(feature), this.opacityCallback_(feature), this.rotateWithViewCallback_(feature), this.colorCallback_(feature, this.colorArray_));
+    }
+    /** @type import('./Layer').WebGLWorkerGenerateBuffersMessage */
+
+
+    var message = {
+      type: _Layer.WebGLWorkerMessageType.GENERATE_BUFFERS,
+      renderInstructions: this.renderInstructions_.buffer
+    }; // additional properties will be sent back as-is by the worker
+
+    message['projectionTransform'] = projectionTransform;
+    this.worker_.postMessage(message, [this.renderInstructions_.buffer]);
+    this.renderInstructions_ = null;
   };
 
   return WebGLPointsLayerRenderer;
@@ -61735,7 +65772,7 @@ function (_super) {
 
 var _default = WebGLPointsLayerRenderer;
 exports.default = _default;
-},{"../Layer":"../node_modules/ol/renderer/Layer.js","../../webgl/Buffer":"../node_modules/ol/webgl/Buffer.js","../../webgl":"../node_modules/ol/webgl.js","../../webgl/Helper":"../node_modules/ol/webgl/Helper.js","../../geom/GeometryType":"../node_modules/ol/geom/GeometryType.js"}],"../node_modules/ol/layer/Heatmap.js":[function(require,module,exports) {
+},{"../../webgl/Buffer.js":"../node_modules/ol/webgl/Buffer.js","../../webgl.js":"../node_modules/ol/webgl.js","../../webgl/Helper.js":"../node_modules/ol/webgl/Helper.js","../../geom/GeometryType.js":"../node_modules/ol/geom/GeometryType.js","./Layer.js":"../node_modules/ol/renderer/webgl/Layer.js","../../ViewHint.js":"../node_modules/ol/ViewHint.js","../../extent.js":"../node_modules/ol/extent.js","../../transform.js":"../node_modules/ol/transform.js","../../worker/webgl.js":"../node_modules/ol/worker/webgl.js"}],"../node_modules/ol/layer/Heatmap.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -61753,7 +65790,7 @@ var _Vector = _interopRequireDefault(require("./Vector.js"));
 
 var _obj = require("../obj.js");
 
-var _PointsLayer = _interopRequireDefault(require("../renderer/webgl/PointsLayer"));
+var _PointsLayer = _interopRequireDefault(require("../renderer/webgl/PointsLayer.js"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -62023,7 +66060,7 @@ function createGradient(colors) {
 
 var _default = Heatmap;
 exports.default = _default;
-},{"../events.js":"../node_modules/ol/events.js","../Object.js":"../node_modules/ol/Object.js","../dom.js":"../node_modules/ol/dom.js","./Vector.js":"../node_modules/ol/layer/Vector.js","../obj.js":"../node_modules/ol/obj.js","../renderer/webgl/PointsLayer":"../node_modules/ol/renderer/webgl/PointsLayer.js"}],"../node_modules/ol/renderer/canvas/VectorImageLayer.js":[function(require,module,exports) {
+},{"../events.js":"../node_modules/ol/events.js","../Object.js":"../node_modules/ol/Object.js","../dom.js":"../node_modules/ol/dom.js","./Vector.js":"../node_modules/ol/layer/Vector.js","../obj.js":"../node_modules/ol/obj.js","../renderer/webgl/PointsLayer.js":"../node_modules/ol/renderer/webgl/PointsLayer.js"}],"../node_modules/ol/renderer/canvas/VectorImageLayer.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -62051,6 +66088,8 @@ var _EventType = _interopRequireDefault(require("../../events/EventType.js"));
 
 var _ImageState = _interopRequireDefault(require("../../ImageState.js"));
 
+var _render = require("../../render.js");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var __extends = void 0 && (void 0).__extends || function () {
@@ -62077,7 +66116,7 @@ var __extends = void 0 && (void 0).__extends || function () {
   };
 }();
 /**
- * @module ol/renderer/canvas/ImageLayer
+ * @module ol/renderer/canvas/VectorImageLayer
  */
 
 
@@ -62132,7 +66171,15 @@ function (_super) {
    */
 
 
-  CanvasVectorImageLayerRenderer.prototype.prepareFrame = function (frameState, layerState) {
+  CanvasVectorImageLayerRenderer.prototype.handleFontsChanged = function () {
+    this.vectorRenderer_.handleFontsChanged();
+  };
+  /**
+   * @inheritDoc
+   */
+
+
+  CanvasVectorImageLayerRenderer.prototype.prepareFrame = function (frameState) {
     var pixelRatio = frameState.pixelRatio;
     var viewState = frameState.viewState;
     var viewResolution = viewState.resolution;
@@ -62147,10 +66194,12 @@ function (_super) {
 
     if (!hints[_ViewHint.default.ANIMATING] && !hints[_ViewHint.default.INTERACTING] && !(0, _extent.isEmpty)(renderedExtent)) {
       var skippedFeatures_1 = this.skippedFeatures_;
+      vectorRenderer.useContainer(null, null, 1);
       var context = vectorRenderer.context;
       var imageFrameState_1 =
       /** @type {import("../../PluggableMap.js").FrameState} */
       (0, _obj.assign)({}, frameState, {
+        declutterItems: [],
         size: [(0, _extent.getWidth)(renderedExtent) / viewResolution, (0, _extent.getHeight)(renderedExtent) / viewResolution],
         viewState:
         /** @type {import("../../View.js").State} */
@@ -62160,8 +66209,9 @@ function (_super) {
       });
       var newSkippedFeatures_1 = Object.keys(imageFrameState_1.skippedFeatureUids).sort();
       var image_1 = new _ImageCanvas.default(renderedExtent, viewResolution, pixelRatio, context.canvas, function (callback) {
-        if (vectorRenderer.prepareFrame(imageFrameState_1, layerState) && (vectorRenderer.replayGroupChanged || !(0, _array.equals)(skippedFeatures_1, newSkippedFeatures_1))) {
-          vectorRenderer.renderFrame(imageFrameState_1, layerState);
+        if (vectorRenderer.prepareFrame(imageFrameState_1) && (vectorRenderer.replayGroupChanged || !(0, _array.equals)(skippedFeatures_1, newSkippedFeatures_1))) {
+          vectorRenderer.renderFrame(imageFrameState_1, null);
+          (0, _render.renderDeclutterItems)(imageFrameState_1, null);
           skippedFeatures_1 = newSkippedFeatures_1;
           callback();
         }
@@ -62201,11 +66251,11 @@ function (_super) {
    */
 
 
-  CanvasVectorImageLayerRenderer.prototype.forEachFeatureAtCoordinate = function (coordinate, frameState, hitTolerance, callback) {
+  CanvasVectorImageLayerRenderer.prototype.forEachFeatureAtCoordinate = function (coordinate, frameState, hitTolerance, callback, declutteredFeatures) {
     if (this.vectorRenderer_) {
-      return this.vectorRenderer_.forEachFeatureAtCoordinate(coordinate, frameState, hitTolerance, callback);
+      return this.vectorRenderer_.forEachFeatureAtCoordinate(coordinate, frameState, hitTolerance, callback, declutteredFeatures);
     } else {
-      return _super.prototype.forEachFeatureAtCoordinate.call(this, coordinate, frameState, hitTolerance, callback);
+      return _super.prototype.forEachFeatureAtCoordinate.call(this, coordinate, frameState, hitTolerance, callback, declutteredFeatures);
     }
   };
 
@@ -62214,7 +66264,7 @@ function (_super) {
 
 var _default = CanvasVectorImageLayerRenderer;
 exports.default = _default;
-},{"../../ImageCanvas.js":"../node_modules/ol/ImageCanvas.js","../../ViewHint.js":"../node_modules/ol/ViewHint.js","../../array.js":"../node_modules/ol/array.js","../../extent.js":"../node_modules/ol/extent.js","../../obj.js":"../node_modules/ol/obj.js","./ImageLayer.js":"../node_modules/ol/renderer/canvas/ImageLayer.js","./VectorLayer.js":"../node_modules/ol/renderer/canvas/VectorLayer.js","../../events.js":"../node_modules/ol/events.js","../../events/EventType.js":"../node_modules/ol/events/EventType.js","../../ImageState.js":"../node_modules/ol/ImageState.js"}],"../node_modules/ol/layer/VectorImage.js":[function(require,module,exports) {
+},{"../../ImageCanvas.js":"../node_modules/ol/ImageCanvas.js","../../ViewHint.js":"../node_modules/ol/ViewHint.js","../../array.js":"../node_modules/ol/array.js","../../extent.js":"../node_modules/ol/extent.js","../../obj.js":"../node_modules/ol/obj.js","./ImageLayer.js":"../node_modules/ol/renderer/canvas/ImageLayer.js","./VectorLayer.js":"../node_modules/ol/renderer/canvas/VectorLayer.js","../../events.js":"../node_modules/ol/events.js","../../events/EventType.js":"../node_modules/ol/events/EventType.js","../../ImageState.js":"../node_modules/ol/ImageState.js","../../render.js":"../node_modules/ol/render.js"}],"../node_modules/ol/layer/VectorImage.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -62283,9 +66333,9 @@ var __extends = void 0 && (void 0).__extends || function () {
  * this layer in its layers collection, and the layer will be rendered on top. This is useful for
  * temporary layers. The standard way to add a layer to a map and have it managed by the map is to
  * use {@link module:ol/Map#addLayer}.
- * @property {boolean} [declutter=false] Declutter images and text. Decluttering is applied to all
- * image and text styles, and the priority is defined by the z-index of the style. Lower z-index
- * means higher priority.
+ * @property {boolean} [declutter=false] Declutter images and text on this layer. The priority is defined
+ * by the `zIndex` of the style and the render order of features. Higher z-index means higher priority.
+ * Within the same z-index, a feature rendered before another has higher priority.
  * @property {import("../style/Style.js").StyleLike} [style] Layer style. See
  * {@link module:ol/style} for default style which will be used if this is not defined.
  * @property {boolean} [updateWhileAnimating=false] When set to `true`, feature batches will
@@ -62319,9 +66369,7 @@ function (_super) {
   function VectorImageLayer(opt_options) {
     var _this = this;
 
-    var options = opt_options ? opt_options :
-    /** @type {Options} */
-    {};
+    var options = opt_options ? opt_options : {};
     var baseOptions = (0, _obj.assign)({}, options);
     delete baseOptions.imageRatio;
     _this = _super.call(this, baseOptions) || this;
@@ -62405,15 +66453,11 @@ var _events = require("../../events.js");
 
 var _EventType = _interopRequireDefault(require("../../events/EventType.js"));
 
-var _rbush = _interopRequireDefault(require("rbush"));
-
 var _extent = require("../../extent.js");
 
 var _VectorTileRenderType = _interopRequireDefault(require("../../layer/VectorTileRenderType.js"));
 
 var _BuilderType = _interopRequireDefault(require("../../render/canvas/BuilderType.js"));
-
-var _canvas = require("../../render/canvas.js");
 
 var _BuilderGroup = _interopRequireDefault(require("../../render/canvas/BuilderGroup.js"));
 
@@ -62424,8 +66468,6 @@ var _vector = require("../vector.js");
 var _transform = require("../../transform.js");
 
 var _ExecutorGroup = _interopRequireWildcard(require("../../render/canvas/ExecutorGroup.js"));
-
-var _obj = require("../../obj.js");
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
@@ -62491,30 +66533,18 @@ function (_super) {
 
   function CanvasVectorTileLayerRenderer(layer) {
     var _this = _super.call(this, layer) || this;
-
-    var baseCanvas = _this.context.canvas;
     /**
      * @private
      * @type {CanvasRenderingContext2D}
      */
 
-    _this.overlayContext_ = (0, _dom.createCanvasContext2D)();
-    var overlayCanvas = _this.overlayContext_.canvas;
-    overlayCanvas.style.position = 'absolute';
-    overlayCanvas.style.transformOrigin = 'top left';
-    var container = document.createElement('div');
-    var style = container.style;
-    style.position = 'absolute';
-    style.width = '100%';
-    style.height = '100%';
-    container.appendChild(baseCanvas);
-    container.appendChild(overlayCanvas);
+
+    _this.overlayContext_ = null;
     /**
-     * @private
-     * @type {HTMLElement}
+     * @type {string}
      */
 
-    _this.container_ = container;
+    _this.overlayContextUid_;
     /**
      * The transform for rendered pixels to viewport CSS pixels for the overlay canvas.
      * @private
@@ -62529,12 +66559,6 @@ function (_super) {
      */
 
     _this.inverseOverlayPixelTransform_ = (0, _transform.create)();
-    /**
-     * Declutter tree.
-     * @private
-     */
-
-    _this.declutterTree_ = layer.getDeclutter() ? (0, _rbush.default)(9, undefined) : null;
     /**
      * @private
      * @type {boolean}
@@ -62563,10 +66587,9 @@ function (_super) {
      * @type {import("../../transform.js").Transform}
      */
 
-    _this.tmpTransform_ = (0, _transform.create)(); // Use closest resolution.
+    _this.tmpTransform_ = (0, _transform.create)(); // Use nearest lower resolution.
 
-    _this.zDirection = 0;
-    (0, _events.listen)(_canvas.labelCache, _EventType.default.CLEAR, _this.handleFontsChanged_, _this);
+    _this.zDirection = 1;
     return _this;
   }
   /**
@@ -62574,20 +66597,50 @@ function (_super) {
    */
 
 
-  CanvasVectorTileLayerRenderer.prototype.disposeInternal = function () {
-    (0, _events.unlisten)(_canvas.labelCache, _EventType.default.CLEAR, this.handleFontsChanged_, this);
-    this.overlayContext_.canvas.width = this.overlayContext_.canvas.height = 0;
+  CanvasVectorTileLayerRenderer.prototype.useContainer = function (target, transform, opacity) {
+    var overlayContext;
 
-    _super.prototype.disposeInternal.call(this);
+    if (target && target.childElementCount === 2) {
+      overlayContext = target.lastElementChild.getContext('2d');
+
+      if (!overlayContext) {
+        target = null;
+      }
+    }
+
+    var containerReused = this.containerReused;
+
+    _super.prototype.useContainer.call(this, target, transform, opacity);
+
+    if (containerReused) {
+      this.overlayContext_ = overlayContext || null;
+      this.overlayContextUid_ = overlayContext ? (0, _util.getUid)(overlayContext) : undefined;
+    }
+
+    if (!this.overlayContext_) {
+      var overlayContext_1 = (0, _dom.createCanvasContext2D)();
+      var style = overlayContext_1.canvas.style;
+      style.position = 'absolute';
+      style.transformOrigin = 'top left';
+      this.overlayContext_ = overlayContext_1;
+      this.overlayContextUid_ = (0, _util.getUid)(overlayContext_1);
+    }
+
+    if (this.container.childElementCount === 1) {
+      this.container.appendChild(this.overlayContext_.canvas);
+    }
   };
   /**
    * @param {import("../../VectorRenderTile.js").default} tile Tile.
    * @param {number} pixelRatio Pixel ratio.
    * @param {import("../../proj/Projection").default} projection Projection.
+   * @param {boolean} queue Queue tile for rendering.
+   * @return {boolean} Tile needs to be rendered.
    */
 
 
-  CanvasVectorTileLayerRenderer.prototype.prepareTile = function (tile, pixelRatio, projection) {
+  CanvasVectorTileLayerRenderer.prototype.prepareTile = function (tile, pixelRatio, projection, queue) {
+    var render = false;
     var tileUid = (0, _util.getUid)(tile);
     var state = tile.getState();
 
@@ -62600,9 +66653,15 @@ function (_super) {
       this.updateExecutorGroup_(tile, pixelRatio, projection);
 
       if (this.tileImageNeedsRender_(tile, pixelRatio, projection)) {
-        this.renderTileImageQueue_[tileUid] = tile;
+        render = true;
+
+        if (queue) {
+          this.renderTileImageQueue_[tileUid] = tile;
+        }
       }
     }
+
+    return render;
   };
   /**
    * @inheritDoc
@@ -62624,7 +66683,7 @@ function (_super) {
       var tileUid = (0, _util.getUid)(tile);
 
       if (!(tileUid in this.tileListenerKeys_)) {
-        var listenerKey = (0, _events.listen)(tile, _EventType.default.CHANGE, this.prepareTile.bind(this, tile, pixelRatio, projection));
+        var listenerKey = (0, _events.listen)(tile, _EventType.default.CHANGE, this.prepareTile.bind(this, tile, pixelRatio, projection, true));
         this.tileListenerKeys_[tileUid] = listenerKey;
       }
     } else {
@@ -62635,7 +66694,11 @@ function (_super) {
         tile.wantedResolution = resolution;
       }
 
-      this.prepareTile(tile, pixelRatio, projection);
+      var render = this.prepareTile(tile, pixelRatio, projection, false);
+
+      if (render) {
+        this.renderTileImage_(tile, frameState);
+      }
     }
 
     return tile;
@@ -62661,7 +66724,9 @@ function (_super) {
    */
 
 
-  CanvasVectorTileLayerRenderer.prototype.prepareFrame = function (frameState, layerState) {
+  CanvasVectorTileLayerRenderer.prototype.prepareFrame = function (frameState) {
+    var layerState = frameState.layerStatesArray[frameState.layerIndex];
+    layerState.hasOverlay = true;
     var layerRevision = this.getLayer().getRevision();
 
     if (this.renderedLayerRevision_ != layerRevision) {
@@ -62669,7 +66734,7 @@ function (_super) {
     }
 
     this.renderedLayerRevision_ = layerRevision;
-    return _super.prototype.prepareFrame.call(this, frameState, layerState);
+    return _super.prototype.prepareFrame.call(this, frameState);
   };
   /**
    * @param {import("../../VectorRenderTile.js").default} tile Tile.
@@ -62720,7 +66785,7 @@ function (_super) {
       var sharedExtent = (0, _extent.getIntersection)(tileExtent, sourceTileExtent);
       var bufferedExtent = (0, _extent.equals)(sourceTileExtent, sharedExtent) ? null : (0, _extent.buffer)(sharedExtent, layer.getRenderBuffer() * resolution, this_1.tmpExtent);
       builderState.dirty = false;
-      var builderGroup = new _BuilderGroup.default(0, sharedExtent, resolution, pixelRatio, !!this_1.declutterTree_);
+      var builderGroup = new _BuilderGroup.default(0, sharedExtent, resolution, pixelRatio, layer.getDeclutter());
       var squaredTolerance = (0, _vector.getSquaredTolerance)(resolution, pixelRatio);
       /**
        * @param {import("../../Feature.js").FeatureLike} feature Feature.
@@ -62759,7 +66824,7 @@ function (_super) {
       var executorGroupInstructions = builderGroup.finish(); // no need to clip when the render tile is covered by a single source tile
 
       var replayExtent = layer.getDeclutter() && sourceTiles.length === 1 ? null : sharedExtent;
-      var renderingReplayGroup = new _ExecutorGroup.default(replayExtent, resolution, pixelRatio, source.getOverlaps(), this_1.declutterTree_, executorGroupInstructions, layer.getRenderBuffer());
+      var renderingReplayGroup = new _ExecutorGroup.default(replayExtent, resolution, pixelRatio, source.getOverlaps(), executorGroupInstructions, layer.getRenderBuffer());
       tile.executorGroups[layerUid].push(renderingReplayGroup);
     };
 
@@ -62779,11 +66844,14 @@ function (_super) {
    */
 
 
-  CanvasVectorTileLayerRenderer.prototype.forEachFeatureAtCoordinate = function (coordinate, frameState, hitTolerance, callback, thisArg) {
+  CanvasVectorTileLayerRenderer.prototype.forEachFeatureAtCoordinate = function (coordinate, frameState, hitTolerance, callback, declutteredFeatures) {
     var resolution = frameState.viewState.resolution;
     var rotation = frameState.viewState.rotation;
     hitTolerance = hitTolerance == undefined ? 0 : hitTolerance;
-    var layer = this.getLayer();
+    var layer =
+    /** @type {import("../../layer/VectorTile.js").default} */
+    this.getLayer();
+    var declutter = layer.getDeclutter();
     var source = layer.getSource();
     var tileGrid = source.getTileGridForProjection(frameState.viewState.projection);
     /** @type {!Object<string, boolean>} */
@@ -62798,7 +66866,7 @@ function (_super) {
     for (i = 0, ii = renderedTiles.length; i < ii; ++i) {
       var tile = renderedTiles[i];
 
-      if (!this.declutterTree_) {
+      if (!declutter) {
         // When not decluttering, we only need to consider the tile that contains the given
         // coordinate, because each feature will be rendered for each tile that contains it.
         var tileExtent = tileGrid.getTileCoordExtent(tile.wrappedTileCoord);
@@ -62826,45 +66894,20 @@ function (_super) {
 
           if (!(key in features)) {
             features[key] = true;
-            return callback.call(thisArg, feature, layer);
+            return callback(feature, layer);
           }
-        }, null);
+        }, layer.getDeclutter() ? declutteredFeatures : null);
       }
     }
 
     return found;
   };
   /**
-   * @param {import("../../VectorTile.js").default} tile Tile.
-   * @param {import("../../PluggableMap.js").FrameState} frameState Frame state.
-   * @return {import("../../transform.js").Transform} transform Transform.
-   * @private
+   * @inheritDoc
    */
 
 
-  CanvasVectorTileLayerRenderer.prototype.getReplayTransform_ = function (tile, frameState) {
-    var layer = this.getLayer();
-    var source = layer.getSource();
-    var tileGrid = source.getTileGrid();
-    var tileCoord = tile.tileCoord;
-    var tileResolution = tileGrid.getResolution(tileCoord[0]);
-    var viewState = frameState.viewState;
-    var pixelRatio = frameState.pixelRatio;
-    var renderResolution = viewState.resolution / pixelRatio;
-    var tileExtent = tileGrid.getTileCoordExtent(tileCoord, this.tmpExtent);
-    var center = viewState.center;
-    var origin = (0, _extent.getTopLeft)(tileExtent);
-    var size = frameState.size;
-    var offsetX = Math.round(pixelRatio * size[0] / 2);
-    var offsetY = Math.round(pixelRatio * size[1] / 2);
-    return (0, _transform.compose)(this.tmpTransform_, offsetX, offsetY, tileResolution / renderResolution, tileResolution / renderResolution, viewState.rotation, (origin[0] - center[0]) / tileResolution, (center[1] - origin[1]) / tileResolution);
-  };
-  /**
-   * @param {import("../../events/Event.js").default} event Event.
-   */
-
-
-  CanvasVectorTileLayerRenderer.prototype.handleFontsChanged_ = function (event) {
+  CanvasVectorTileLayerRenderer.prototype.handleFontsChanged = function () {
     var layer = this.getLayer();
 
     if (layer.getVisible() && this.renderedLayerRevision_ !== undefined) {
@@ -62886,29 +66929,34 @@ function (_super) {
    */
 
 
-  CanvasVectorTileLayerRenderer.prototype.renderFrame = function (frameState, layerState) {
-    _super.prototype.renderFrame.call(this, frameState, layerState);
+  CanvasVectorTileLayerRenderer.prototype.renderFrame = function (frameState, target) {
+    var viewHints = frameState.viewHints;
+    var hifi = !(viewHints[_ViewHint.default.ANIMATING] || viewHints[_ViewHint.default.INTERACTING]);
+    this.renderQueuedTileImages_(hifi, frameState);
+
+    _super.prototype.renderFrame.call(this, frameState, target);
 
     var layer =
     /** @type {import("../../layer/VectorTile.js").default} */
     this.getLayer();
-    var viewHints = frameState.viewHints;
-    var hifi = !(viewHints[_ViewHint.default.ANIMATING] || viewHints[_ViewHint.default.INTERACTING]);
     var renderMode = layer.getRenderMode();
 
     if (renderMode === _VectorTileRenderType.default.IMAGE) {
-      this.renderTileImages_(hifi, frameState);
-      return this.container_;
+      return this.container;
     }
 
-    if (!(0, _obj.isEmpty)(this.renderTileImageQueue_) && !this.extentChanged) {
-      this.renderTileImages_(hifi, frameState);
-      return this.container_;
+    var source = layer.getSource(); // Unqueue tiles from the image queue when we don't need any more
+
+    var usedTiles = frameState.usedTiles[(0, _util.getUid)(source)];
+
+    for (var tileUid in this.renderTileImageQueue_) {
+      if (!usedTiles || !(tileUid in usedTiles)) {
+        delete this.renderTileImageQueue_[tileUid];
+      }
     }
 
     var context = this.overlayContext_;
     var declutterReplays = layer.getDeclutter() ? {} : null;
-    var source = layer.getSource();
     var replayTypes = VECTOR_REPLAYS[renderMode];
     var pixelRatio = frameState.pixelRatio;
     var rotation = frameState.viewState.rotation;
@@ -62929,17 +66977,14 @@ function (_super) {
       if (canvas.style.transform !== canvasTransform) {
         canvas.style.transform = canvasTransform;
       }
-    } else {
+    } else if ((0, _util.getUid)(context) === this.overlayContextUid_) {
       context.clearRect(0, 0, width, height);
-    }
-
-    if (declutterReplays) {
-      this.declutterTree_.clear();
     }
 
     var tiles = this.renderedTiles;
     var tileGrid = source.getTileGridForProjection(frameState.viewState.projection);
     var clips = [];
+    var clipZs = [];
 
     for (var i = tiles.length - 1; i >= 0; --i) {
       var tile =
@@ -62955,6 +67000,7 @@ function (_super) {
       var worldOffset = tileGrid.getTileCoordExtent(tileCoord, this.tmpExtent)[0] - tileExtent[0];
       var transform = this.getRenderTransform(frameState, width, height, worldOffset);
       var executorGroups = tile.executorGroups[(0, _util.getUid)(layer)];
+      var clipped = false;
 
       for (var t = 0, tt = executorGroups.length; t < tt; ++t) {
         var executorGroup = executorGroups[t];
@@ -62965,11 +67011,9 @@ function (_super) {
         }
 
         var currentZ = tile.tileCoord[0];
-        var zs = void 0,
-            currentClip = void 0;
+        var currentClip = void 0;
 
-        if (!declutterReplays) {
-          zs = [];
+        if (!declutterReplays && !clipped) {
           currentClip = executorGroup.getClipCoords(transform);
           context.save(); // Create a clip mask for regions in this low resolution tile that are
           // already filled by a higher resolution tile
@@ -62977,7 +67021,7 @@ function (_super) {
           for (var j = 0, jj = clips.length; j < jj; ++j) {
             var clip = clips[j];
 
-            if (currentZ < zs[j]) {
+            if (currentZ < clipZs[j]) {
               context.beginPath(); // counter-clockwise (outer ring) for current tile
 
               context.moveTo(currentClip[0], currentClip[1]);
@@ -62996,28 +67040,21 @@ function (_super) {
 
         executorGroup.execute(context, transform, rotation, {}, hifi, replayTypes, declutterReplays);
 
-        if (!declutterReplays) {
+        if (!declutterReplays && !clipped) {
           context.restore();
           clips.push(currentClip);
-          zs.push(currentZ);
+          clipZs.push(currentZ);
+          clipped = true;
         }
       }
     }
 
     if (declutterReplays) {
-      (0, _ExecutorGroup.replayDeclutter)(declutterReplays, context, rotation, hifi);
+      var layerState = frameState.layerStatesArray[frameState.layerIndex];
+      (0, _ExecutorGroup.replayDeclutter)(declutterReplays, context, rotation, layerState.opacity, hifi, frameState.declutterItems);
     }
 
-    var opacity = layerState.opacity;
-
-    if (opacity !== parseFloat(canvas.style.opacity)) {
-      canvas.style.opacity = opacity;
-    } // Now that we have rendered the tiles we have already, let's prepare new tile images
-    // for the next frame
-
-
-    this.renderTileImages_(hifi, frameState);
-    return this.container_;
+    return this.container;
   };
   /**
    * @param {boolean} hifi We have time to render a high fidelity map image.
@@ -63025,33 +67062,19 @@ function (_super) {
    */
 
 
-  CanvasVectorTileLayerRenderer.prototype.renderTileImages_ = function (hifi, frameState) {
+  CanvasVectorTileLayerRenderer.prototype.renderQueuedTileImages_ = function (hifi, frameState) {
     // When we don't have time to render hifi, only render tiles until we have used up
     // half of the frame budget of 16 ms
     for (var uid in this.renderTileImageQueue_) {
       if (!hifi && Date.now() - frameState.time > 8) {
+        frameState.animate = true;
         break;
       }
 
       var tile = this.renderTileImageQueue_[uid];
-      frameState.animate = true;
       delete this.renderTileImageQueue_[uid];
-      var layer =
-      /** @type {import("../../layer/VectorTile.js").default} */
-      this.getLayer();
-
-      if (this.declutterTree_ && layer.getRenderMode() === _VectorTileRenderType.default.IMAGE) {
-        this.declutterTree_.clear();
-      }
-
-      var viewState = frameState.viewState;
-      var tileGrid = layer.getSource().getTileGridForProjection(viewState.projection);
-      var tileResolution = tileGrid.getResolution(tile.tileCoord[0]);
-      var renderPixelRatio = frameState.pixelRatio / tile.wantedResolution * tileResolution;
-      this.renderTileImage_(tile, frameState.pixelRatio, renderPixelRatio, viewState.projection);
+      this.renderTileImage_(tile, frameState);
     }
-
-    (0, _obj.clear)(this.renderTileImageQueue_);
   };
   /**
    * @param {import("../../Feature.js").FeatureLike} feature Feature.
@@ -63100,14 +67123,12 @@ function (_super) {
   };
   /**
    * @param {import("../../VectorRenderTile.js").default} tile Tile.
-   * @param {number} pixelRatio Pixel ratio.
-   * @param {number} renderPixelRatio Render pixel ratio.
-   * @param {import("../../proj/Projection.js").default} projection Projection.
+   * @param {import("../../PluggableMap").FrameState} frameState Frame state.
    * @private
    */
 
 
-  CanvasVectorTileLayerRenderer.prototype.renderTileImage_ = function (tile, pixelRatio, renderPixelRatio, projection) {
+  CanvasVectorTileLayerRenderer.prototype.renderTileImage_ = function (tile, frameState) {
     var layer =
     /** @type {import("../../layer/VectorTile.js").default} */
     this.getLayer();
@@ -63119,24 +67140,35 @@ function (_super) {
     var tileCoord = tile.wrappedTileCoord;
     var z = tileCoord[0];
     var source = layer.getSource();
+    var pixelRatio = frameState.pixelRatio;
+    var viewState = frameState.viewState;
+    var projection = viewState.projection;
     var tileGrid = source.getTileGridForProjection(projection);
+    var tileResolution = tileGrid.getResolution(tile.tileCoord[0]);
+    var renderPixelRatio = frameState.pixelRatio / tile.wantedResolution * tileResolution;
     var resolution = tileGrid.getResolution(z);
-    var context = tile.getContext(layer);
+    var context = tile.getContext(layer); // Increase tile size when overzooming for low pixel ratio, to avoid blurry tiles
+
+    pixelRatio = Math.max(pixelRatio, renderPixelRatio / pixelRatio);
     var size = source.getTilePixelSize(z, pixelRatio, projection);
     context.canvas.width = size[0];
     context.canvas.height = size[1];
-    var canvasTransform = (0, _transform.reset)(this.tmpTransform_);
     var renderScale = pixelRatio / renderPixelRatio;
-    (0, _transform.scale)(canvasTransform, renderScale, renderScale);
-    context.setTransform.apply(context, canvasTransform);
+
+    if (renderScale !== 1) {
+      var canvasTransform = (0, _transform.reset)(this.tmpTransform_);
+      (0, _transform.scale)(canvasTransform, renderScale, renderScale);
+      context.setTransform.apply(context, canvasTransform);
+    }
+
     var tileExtent = tileGrid.getTileCoordExtent(tileCoord, this.tmpExtent);
+    var pixelScale = renderPixelRatio / resolution;
+    var transform = (0, _transform.reset)(this.tmpTransform_);
+    (0, _transform.scale)(transform, pixelScale, -pixelScale);
+    (0, _transform.translate)(transform, -tileExtent[0], -tileExtent[3]);
 
     for (var i = 0, ii = executorGroups.length; i < ii; ++i) {
       var executorGroup = executorGroups[i];
-      var pixelScale = renderPixelRatio / resolution;
-      var transform = (0, _transform.reset)(this.tmpTransform_);
-      (0, _transform.scale)(transform, pixelScale, -pixelScale);
-      (0, _transform.translate)(transform, -tileExtent[0], -tileExtent[3]);
       executorGroup.execute(context, transform, 0, {}, true, IMAGE_REPLAYS[layer.getRenderMode()]);
     }
 
@@ -63180,7 +67212,7 @@ function (_super) {
 
 var _default = CanvasVectorTileLayerRenderer;
 exports.default = _default;
-},{"../../util.js":"../node_modules/ol/util.js","../../dom.js":"../node_modules/ol/dom.js","../../TileState.js":"../node_modules/ol/TileState.js","../../ViewHint.js":"../node_modules/ol/ViewHint.js","../../events.js":"../node_modules/ol/events.js","../../events/EventType.js":"../node_modules/ol/events/EventType.js","rbush":"../node_modules/rbush/index.js","../../extent.js":"../node_modules/ol/extent.js","../../layer/VectorTileRenderType.js":"../node_modules/ol/layer/VectorTileRenderType.js","../../render/canvas/BuilderType.js":"../node_modules/ol/render/canvas/BuilderType.js","../../render/canvas.js":"../node_modules/ol/render/canvas.js","../../render/canvas/BuilderGroup.js":"../node_modules/ol/render/canvas/BuilderGroup.js","./TileLayer.js":"../node_modules/ol/renderer/canvas/TileLayer.js","../vector.js":"../node_modules/ol/renderer/vector.js","../../transform.js":"../node_modules/ol/transform.js","../../render/canvas/ExecutorGroup.js":"../node_modules/ol/render/canvas/ExecutorGroup.js","../../obj.js":"../node_modules/ol/obj.js"}],"../node_modules/ol/layer/VectorTile.js":[function(require,module,exports) {
+},{"../../util.js":"../node_modules/ol/util.js","../../dom.js":"../node_modules/ol/dom.js","../../TileState.js":"../node_modules/ol/TileState.js","../../ViewHint.js":"../node_modules/ol/ViewHint.js","../../events.js":"../node_modules/ol/events.js","../../events/EventType.js":"../node_modules/ol/events/EventType.js","../../extent.js":"../node_modules/ol/extent.js","../../layer/VectorTileRenderType.js":"../node_modules/ol/layer/VectorTileRenderType.js","../../render/canvas/BuilderType.js":"../node_modules/ol/render/canvas/BuilderType.js","../../render/canvas/BuilderGroup.js":"../node_modules/ol/render/canvas/BuilderGroup.js","./TileLayer.js":"../node_modules/ol/renderer/canvas/TileLayer.js","../vector.js":"../node_modules/ol/renderer/vector.js","../../transform.js":"../node_modules/ol/transform.js","../../render/canvas/ExecutorGroup.js":"../node_modules/ol/render/canvas/ExecutorGroup.js"}],"../node_modules/ol/layer/VectorTile.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -63267,8 +67299,10 @@ var __extends = void 0 && (void 0).__extends || function () {
  * temporary layers. The standard way to add a layer to a map and have it managed by the map is to
  * use {@link module:ol/Map#addLayer}.
  * @property {boolean} [declutter=false] Declutter images and text. Decluttering is applied to all
- * image and text styles, and the priority is defined by the z-index of the style. Lower z-index
- * means higher priority.
+ * image and text styles of all Vector and VectorTile layers that have set this to `true`. The priority
+ * is defined by the z-index of the layer, the `zIndex` of the style and the render order of features.
+ * Higher z-index means higher priority. Within the same z-index, a feature rendered before another has
+ * higher priority.
  * @property {import("../style/Style.js").StyleLike} [style] Layer style. See
  * {@link module:ol/style} for default style which will be used if this is not defined.
  * @property {boolean} [updateWhileAnimating=false] When set to `true`, feature batches will be
@@ -63312,7 +67346,7 @@ function (_super) {
     delete baseOptions.preload;
     delete baseOptions.useInterimTilesOnError;
     _this = _super.call(this,
-    /** @type {import("./Vector.js").Options} */
+    /** @type {import("./BaseVector.js").Options} */
     baseOptions) || this;
     var renderMode = options.renderMode || _VectorTileRenderType.default.HYBRID;
     (0, _asserts.assert)(renderMode == undefined || renderMode == _VectorTileRenderType.default.IMAGE || renderMode == _VectorTileRenderType.default.HYBRID, 28); // `renderMode` must be `'image'` or `'hybrid'`
@@ -63503,8 +67537,10 @@ var _proj = require("../proj.js");
  * the `dataProjection` of the format is assigned (where set). If the projection
  * can not be derived from the data and if no `dataProjection` is set for a format,
  * the features will not be reprojected.
- * @property {import("../extent.js").Extent} [extent] Tile extent of the tile being read. This is only used and
- * required for {@link module:ol/format/MVT}.
+ * @property {import("../extent.js").Extent} [extent] Tile extent in map units of the tile being read.
+ * This is only required when reading data with tile pixels as geometry units. When configured,
+ * a `dataProjection` with `TILE_PIXELS` as `units` and the tile's pixel extent as `extent` needs to be
+ * provided.
  * @property {import("../proj.js").ProjectionLike} [featureProjection] Projection of the feature geometries
  * created by the format reader. If not provided, features will be returned in the
  * `dataProjection`.
@@ -63576,8 +67612,15 @@ function () {
     var options;
 
     if (opt_options) {
+      var dataProjection = opt_options.dataProjection ? opt_options.dataProjection : this.readProjection(source);
+
+      if (opt_options.extent) {
+        dataProjection = (0, _proj.get)(dataProjection);
+        dataProjection.setWorldExtent(opt_options.extent);
+      }
+
       options = {
-        dataProjection: opt_options.dataProjection ? opt_options.dataProjection : this.readProjection(source),
+        dataProjection: dataProjection,
         featureProjection: opt_options.featureProjection
       };
     }
@@ -70446,8 +74489,6 @@ exports.default = void 0;
 
 var _dom = require("../dom.js");
 
-var _events = require("../events.js");
-
 var _Target = _interopRequireDefault(require("../events/Target.js"));
 
 var _EventType = _interopRequireDefault(require("../events/EventType.js"));
@@ -70455,6 +74496,8 @@ var _EventType = _interopRequireDefault(require("../events/EventType.js"));
 var _ImageState = _interopRequireDefault(require("../ImageState.js"));
 
 var _IconImageCache = require("./IconImageCache.js");
+
+var _Image = require("../Image.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -70534,10 +74577,10 @@ function (_super) {
     _this.color_ = color;
     /**
      * @private
-     * @type {Array<import("../events.js").EventsKey>}
+     * @type {function():void}
      */
 
-    _this.imageListenerKeys_ = null;
+    _this.unlisten_ = null;
     /**
      * @private
      * @type {import("../ImageState.js").default}
@@ -70683,7 +74726,6 @@ function (_super) {
   IconImage.prototype.load = function () {
     if (this.imageState_ == _ImageState.default.IDLE) {
       this.imageState_ = _ImageState.default.LOADING;
-      this.imageListenerKeys_ = [(0, _events.listenOnce)(this.image_, _EventType.default.ERROR, this.handleImageError_, this), (0, _events.listenOnce)(this.image_, _EventType.default.LOAD, this.handleImageLoad_, this)];
 
       try {
         /** @type {HTMLImageElement} */
@@ -70691,6 +74733,8 @@ function (_super) {
       } catch (e) {
         this.handleImageError_();
       }
+
+      this.unlisten_ = (0, _Image.listenImage)(this.image_, this.handleImageLoad_.bind(this), this.handleImageError_.bind(this));
     }
   };
   /**
@@ -70729,8 +74773,10 @@ function (_super) {
 
 
   IconImage.prototype.unlistenImage_ = function () {
-    this.imageListenerKeys_.forEach(_events.unlistenByKey);
-    this.imageListenerKeys_ = null;
+    if (this.unlisten_) {
+      this.unlisten_();
+      this.unlisten_ = null;
+    }
   };
 
   return IconImage;
@@ -70760,7 +74806,7 @@ function get(image, src, size, crossOrigin, imageState, color) {
 
 var _default = IconImage;
 exports.default = _default;
-},{"../dom.js":"../node_modules/ol/dom.js","../events.js":"../node_modules/ol/events.js","../events/Target.js":"../node_modules/ol/events/Target.js","../events/EventType.js":"../node_modules/ol/events/EventType.js","../ImageState.js":"../node_modules/ol/ImageState.js","./IconImageCache.js":"../node_modules/ol/style/IconImageCache.js"}],"../node_modules/ol/style/IconOrigin.js":[function(require,module,exports) {
+},{"../dom.js":"../node_modules/ol/dom.js","../events/Target.js":"../node_modules/ol/events/Target.js","../events/EventType.js":"../node_modules/ol/events/EventType.js","../ImageState.js":"../node_modules/ol/ImageState.js","./IconImageCache.js":"../node_modules/ol/style/IconImageCache.js","../Image.js":"../node_modules/ol/Image.js"}],"../node_modules/ol/style/IconOrigin.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -74088,16 +78134,6 @@ function writePlacemark(node, feature, objectStack) {
   var keys = Object.keys(properties || {}).sort().filter(function (v) {
     return !filter[v];
   });
-
-  if (keys.length > 0) {
-    var sequence = (0, _xml.makeSequence)(properties, keys);
-    var namesAndValues = {
-      names: keys,
-      values: sequence
-    };
-    (0, _xml.pushSerializeAndPop)(context, PLACEMARK_SERIALIZERS, EXTENDEDDATA_NODE_FACTORY, [namesAndValues], objectStack);
-  }
-
   var styleFunction = feature.getStyleFunction();
 
   if (styleFunction) {
@@ -74123,7 +78159,17 @@ function writePlacemark(node, feature, objectStack) {
   var parentNode = objectStack[objectStack.length - 1].node;
   var orderedKeys = PLACEMARK_SEQUENCE[parentNode.namespaceURI];
   var values = (0, _xml.makeSequence)(properties, orderedKeys);
-  (0, _xml.pushSerializeAndPop)(context, PLACEMARK_SERIALIZERS, _xml.OBJECT_PROPERTY_NODE_FACTORY, values, objectStack, orderedKeys); // serialize geometry
+  (0, _xml.pushSerializeAndPop)(context, PLACEMARK_SERIALIZERS, _xml.OBJECT_PROPERTY_NODE_FACTORY, values, objectStack, orderedKeys);
+
+  if (keys.length > 0) {
+    var sequence = (0, _xml.makeSequence)(properties, keys);
+    var namesAndValues = {
+      names: keys,
+      values: sequence
+    };
+    (0, _xml.pushSerializeAndPop)(context, PLACEMARK_SERIALIZERS, EXTENDEDDATA_NODE_FACTORY, [namesAndValues], objectStack);
+  } // serialize geometry
+
 
   var options =
   /** @type {import("./Feature.js").WriteOptions} */
@@ -75438,6 +79484,7 @@ var __extends = void 0 && (void 0).__extends || function () {
  * @property {string} [geometryName='geometry'] Geometry name to use when creating features.
  * @property {string} [layerName='layer'] Name of the feature attribute that holds the layer name.
  * @property {Array<string>} [layers] Layers to read features from. If not provided, features will be read from all
+ * @property {string} [idProperty] Optional property that will be assigned as the feature id and removed from the properties.
  * layers.
  */
 
@@ -75493,6 +79540,12 @@ function (_super) {
      */
 
     _this.layers_ = options.layers ? options.layers : null;
+    /**
+     * @private
+     * @type {string}
+     */
+
+    _this.idProperty_ = options.idProperty;
     return _this;
   }
   /**
@@ -75572,8 +79625,16 @@ function (_super) {
     }
 
     var feature;
-    var id = rawFeature.id;
     var values = rawFeature.properties;
+    var id;
+
+    if (!this.idProperty_) {
+      id = rawFeature.id;
+    } else {
+      id = values[this.idProperty_];
+      delete values[this.idProperty_];
+    }
+
     values[this.layerName_] = rawFeature.layer.name;
     var flatCoordinates = [];
     var ends = [];
@@ -83518,6 +87579,12 @@ Object.defineProperty(exports, "IGC", {
     return _IGC.default;
   }
 });
+Object.defineProperty(exports, "IIIFInfo", {
+  enumerable: true,
+  get: function () {
+    return _IIIFInfo.default;
+  }
+});
 Object.defineProperty(exports, "KML", {
   enumerable: true,
   get: function () {
@@ -83589,6 +87656,8 @@ var _GPX = _interopRequireDefault(require("./format/GPX.js"));
 
 var _IGC = _interopRequireDefault(require("./format/IGC.js"));
 
+var _IIIFInfo = _interopRequireDefault(require("./format/IIIFInfo.js"));
+
 var _KML = _interopRequireDefault(require("./format/KML.js"));
 
 var _MVT = _interopRequireDefault(require("./format/MVT.js"));
@@ -83610,7 +87679,7 @@ var _WMSGetFeatureInfo = _interopRequireDefault(require("./format/WMSGetFeatureI
 var _WMTSCapabilities = _interopRequireDefault(require("./format/WMTSCapabilities.js"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-},{"./format/EsriJSON.js":"../node_modules/ol/format/EsriJSON.js","./format/GeoJSON.js":"../node_modules/ol/format/GeoJSON.js","./format/GML.js":"../node_modules/ol/format/GML.js","./format/GPX.js":"../node_modules/ol/format/GPX.js","./format/IGC.js":"../node_modules/ol/format/IGC.js","./format/KML.js":"../node_modules/ol/format/KML.js","./format/MVT.js":"../node_modules/ol/format/MVT.js","./format/OWS.js":"../node_modules/ol/format/OWS.js","./format/Polyline.js":"../node_modules/ol/format/Polyline.js","./format/TopoJSON.js":"../node_modules/ol/format/TopoJSON.js","./format/WFS.js":"../node_modules/ol/format/WFS.js","./format/WKT.js":"../node_modules/ol/format/WKT.js","./format/WMSCapabilities.js":"../node_modules/ol/format/WMSCapabilities.js","./format/WMSGetFeatureInfo.js":"../node_modules/ol/format/WMSGetFeatureInfo.js","./format/WMTSCapabilities.js":"../node_modules/ol/format/WMTSCapabilities.js"}],"../node_modules/ol/geom.js":[function(require,module,exports) {
+},{"./format/EsriJSON.js":"../node_modules/ol/format/EsriJSON.js","./format/GeoJSON.js":"../node_modules/ol/format/GeoJSON.js","./format/GML.js":"../node_modules/ol/format/GML.js","./format/GPX.js":"../node_modules/ol/format/GPX.js","./format/IGC.js":"../node_modules/ol/format/IGC.js","./format/IIIFInfo.js":"../node_modules/ol/format/IIIFInfo.js","./format/KML.js":"../node_modules/ol/format/KML.js","./format/MVT.js":"../node_modules/ol/format/MVT.js","./format/OWS.js":"../node_modules/ol/format/OWS.js","./format/Polyline.js":"../node_modules/ol/format/Polyline.js","./format/TopoJSON.js":"../node_modules/ol/format/TopoJSON.js","./format/WFS.js":"../node_modules/ol/format/WFS.js","./format/WKT.js":"../node_modules/ol/format/WKT.js","./format/WMSCapabilities.js":"../node_modules/ol/format/WMSCapabilities.js","./format/WMSGetFeatureInfo.js":"../node_modules/ol/format/WMSGetFeatureInfo.js","./format/WMTSCapabilities.js":"../node_modules/ol/format/WMTSCapabilities.js"}],"../node_modules/ol/geom.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -91854,7 +95923,9 @@ function () {
 }();
 
 exports.default = Notifier;
-},{"./service-worker.js":[["service-worker.js","service-worker.js"],"service-worker.js.map","service-worker.js"]}],"monitor.js":[function(require,module,exports) {
+},{"./service-worker.js":[["service-worker.js","service-worker.js"],"service-worker.js.map","service-worker.js"]}],"img/lost.jpg":[function(require,module,exports) {
+module.exports = "/lost.199f4de9.jpg";
+},{}],"monitor.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -91873,6 +95944,8 @@ var _extent = require("ol/extent");
 var style = _interopRequireWildcard(require("./style"));
 
 var _notification = _interopRequireDefault(require("./notification"));
+
+var _lost = _interopRequireDefault(require("./img/lost.jpg"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -91998,7 +96071,7 @@ function (_EventTarget) {
 
       this.notifier.showNotification('You are lost!', {
         body: "".concat(Math.round(this.difference), "m away from the track "),
-        image: 'img/lost.jpg',
+        image: _lost.default,
         tag: 'outside',
         renotify: !this.mutted,
         actions: actions
@@ -92037,7 +96110,7 @@ function (_EventTarget) {
 }(_wrapNativeSuper(EventTarget));
 
 exports.default = Monitor;
-},{"ol/coordinate":"../node_modules/ol/coordinate.js","ol":"../node_modules/ol/index.js","ol/geom":"../node_modules/ol/geom.js","ol/extent":"../node_modules/ol/extent.js","./style":"style.js","./notification":"notification.js"}],"index.js":[function(require,module,exports) {
+},{"ol/coordinate":"../node_modules/ol/coordinate.js","ol":"../node_modules/ol/index.js","ol/geom":"../node_modules/ol/geom.js","ol/extent":"../node_modules/ol/extent.js","./style":"style.js","./notification":"notification.js","./img/lost.jpg":"img/lost.jpg"}],"index.js":[function(require,module,exports) {
 "use strict";
 
 var _ol = require("ol");
@@ -92183,7 +96256,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "38233" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "34791" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
