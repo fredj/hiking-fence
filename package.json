@@ -2,7 +2,7 @@
   "name": "hiking-fence",
   "version": "0.0.0",
   "scripts": {
-    "lint": "eslint src/** dist/service-worker.*.js",
+    "lint": "eslint src/**/*.js",
     "start": "parcel serve src/index.html",
     "build": "parcel build src/index.html --public-url ./",
     "gh-pages": "npm run build && gh-pages -d dist"
