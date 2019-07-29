@@ -82,10 +82,17 @@ map.addLayer(
   })
 );
 
-document.querySelector('.start').addEventListener('click', () => {
+const startButton = document.querySelector('.controls .start');
+const stopButton = document.querySelector('.controls .stop');
+
+startButton.addEventListener('click', () => {
   monitor.tracking = true;
+  startButton.style.display = 'none';
+  stopButton.style.display = '';
 });
 
-document.querySelector('.stop').addEventListener('click', () => {
+stopButton.addEventListener('click', () => {
   monitor.tracking = false;
+  startButton.style.display = '';
+  stopButton.style.display = 'none';
 });
