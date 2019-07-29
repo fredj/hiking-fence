@@ -87851,7 +87851,7 @@ exports.buffer = exports.track = void 0;
 
 var _style = require("ol/style");
 
-var positionBackgroundStyle = new _style.Style({
+const positionBackgroundStyle = new _style.Style({
   image: new _style.Circle({
     radius: 10,
     fill: new _style.Fill({
@@ -87859,7 +87859,7 @@ var positionBackgroundStyle = new _style.Style({
     })
   })
 });
-var positionOutside = [positionBackgroundStyle, new _style.Style({
+const positionOutside = [positionBackgroundStyle, new _style.Style({
   image: new _style.Circle({
     radius: 8,
     fill: new _style.Fill({
@@ -87867,7 +87867,7 @@ var positionOutside = [positionBackgroundStyle, new _style.Style({
     })
   })
 })];
-var positionInside = [positionBackgroundStyle, new _style.Style({
+const positionInside = [positionBackgroundStyle, new _style.Style({
   image: new _style.Circle({
     radius: 8,
     fill: new _style.Fill({
@@ -87875,7 +87875,7 @@ var positionInside = [positionBackgroundStyle, new _style.Style({
     })
   })
 })];
-var shortestLineOutside = [new _style.Style({
+const shortestLineOutside = [new _style.Style({
   stroke: new _style.Stroke({
     color: '#fff',
     width: 8,
@@ -87888,7 +87888,7 @@ var shortestLineOutside = [new _style.Style({
     lineDash: [8, 14]
   })
 })];
-var track = [new _style.Style({
+const track = [new _style.Style({
   stroke: new _style.Stroke({
     color: '#fff',
     width: 8
@@ -87900,7 +87900,7 @@ var track = [new _style.Style({
   })
 })];
 exports.track = track;
-var buffer = [new _style.Style({
+const buffer = [new _style.Style({
   fill: new _style.Fill({
     color: '#3399CC33'
   })
@@ -87932,18 +87932,18 @@ var _layer = require("ol/layer");
 
 var _source = require("ol/source");
 
-var mapbox_token = 'pk.eyJ1IjoiZnJlZGoiLCJhIjoiMndGNGNINCJ9.yG14Tih1Vtuge0hsjL0grA';
-var view = new _ol.View({
+const mapbox_token = 'pk.eyJ1IjoiZnJlZGoiLCJhIjoiMndGNGNINCJ9.yG14Tih1Vtuge0hsjL0grA';
+const view = new _ol.View({
   center: [0, 0],
   zoom: 0
 });
 exports.view = view;
-var map = new _ol.Map({
+const map = new _ol.Map({
   controls: [],
   layers: [new _layer.Tile({
     preload: Infinity,
     source: new _source.TileJSON({
-      url: "https://api.mapbox.com/v4/mapbox.outdoors.json?secure&access_token=".concat(mapbox_token),
+      url: `https://api.mapbox.com/v4/mapbox.outdoors.json?secure&access_token=${mapbox_token}`,
       crossOrigin: 'anonymous'
     })
   })],
@@ -95868,11 +95868,11 @@ var _buffer = _interopRequireDefault(require("@turf/buffer"));
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function getBufferCoordinates(geom, projection, distance) {
-  var format = new _format.GeoJSON({
+  const format = new _format.GeoJSON({
     featureProjection: projection
   });
-  var geojsonGeom = format.writeGeometryObject(geom);
-  var bufferFeature = format.readFeature((0, _buffer.default)(geojsonGeom, distance / 1000));
+  const geojsonGeom = format.writeGeometryObject(geom);
+  const bufferFeature = format.readFeature((0, _buffer.default)(geojsonGeom, distance / 1000));
   return bufferFeature.getGeometry().getCoordinates();
 }
 },{"ol/format":"../node_modules/ol/format.js","@turf/buffer":"../node_modules/@turf/buffer/main.es.js"}],"notification.js":[function(require,module,exports) {
@@ -95883,24 +95883,12 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-var Notifier =
-/*#__PURE__*/
-function () {
-  function Notifier(actionHandler) {
-    var _this = this;
-
-    _classCallCheck(this, Notifier);
-
-    navigator.serviceWorker.register("/service-worker.js").then(function (registration) {
-      Notification.requestPermission().then(function (result) {
+class Notifier {
+  constructor(actionHandler) {
+    navigator.serviceWorker.register("/service-worker.js").then(registration => {
+      Notification.requestPermission().then(result => {
         if (result === 'granted') {
-          _this.registration = registration;
+          this.registration = registration;
         }
       });
     }); // navigator.serviceWorker.addEventListener('message', (event) => {
@@ -95910,17 +95898,13 @@ function () {
     // });
   }
 
-  _createClass(Notifier, [{
-    key: "showNotification",
-    value: function showNotification(title, options) {
-      if (this.registration) {
-        this.registration.showNotification(title, options);
-      }
+  showNotification(title, options) {
+    if (this.registration) {
+      this.registration.showNotification(title, options);
     }
-  }]);
+  }
 
-  return Notifier;
-}();
+}
 
 exports.default = Notifier;
 },{"./service-worker.js":[["service-worker.js","service-worker.js"],"service-worker.js.map","service-worker.js"]}],"img/lost.jpg":[function(require,module,exports) {
@@ -95951,163 +95935,116 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _wrapNativeSuper(Class) { var _cache = typeof Map === "function" ? new Map() : undefined; _wrapNativeSuper = function _wrapNativeSuper(Class) { if (Class === null || !_isNativeFunction(Class)) return Class; if (typeof Class !== "function") { throw new TypeError("Super expression must either be null or a function"); } if (typeof _cache !== "undefined") { if (_cache.has(Class)) return _cache.get(Class); _cache.set(Class, Wrapper); } function Wrapper() { return _construct(Class, arguments, _getPrototypeOf(this).constructor); } Wrapper.prototype = Object.create(Class.prototype, { constructor: { value: Wrapper, enumerable: false, writable: true, configurable: true } }); return _setPrototypeOf(Wrapper, Class); }; return _wrapNativeSuper(Class); }
-
-function isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
-
-function _construct(Parent, args, Class) { if (isNativeReflectConstruct()) { _construct = Reflect.construct; } else { _construct = function _construct(Parent, args, Class) { var a = [null]; a.push.apply(a, args); var Constructor = Function.bind.apply(Parent, a); var instance = new Constructor(); if (Class) _setPrototypeOf(instance, Class.prototype); return instance; }; } return _construct.apply(null, arguments); }
-
-function _isNativeFunction(fn) { return Function.toString.call(fn).indexOf("[native code]") !== -1; }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-var Monitor =
-/*#__PURE__*/
-function (_EventTarget) {
-  _inherits(Monitor, _EventTarget);
-
-  function Monitor(view, segment, distance) {
-    var _this;
-
-    _classCallCheck(this, Monitor);
-
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Monitor).call(this));
-    _this.view = view;
-    _this.segment = segment;
+class Monitor extends EventTarget {
+  constructor(view, segment, distance) {
+    super();
+    this.view = view;
+    this.segment = segment;
     /**
      * @type {number}
      */
 
-    _this.distance = distance;
-    _this.geolocation = new _ol.Geolocation({
-      projection: _this.view.getProjection()
+    this.distance = distance;
+    this.geolocation = new _ol.Geolocation({
+      projection: this.view.getProjection()
     });
-    _this.positionFeature = new _ol.Feature(new _geom.Point([]));
-
-    _this.positionFeature.setStyle(style.position);
-
-    _this.shortestLineFeature = new _ol.Feature(new _geom.LineString([]));
-
-    _this.shortestLineFeature.setStyle(style.shortestLine);
-
-    _this.geolocation.on('change:position', _this.onPositionChange.bind(_assertThisInitialized(_this)));
-
-    _this.notifier = new _notification.default(_this.onAction.bind(_assertThisInitialized(_this)));
+    this.positionFeature = new _ol.Feature(new _geom.Point([]));
+    this.positionFeature.setStyle(style.position);
+    this.shortestLineFeature = new _ol.Feature(new _geom.LineString([]));
+    this.shortestLineFeature.setStyle(style.shortestLine);
+    this.geolocation.on('change:position', this.onPositionChange.bind(this));
+    this.notifier = new _notification.default(this.onAction.bind(this));
     /**
      * @type {number}
      */
 
-    _this.difference = 0;
+    this.difference = 0;
     /**
      * @type {boolean}
      */
 
-    _this.outside = false;
+    this.outside = false;
     /**
      * @type {boolean}
      */
 
-    _this.mutted = false;
-    return _this;
+    this.mutted = false;
   }
 
-  _createClass(Monitor, [{
-    key: "onAction",
-    value: function onAction(eventData) {
-      this.mutted = eventData.action === 'mute';
+  onAction(eventData) {
+    this.mutted = eventData.action === 'mute';
+    this.notify();
+  }
+
+  onPositionChange(event) {
+    const position = event.target.getPosition(); // fixme: recenter only if not in viewport
+
+    if (!(0, _extent.containsCoordinate)(this.view.calculateExtent(), position)) {
+      this.view.animate({
+        center: position,
+        duration: 250
+      });
+    }
+
+    this.positionFeature.getGeometry().setCoordinates(position);
+    const closest = this.segment.getClosestPoint(position);
+    this.shortestLineFeature.getGeometry().setCoordinates([position, closest]);
+    const distance = (0, _coordinate.distance)(closest, position);
+    this.difference = distance - this.distance;
+    this.outside = this.difference > 0;
+  }
+
+  notify() {
+    const actions = [];
+
+    if (this.mutted) {
+      actions.push({
+        action: 'Unmute',
+        title: 'Unmute'
+      });
+    } else {
+      actions.push({
+        action: 'mute',
+        title: 'Mute'
+      });
+    }
+
+    this.notifier.showNotification('You are lost!', {
+      body: `${Math.round(this.difference)}m away from the track `,
+      image: _lost.default,
+      tag: 'outside',
+      renotify: !this.mutted,
+      actions: actions
+    });
+  }
+
+  set outside(value) {
+    if (value) {
       this.notify();
     }
-  }, {
-    key: "onPositionChange",
-    value: function onPositionChange(event) {
-      var position = event.target.getPosition(); // fixme: recenter only if not in viewport
 
-      if (!(0, _extent.containsCoordinate)(this.view.calculateExtent(), position)) {
-        this.view.animate({
-          center: position,
-          duration: 250
-        });
+    this.positionFeature.set('outside', value);
+    this.shortestLineFeature.set('outside', value);
+    const event = new CustomEvent('change', {
+      detail: {
+        outside: value,
+        difference: this.difference
       }
+    });
+    this.dispatchEvent(event);
+  }
 
-      this.positionFeature.getGeometry().setCoordinates(position);
-      var closest = this.segment.getClosestPoint(position);
-      this.shortestLineFeature.getGeometry().setCoordinates([position, closest]);
-      var distance = (0, _coordinate.distance)(closest, position);
-      this.difference = distance - this.distance;
-      this.outside = this.difference > 0;
-    }
-  }, {
-    key: "notify",
-    value: function notify() {
-      var actions = [];
+  get tracking() {
+    return this.geolocation.getTracking();
+  }
 
-      if (this.mutted) {
-        actions.push({
-          action: 'Unmute',
-          title: 'Unmute'
-        });
-      } else {
-        actions.push({
-          action: 'mute',
-          title: 'Mute'
-        });
-      }
+  set tracking(value) {
+    this.geolocation.setTracking(value);
+    this.positionFeature.set('visible', value);
+    this.shortestLineFeature.set('visible', value);
+  }
 
-      this.notifier.showNotification('You are lost!', {
-        body: "".concat(Math.round(this.difference), "m away from the track "),
-        image: _lost.default,
-        tag: 'outside',
-        renotify: !this.mutted,
-        actions: actions
-      });
-    }
-  }, {
-    key: "outside",
-    set: function set(value) {
-      if (value) {
-        this.notify();
-      }
-
-      this.positionFeature.set('outside', value);
-      this.shortestLineFeature.set('outside', value);
-      var event = new CustomEvent('change', {
-        detail: {
-          outside: value,
-          difference: this.difference
-        }
-      });
-      this.dispatchEvent(event);
-    }
-  }, {
-    key: "tracking",
-    get: function get() {
-      return this.geolocation.getTracking();
-    },
-    set: function set(value) {
-      this.geolocation.setTracking(value);
-      this.positionFeature.set('visible', value);
-      this.shortestLineFeature.set('visible', value);
-    }
-  }]);
-
-  return Monitor;
-}(_wrapNativeSuper(EventTarget));
+}
 
 exports.default = Monitor;
 },{"ol/coordinate":"../node_modules/ol/coordinate.js","ol":"../node_modules/ol/index.js","ol/geom":"../node_modules/ol/geom.js","ol/extent":"../node_modules/ol/extent.js","./style":"style.js","./notification":"notification.js","./img/lost.jpg":"img/lost.jpg"}],"index.js":[function(require,module,exports) {
@@ -96140,65 +96077,45 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 /**
  * @type {LineString}
  */
-var segmentGeometry = new _geom.LineString([]);
+const segmentGeometry = new _geom.LineString([]);
 /**
  * @type {Feature}
  */
 
-var segmentFeature = new _ol.Feature(segmentGeometry);
+const segmentFeature = new _ol.Feature(segmentGeometry);
 segmentFeature.setStyle(style.track);
 /**
  * @type {Polygon}
  */
 
-var bufferGeometry = new _geom.Polygon([]);
+const bufferGeometry = new _geom.Polygon([]);
 /**
  * @type {Feature}
  */
 
-var bufferFeature = new _ol.Feature(bufferGeometry);
+const bufferFeature = new _ol.Feature(bufferGeometry);
 bufferFeature.setStyle(style.buffer);
-var searchParams = new URLSearchParams(location.search);
-var fenceWidth = searchParams.has('width') ? searchParams.get('width') : 75;
-var loader = (0, _featureloader.loadFeaturesXhr)(searchParams.get('gpx'), new _format.GPX(), function (features, projection) {
-  var _iteratorNormalCompletion = true;
-  var _didIteratorError = false;
-  var _iteratorError = undefined;
+const searchParams = new URLSearchParams(location.search);
+const fenceWidth = searchParams.has('width') ? searchParams.get('width') : 75;
+const loader = (0, _featureloader.loadFeaturesXhr)(searchParams.get('gpx'), new _format.GPX(), (features, projection) => {
+  for (const feature of features) {
+    const geom = feature.getGeometry();
+    const type = geom.getType();
 
-  try {
-    for (var _iterator = features[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-      var feature = _step.value;
-      var geom = feature.getGeometry();
-      var type = geom.getType();
+    if (type === 'MultiLineString' || type === 'LineString') {
+      geom.transform(projection, _map.view.getProjection());
 
-      if (type === 'MultiLineString' || type === 'LineString') {
-        geom.transform(projection, _map.view.getProjection());
-
-        if (geom.getLineString) {
-          // MultiLineString
-          segmentGeometry.setCoordinates(geom.getLineString(0).getCoordinates());
-        } else {
-          segmentGeometry.setCoordinates(geom.getCoordinates());
-        }
-
-        var polygonCoordinates = (0, _geom2.getBufferCoordinates)(segmentGeometry, _map.view.getProjection(), fenceWidth);
-        bufferGeometry.setCoordinates(polygonCoordinates);
-
-        _map.view.fit(bufferGeometry);
+      if (geom.getLineString) {
+        // MultiLineString
+        segmentGeometry.setCoordinates(geom.getLineString(0).getCoordinates());
+      } else {
+        segmentGeometry.setCoordinates(geom.getCoordinates());
       }
-    }
-  } catch (err) {
-    _didIteratorError = true;
-    _iteratorError = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion && _iterator.return != null) {
-        _iterator.return();
-      }
-    } finally {
-      if (_didIteratorError) {
-        throw _iteratorError;
-      }
+
+      const polygonCoordinates = (0, _geom2.getBufferCoordinates)(segmentGeometry, _map.view.getProjection(), fenceWidth);
+      bufferGeometry.setCoordinates(polygonCoordinates);
+
+      _map.view.fit(bufferGeometry);
     }
   }
 });
@@ -96206,7 +96123,7 @@ loader();
 
 _map.map.setTarget('map');
 
-var monitor = new _monitor.default(_map.view, segmentGeometry, fenceWidth);
+const monitor = new _monitor.default(_map.view, segmentGeometry, fenceWidth);
 
 _map.map.addLayer(new _layer.Vector({
   source: new _source.Vector({
@@ -96222,11 +96139,17 @@ _map.map.addLayer(new _layer.Vector({
   updateWhileInteracting: true
 }));
 
-document.querySelector('.start').addEventListener('click', function () {
+const startButton = document.querySelector('.controls .start');
+const stopButton = document.querySelector('.controls .stop');
+startButton.addEventListener('click', () => {
   monitor.tracking = true;
+  startButton.style.display = 'none';
+  stopButton.style.display = '';
 });
-document.querySelector('.stop').addEventListener('click', function () {
+stopButton.addEventListener('click', () => {
   monitor.tracking = false;
+  startButton.style.display = '';
+  stopButton.style.display = 'none';
 });
 },{"ol":"../node_modules/ol/index.js","ol/source":"../node_modules/ol/source.js","ol/layer":"../node_modules/ol/layer.js","ol/format":"../node_modules/ol/format.js","ol/geom":"../node_modules/ol/geom.js","ol/featureloader":"../node_modules/ol/featureloader.js","./style":"style.js","./map":"map.js","./geom":"geom.js","./monitor":"monitor.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
@@ -96256,7 +96179,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "34791" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "34605" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
