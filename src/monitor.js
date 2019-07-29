@@ -6,6 +6,7 @@ import {containsCoordinate} from 'ol/extent';
 import * as style from './style';
 import Notifier from './notification';
 
+import lostImage from './img/lost.jpg';
 
 export default class Monitor extends EventTarget {
 
@@ -91,7 +92,7 @@ export default class Monitor extends EventTarget {
     }
     this.notifier.showNotification('You are lost!', {
       body: `${Math.round(this.difference)}m away from the track `,
-      image: 'img/lost.jpg',
+      image: lostImage,
       tag: 'outside',
       renotify: !this.mutted,
       actions: actions
