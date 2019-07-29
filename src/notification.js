@@ -1,21 +1,18 @@
 export default class Notifier {
 
   constructor(actionHandler) {
-
-    navigator.serviceWorker.ready.then((registration) => {
+    navigator.serviceWorker.register('service-worker.js').then((registration) => {
       Notification.requestPermission().then((result) => {
         if (result === 'granted') {
-          navigator.serviceWorker.register('service-worker.js').then((registration) => {
-            this.registration = registration;
-          });
-        }
-      });
-      navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data.action) {
-          actionHandler(event.data);
+          this.registration = registration;
         }
       });
     });
+    // navigator.serviceWorker.addEventListener('message', (event) => {
+    //   if (event.data.action) {
+    //     actionHandler(event.data);
+    //   }
+    // });
   }
 
   showNotification(title, options) {
@@ -23,5 +20,4 @@ export default class Notifier {
       this.registration.showNotification(title, options);
     }
   }
-
 }
