@@ -7,6 +7,9 @@
     "build": "parcel build src/index.html --public-url ./",
     "gh-pages": "npm run build && gh-pages -d dist"
   },
+  "browserslist": [
+    "last 1 Chrome version"
+  ],
   "dependencies": {
     "@turf/buffer": "^5.1.5",
     "ol": "6.0.0-beta.11"
