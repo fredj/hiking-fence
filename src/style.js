@@ -4,7 +4,7 @@ const positionBackgroundStyle = new Style({
   image: new Circle({
     radius: 10,
     fill: new Fill({
-      color: '#FFF'
+      color: '#fff'
     })
   })
 });
@@ -15,7 +15,7 @@ const positionOutside = [
     image: new Circle({
       radius: 8,
       fill: new Fill({
-        color: 'red'
+        color: '#f54435'
       })
     })
   })
@@ -27,7 +27,7 @@ const positionInside = [
     image: new Circle({
       radius: 8,
       fill: new Fill({
-        color: 'green'
+        color: '#56b151'
       })
     })
   })
@@ -36,14 +36,14 @@ const positionInside = [
 const shortestLineOutside = [
   new Style({
     stroke: new Stroke({
-      color: '#FFF',
+      color: '#fff',
       width: 8,
       lineDash: [8, 14]
     })
   }),
   new Style({
     stroke: new Stroke({
-      color: 'red',
+      color: '#f54435',
       width: 4,
       lineDash: [8, 14]
     })
@@ -54,7 +54,7 @@ const shortestLineOutside = [
 export const track = [
   new Style({
     stroke: new Stroke({
-      color: '#FFF',
+      color: '#fff',
       width: 8
     })
   }),
