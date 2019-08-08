@@ -169,7 +169,7 @@ function getUid(obj) {
  */
 
 
-var VERSION = '6.0.0-beta.11';
+var VERSION = '6.0.0-beta.12';
 exports.VERSION = VERSION;
 },{}],"../node_modules/ol/AssertionError.js":[function(require,module,exports) {
 "use strict";
@@ -9679,6 +9679,8 @@ var _default = {
   Z_INDEX: 'zIndex',
   MAX_RESOLUTION: 'maxResolution',
   MIN_RESOLUTION: 'minResolution',
+  MAX_ZOOM: 'maxZoom',
+  MIN_ZOOM: 'minZoom',
   SOURCE: 'source'
 };
 exports.default = _default;
@@ -9745,6 +9747,10 @@ var __extends = void 0 && (void 0).__extends || function () {
  * visible.
  * @property {number} [maxResolution] The maximum resolution (exclusive) below which this layer will
  * be visible.
+ * @property {number} [minZoom] The minimum view zoom level (exclusive) above which this layer will be
+ * visible.
+ * @property {number} [maxZoom] The maximum view zoom level (inclusive) at which this layer will
+ * be visible.
  */
 
 /**
@@ -9779,6 +9785,8 @@ function (_super) {
     properties[_Property.default.Z_INDEX] = options.zIndex;
     properties[_Property.default.MAX_RESOLUTION] = options.maxResolution !== undefined ? options.maxResolution : Infinity;
     properties[_Property.default.MIN_RESOLUTION] = options.minResolution !== undefined ? options.minResolution : 0;
+    properties[_Property.default.MIN_ZOOM] = options.minZoom !== undefined ? options.minZoom : -Infinity;
+    properties[_Property.default.MAX_ZOOM] = options.maxZoom !== undefined ? options.maxZoom : Infinity;
     /**
      * @type {string}
      * @private
@@ -9830,6 +9838,8 @@ function (_super) {
     state.zIndex = this.getZIndex() || (state.managed === false ? Infinity : 0);
     state.maxResolution = this.getMaxResolution();
     state.minResolution = Math.max(this.getMinResolution(), 0);
+    state.minZoom = this.getMinZoom();
+    state.maxZoom = this.getMaxZoom();
     this.state_ = state;
     return state;
   };
@@ -9896,6 +9906,34 @@ function (_super) {
     return (
       /** @type {number} */
       this.get(_Property.default.MIN_RESOLUTION)
+    );
+  };
+  /**
+   * Return the minimum zoom level of the layer.
+   * @return {number} The minimum zoom level of the layer.
+   * @observable
+   * @api
+   */
+
+
+  BaseLayer.prototype.getMinZoom = function () {
+    return (
+      /** @type {number} */
+      this.get(_Property.default.MIN_ZOOM)
+    );
+  };
+  /**
+   * Return the maximum zoom level of the layer.
+   * @return {number} The maximum zoom level of the layer.
+   * @observable
+   * @api
+   */
+
+
+  BaseLayer.prototype.getMaxZoom = function () {
+    return (
+      /** @type {number} */
+      this.get(_Property.default.MAX_ZOOM)
     );
   };
   /**
@@ -9983,6 +10021,32 @@ function (_super) {
 
   BaseLayer.prototype.setMinResolution = function (minResolution) {
     this.set(_Property.default.MIN_RESOLUTION, minResolution);
+  };
+  /**
+   * Set the maximum zoom (exclusive) at which the layer is visible.
+   * Note that the zoom levels for layer visibility are based on the
+   * view zoom level, which may be different from a tile source zoom level.
+   * @param {number} maxZoom The maximum zoom of the layer.
+   * @observable
+   * @api
+   */
+
+
+  BaseLayer.prototype.setMaxZoom = function (maxZoom) {
+    this.set(_Property.default.MAX_ZOOM, maxZoom);
+  };
+  /**
+   * Set the minimum zoom (inclusive) at which the layer is visible.
+   * Note that the zoom levels for layer visibility are based on the
+   * view zoom level, which may be different from a tile source zoom level.
+   * @param {number} minZoom The minimum zoom of the layer.
+   * @observable
+   * @api
+   */
+
+
+  BaseLayer.prototype.setMinZoom = function (minZoom) {
+    this.set(_Property.default.MIN_ZOOM, minZoom);
   };
   /**
    * Set the opacity of the layer, allowed values range from 0 to 1.
@@ -10106,7 +10170,7 @@ exports.default = _default;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.visibleAtResolution = visibleAtResolution;
+exports.inView = inView;
 exports.default = void 0;
 
 var _events = require("../events.js");
@@ -10193,6 +10257,8 @@ var __extends = void 0 && (void 0).__extends || function () {
  * @property {number} zIndex
  * @property {number} maxResolution
  * @property {number} minResolution
+ * @property {number} minZoom
+ * @property {number} maxZoom
  */
 
 /**
@@ -10448,17 +10514,27 @@ function (_super) {
   return Layer;
 }(_Base.default);
 /**
- * Return `true` if the layer is visible, and if the passed resolution is
- * between the layer's minResolution and maxResolution. The comparison is
- * inclusive for `minResolution` and exclusive for `maxResolution`.
+ * Return `true` if the layer is visible and if the provided view state
+ * has resolution and zoom levels that are in range of the layer's min/max.
  * @param {State} layerState Layer state.
- * @param {number} resolution Resolution.
- * @return {boolean} The layer is visible at the given resolution.
+ * @param {import("../View.js").State} viewState View state.
+ * @return {boolean} The layer is visible at the given view state.
  */
 
 
-function visibleAtResolution(layerState, resolution) {
-  return layerState.visible && resolution >= layerState.minResolution && resolution < layerState.maxResolution;
+function inView(layerState, viewState) {
+  if (!layerState.visible) {
+    return false;
+  }
+
+  var resolution = viewState.resolution;
+
+  if (resolution < layerState.minResolution || resolution >= layerState.maxResolution) {
+    return false;
+  }
+
+  var zoom = viewState.zoom;
+  return zoom > layerState.minZoom && zoom <= layerState.maxZoom;
 }
 
 var _default = Layer;
@@ -10921,7 +10997,8 @@ var _default = {
   IDLE: 0,
   LOADING: 1,
   LOADED: 2,
-  ERROR: 3
+  ERROR: 3,
+  EMPTY: 4
 };
 exports.default = _default;
 },{}],"../node_modules/ol/css.js":[function(require,module,exports) {
@@ -10930,10 +11007,17 @@ exports.default = _default;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.getFontFamilies = exports.CLASS_COLLAPSED = exports.CLASS_CONTROL = exports.CLASS_UNSUPPORTED = exports.CLASS_UNSELECTABLE = exports.CLASS_SELECTABLE = exports.CLASS_HIDDEN = void 0;
+exports.getFontParameters = exports.CLASS_COLLAPSED = exports.CLASS_CONTROL = exports.CLASS_UNSUPPORTED = exports.CLASS_UNSELECTABLE = exports.CLASS_SELECTABLE = exports.CLASS_HIDDEN = void 0;
 
 /**
  * @module ol/css
+ */
+
+/**
+ * @typedef {Object} FontParameters
+ * @property {Array<string>} families
+ * @property {string} style
+ * @property {string} weight
  */
 
 /**
@@ -10993,13 +11077,17 @@ var CLASS_COLLAPSED = 'ol-collapsed';
  * Get the list of font families from a font spec.  Note that this doesn't work
  * for font families that have commas in them.
  * @param {string} The CSS font property.
- * @return {Object<string>} The font families (or null if the input spec is invalid).
+ * @return {FontParameters} The font families (or null if the input spec is invalid).
  */
 
 exports.CLASS_COLLAPSED = CLASS_COLLAPSED;
 
-var getFontFamilies = function () {
+var getFontParameters = function () {
   var style;
+  /**
+   * @type {Object<string, FontParameters>}
+   */
+
   var cache = {};
   return function (font) {
     if (!style) {
@@ -11009,20 +11097,27 @@ var getFontFamilies = function () {
     if (!(font in cache)) {
       style.font = font;
       var family = style.fontFamily;
+      var fontWeight = style.fontWeight;
+      var fontStyle = style.fontStyle;
       style.font = '';
 
       if (!family) {
         return null;
       }
 
-      cache[font] = family.split(/,\s?/);
+      var families = family.split(/,\s?/);
+      cache[font] = {
+        families: families,
+        weight: fontWeight,
+        style: fontStyle
+      };
     }
 
     return cache[font];
   };
 }();
 
-exports.getFontFamilies = getFontFamilies;
+exports.getFontParameters = getFontParameters;
 },{}],"../node_modules/ol/structs/LRUCache.js":[function(require,module,exports) {
 "use strict";
 
@@ -11442,9 +11537,9 @@ function (_super) {
   }
 
   LabelCache.prototype.clear = function () {
-    _super.prototype.clear.call(this);
-
     this.consumers = {};
+
+    _super.prototype.clear.call(this);
   };
   /**
    * @override
@@ -11537,29 +11632,29 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @typedef {Object} FillStrokeState
  * @property {import("../colorlike.js").ColorLike} [currentFillStyle]
  * @property {import("../colorlike.js").ColorLike} [currentStrokeStyle]
- * @property {string} [currentLineCap]
+ * @property {CanvasLineCap} [currentLineCap]
  * @property {Array<number>} currentLineDash
  * @property {number} [currentLineDashOffset]
- * @property {string} [currentLineJoin]
+ * @property {CanvasLineJoin} [currentLineJoin]
  * @property {number} [currentLineWidth]
  * @property {number} [currentMiterLimit]
  * @property {number} [lastStroke]
  * @property {import("../colorlike.js").ColorLike} [fillStyle]
  * @property {import("../colorlike.js").ColorLike} [strokeStyle]
- * @property {string} [lineCap]
+ * @property {CanvasLineCap} [lineCap]
  * @property {Array<number>} lineDash
  * @property {number} [lineDashOffset]
- * @property {string} [lineJoin]
+ * @property {CanvasLineJoin} [lineJoin]
  * @property {number} [lineWidth]
  * @property {number} [miterLimit]
  */
 
 /**
  * @typedef {Object} StrokeState
- * @property {string} lineCap
+ * @property {CanvasLineCap} lineCap
  * @property {Array<number>} lineDash
  * @property {number} lineDashOffset
- * @property {string} lineJoin
+ * @property {CanvasLineJoin} lineJoin
  * @property {number} lineWidth
  * @property {number} miterLimit
  * @property {import("../colorlike.js").ColorLike} strokeStyle
@@ -11605,7 +11700,7 @@ exports.defaultFont = defaultFont;
 var defaultFillStyle = '#000';
 /**
  * @const
- * @type {string}
+ * @type {CanvasLineCap}
  */
 
 exports.defaultFillStyle = defaultFillStyle;
@@ -11626,7 +11721,7 @@ exports.defaultLineDash = defaultLineDash;
 var defaultLineDashOffset = 0;
 /**
  * @const
- * @type {string}
+ * @type {CanvasLineJoin}
  */
 
 exports.defaultLineDashOffset = defaultLineDashOffset;
@@ -11695,6 +11790,11 @@ var checkedFonts = {};
 exports.checkedFonts = checkedFonts;
 var measureContext = null;
 /**
+ * @type {string}
+ */
+
+var measureFont;
+/**
  * @type {!Object<string, number>}
  */
 
@@ -11707,42 +11807,40 @@ var textHeights = {};
 exports.textHeights = textHeights;
 
 var checkFont = function () {
-  var retries = 60;
+  var retries = 100;
   var checked = checkedFonts;
   var size = '32px ';
   var referenceFonts = ['monospace', 'serif'];
   var len = referenceFonts.length;
   var text = 'wmytzilWMYTZIL@#/&?$%10\uF013';
   var interval, referenceWidth;
+  /**
+   * @param {string} fontStyle Css font-style
+   * @param {string} fontWeight Css font-weight
+   * @param {*} fontFamily Css font-family
+   * @return {boolean} Font with style and weight is available
+   */
 
-  function isAvailable(font) {
-    var context = getMeasureContext(); // Check weight ranges according to
-    // https://developer.mozilla.org/en-US/docs/Web/CSS/font-weight#Fallback_weights
+  function isAvailable(fontStyle, fontWeight, fontFamily) {
+    var context = getMeasureContext();
+    var available = true;
 
-    for (var weight = 100; weight <= 700; weight += 300) {
-      var fontWeight = weight + ' ';
-      var available = true;
+    for (var i = 0; i < len; ++i) {
+      var referenceFont = referenceFonts[i];
+      context.font = fontStyle + ' ' + fontWeight + ' ' + size + referenceFont;
+      referenceWidth = context.measureText(text).width;
 
-      for (var i = 0; i < len; ++i) {
-        var referenceFont = referenceFonts[i];
-        context.font = fontWeight + size + referenceFont;
-        referenceWidth = context.measureText(text).width;
+      if (fontFamily != referenceFont) {
+        context.font = fontStyle + ' ' + fontWeight + ' ' + size + fontFamily + ',' + referenceFont;
+        var width = context.measureText(text).width; // If width and referenceWidth are the same, then the fallback was used
+        // instead of the font we wanted, so the font is not available.
 
-        if (font != referenceFont) {
-          context.font = fontWeight + size + font + ',' + referenceFont;
-          var width = context.measureText(text).width; // If width and referenceWidth are the same, then the fallback was used
-          // instead of the font we wanted, so the font is not available.
-
-          available = available && width != referenceWidth;
-        }
+        available = available && width != referenceWidth;
       }
+    }
 
-      if (available) {
-        // Consider font available when it is available in one weight range.
-        //FIXME With this we miss rare corner cases, so we should consider
-        //FIXME checking availability for each requested weight range.
-        return true;
-      }
+    if (available) {
+      return true;
     }
 
     return false;
@@ -11753,12 +11851,16 @@ var checkFont = function () {
 
     for (var font in checked) {
       if (checked[font] < retries) {
-        if (isAvailable(font)) {
+        if (isAvailable.apply(this, font.split('\n'))) {
           checked[font] = retries;
           (0, _obj.clear)(textHeights); // Make sure that loaded fonts are picked up by Safari
 
           measureContext = null;
-          labelCache.clear();
+          measureFont = undefined;
+
+          if (labelCache.getCount()) {
+            labelCache.clear();
+          }
         } else {
           ++checked[font];
           done = false;
@@ -11773,20 +11875,23 @@ var checkFont = function () {
   }
 
   return function (fontSpec) {
-    var fontFamilies = (0, _css.getFontFamilies)(fontSpec);
+    var font = (0, _css.getFontParameters)(fontSpec);
 
-    if (!fontFamilies) {
+    if (!font) {
       return;
     }
 
-    for (var i = 0, ii = fontFamilies.length; i < ii; ++i) {
-      var fontFamily = fontFamilies[i];
+    var families = font.families;
 
-      if (!(fontFamily in checked)) {
-        checked[fontFamily] = retries;
+    for (var i = 0, ii = families.length; i < ii; ++i) {
+      var family = families[i];
+      var key = font.style + '\n' + font.weight + '\n' + family;
 
-        if (!isAvailable(fontFamily)) {
-          checked[fontFamily] = 0;
+      if (!(key in checked)) {
+        checked[key] = retries;
+
+        if (!isAvailable(font.style, font.weight, family)) {
+          checked[key] = 0;
 
           if (interval === undefined) {
             interval = setInterval(check, 32);
@@ -11852,8 +11957,8 @@ exports.measureTextHeight = measureTextHeight;
 function measureTextWidth(font, text) {
   var measureContext = getMeasureContext();
 
-  if (font != measureContext.font) {
-    measureContext.font = font;
+  if (font != measureFont) {
+    measureContext.font = measureFont = font;
   }
 
   return measureContext.measureText(text).width;
@@ -12295,10 +12400,10 @@ var __extends = void 0 && (void 0).__extends || function () {
  * @property {import("../colorlike.js").ColorLike} [strokeStyle]
  * @property {number} strokeWidth
  * @property {number} size
- * @property {string} lineCap
+ * @property {CanvasLineCap} lineCap
  * @property {Array<number>} lineDash
  * @property {number} lineDashOffset
- * @property {string} lineJoin
+ * @property {CanvasLineJoin} lineJoin
  * @property {number} miterLimit
  */
 
@@ -12413,7 +12518,7 @@ function (_super) {
 
     _this.hitDetectionImageSize_ = null;
 
-    _this.render_();
+    _this.render();
 
     return _this;
   }
@@ -12592,9 +12697,9 @@ function (_super) {
    */
 
 
-  RegularShape.prototype.render_ = function () {
-    var lineCap = '';
-    var lineJoin = '';
+  RegularShape.prototype.render = function () {
+    var lineCap = _canvas.defaultLineCap;
+    var lineJoin = _canvas.defaultLineJoin;
     var miterLimit = 0;
     var lineDash = null;
     var lineDashOffset = 0;
@@ -12637,8 +12742,6 @@ function (_super) {
     }
 
     var size = 2 * (this.radius_ + strokeWidth) + 1;
-    /** @type {RenderOptions} */
-
     var renderOptions = {
       strokeStyle: strokeStyle,
       strokeWidth: strokeWidth,
@@ -12714,12 +12817,8 @@ function (_super) {
         context.lineDashOffset = renderOptions.lineDashOffset;
       }
 
-      context.lineCap =
-      /** @type {CanvasLineCap} */
-      renderOptions.lineCap;
-      context.lineJoin =
-      /** @type {CanvasLineJoin} */
-      renderOptions.lineJoin;
+      context.lineCap = renderOptions.lineCap;
+      context.lineJoin = renderOptions.lineJoin;
       context.miterLimit = renderOptions.miterLimit;
       context.stroke();
     }
@@ -12897,15 +12996,16 @@ function (_super) {
     return style;
   };
   /**
-  * Set the circle radius.
-  *
-  * @param {number} radius Circle radius.
-  * @api
-  */
+   * Set the circle radius.
+   *
+   * @param {number} radius Circle radius.
+   * @api
+   */
 
 
   CircleStyle.prototype.setRadius = function (radius) {
     this.radius_ = radius;
+    this.render();
   };
 
   return CircleStyle;
@@ -13009,8 +13109,8 @@ exports.default = void 0;
  * @property {import("../color.js").Color|import("../colorlike.js").ColorLike} [color] A color, gradient or pattern.
  * See {@link module:ol/color~Color} and {@link module:ol/colorlike~ColorLike} for possible formats.
  * Default null; if null, the Canvas/renderer default black will be used.
- * @property {string} [lineCap='round'] Line cap style: `butt`, `round`, or `square`.
- * @property {string} [lineJoin='round'] Line join style: `bevel`, `round`, or `miter`.
+ * @property {CanvasLineCap} [lineCap='round'] Line cap style: `butt`, `round`, or `square`.
+ * @property {CanvasLineJoin} [lineJoin='round'] Line join style: `bevel`, `round`, or `miter`.
  * @property {Array<number>} [lineDash] Line dash pattern. Default is `undefined` (no dash).
  * Please note that Internet Explorer 10 and lower do not support the `setLineDash` method on
  * the `CanvasRenderingContext2D` and therefore this option will have no visual effect in these browsers.
@@ -13043,7 +13143,7 @@ function () {
     this.color_ = options.color !== undefined ? options.color : null;
     /**
      * @private
-     * @type {string|undefined}
+     * @type {CanvasLineCap|undefined}
      */
 
     this.lineCap_ = options.lineCap;
@@ -13061,7 +13161,7 @@ function () {
     this.lineDashOffset_ = options.lineDashOffset;
     /**
      * @private
-     * @type {string|undefined}
+     * @type {CanvasLineJoin|undefined}
      */
 
     this.lineJoin_ = options.lineJoin;
@@ -13109,7 +13209,7 @@ function () {
   };
   /**
    * Get the line cap type for the stroke.
-   * @return {string|undefined} Line cap.
+   * @return {CanvasLineCap|undefined} Line cap.
    * @api
    */
 
@@ -13139,7 +13239,7 @@ function () {
   };
   /**
    * Get the line join type for the stroke.
-   * @return {string|undefined} Line join.
+   * @return {CanvasLineJoin|undefined} Line join.
    * @api
    */
 
@@ -13181,7 +13281,7 @@ function () {
   /**
    * Set the line cap.
    *
-   * @param {string|undefined} lineCap Line cap.
+   * @param {CanvasLineCap|undefined} lineCap Line cap.
    * @api
    */
 
@@ -13220,7 +13320,7 @@ function () {
   /**
    * Set the line join.
    *
-   * @param {string|undefined} lineJoin Line join.
+   * @param {CanvasLineJoin|undefined} lineJoin Line join.
    * @api
    */
 
@@ -16487,7 +16587,7 @@ function drawTextOnPath(flatCoordinates, offset, end, stride, text, startM, maxA
 }
 },{"../../math.js":"../node_modules/ol/math.js"}],"../node_modules/rbush/rbush.min.js":[function(require,module,exports) {
 var define;
-!function(t,i){"object"==typeof exports&&"undefined"!=typeof module?module.exports=i():"function"==typeof define&&define.amd?define(i):(t=t||self).RBush=i()}(this,function(){"use strict";function t(t,r,e,a,h){!function t(n,r,e,a,h){for(;a>e;){if(a-e>600){var o=a-e+1,s=r-e+1,l=Math.log(o),f=.5*Math.exp(2*l/3),u=.5*Math.sqrt(l*f*(o-f)/o)*(s-o/2<0?-1:1),m=Math.max(e,Math.floor(r-s*f/o+u)),c=Math.min(a,Math.floor(r+(o-s)*f/o+u));t(n,r,m,c,h)}var p=n[r],d=e,x=a;for(i(n,e,r),h(n[a],p)>0&&i(n,e,a);d<x;){for(i(n,d,x),d++,x--;h(n[d],p)<0;)d++;for(;h(n[x],p)>0;)x--}0===h(n[e],p)?i(n,e,x):i(n,++x,a),x<=r&&(e=x+1),r<=x&&(a=x-1)}}(t,r,e||0,a||t.length-1,h||n)}function i(t,i,n){var r=t[i];t[i]=t[n],t[n]=r}function n(t,i){return t<i?-1:t>i?1:0}var r=function(t){void 0===t&&(t=9),this._maxEntries=Math.max(4,t),this._minEntries=Math.max(2,Math.ceil(.4*this._maxEntries)),this.clear()};function e(t,i,n){if(!n)return i.indexOf(t);for(var r=0;r<i.length;r++)if(n(t,i[r]))return r;return-1}function a(t,i){h(t,0,t.children.length,i,t)}function h(t,i,n,r,e){e||(e=p(null)),e.minX=1/0,e.minY=1/0,e.maxX=-1/0,e.maxY=-1/0;for(var a=i;a<n;a++){var h=t.children[a];o(e,t.leaf?r(h):h)}return e}function o(t,i){return t.minX=Math.min(t.minX,i.minX),t.minY=Math.min(t.minY,i.minY),t.maxX=Math.max(t.maxX,i.maxX),t.maxY=Math.max(t.maxY,i.maxY),t}function s(t,i){return t.minX-i.minX}function l(t,i){return t.minY-i.minY}function f(t){return(t.maxX-t.minX)*(t.maxY-t.minY)}function u(t){return t.maxX-t.minX+(t.maxY-t.minY)}function m(t,i){return t.minX<=i.minX&&t.minY<=i.minY&&i.maxX<=t.maxX&&i.maxY<=t.maxY}function c(t,i){return i.minX<=t.maxX&&i.minY<=t.maxY&&i.maxX>=t.minX&&i.maxY>=t.minY}function p(t){return{children:t,height:1,leaf:!0,minX:1/0,minY:1/0,maxX:-1/0,maxY:-1/0}}function d(i,n,r,e,a){for(var h=[n,r];h.length;)if(!((r=h.pop())-(n=h.pop())<=e)){var o=n+Math.ceil((r-n)/e/2)*e;t(i,o,n,r,a),h.push(n,o,o,r)}}return r.prototype.all=function(){return this._all(this.data,[])},r.prototype.search=function(t){var i=this.data,n=[];if(!c(t,i))return n;for(var r=this.toBBox,e=[];i;){for(var a=0;a<i.children.length;a++){var h=i.children[a],o=i.leaf?r(h):h;c(t,o)&&(i.leaf?n.push(h):m(t,o)?this._all(h,n):e.push(h))}i=e.pop()}return n},r.prototype.collides=function(t){var i=this.data;if(!c(t,i))return!1;for(var n=[];i;){for(var r=0;r<i.children.length;r++){var e=i.children[r],a=i.leaf?this.toBBox(e):e;if(c(t,a)){if(i.leaf||m(t,a))return!0;n.push(e)}}i=n.pop()}return!1},r.prototype.load=function(t){if(!t||!t.length)return this;if(t.length<this._minEntries){for(var i=0;i<t.length;i++)this.insert(t[i]);return this}var n=this._build(t.slice(),0,t.length-1,0);if(this.data.children.length)if(this.data.height===n.height)this._splitRoot(this.data,n);else{if(this.data.height<n.height){var r=this.data;this.data=n,n=r}this._insert(n,this.data.height-n.height-1,!0)}else this.data=n;return this},r.prototype.insert=function(t){return t&&this._insert(t,this.data.height-1),this},r.prototype.clear=function(){return this.data=p([]),this},r.prototype.remove=function(t,i){if(!t)return this;for(var n,r,a,h=this.data,o=this.toBBox(t),s=[],l=[];h||s.length;){if(h||(h=s.pop(),r=s[s.length-1],n=l.pop(),a=!0),h.leaf){var f=e(t,h.children,i);if(-1!==f)return h.children.splice(f,1),s.push(h),this._condense(s),this}a||h.leaf||!m(h,o)?r?(n++,h=r.children[n],a=!1):h=null:(s.push(h),l.push(n),n=0,r=h,h=h.children[0])}return this},r.prototype.toBBox=function(t){return t},r.prototype.compareMinX=function(t,i){return t.minX-i.minX},r.prototype.compareMinY=function(t,i){return t.minY-i.minY},r.prototype.toJSON=function(){return this.data},r.prototype.fromJSON=function(t){return this.data=t,this},r.prototype._all=function(t,i){for(var n=[];t;)t.leaf?i.push.apply(i,t.children):n.push.apply(n,t.children),t=n.pop();return i},r.prototype._build=function(t,i,n,r){var e,h=n-i+1,o=this._maxEntries;if(h<=o)return a(e=p(t.slice(i,n+1)),this.toBBox),e;r||(r=Math.ceil(Math.log(h)/Math.log(o)),o=Math.ceil(h/Math.pow(o,r-1))),(e=p([])).leaf=!1,e.height=r;var s=Math.ceil(h/o),l=s*Math.ceil(Math.sqrt(o));d(t,i,n,l,this.compareMinX);for(var f=i;f<=n;f+=l){var u=Math.min(f+l-1,n);d(t,f,u,s,this.compareMinY);for(var m=f;m<=u;m+=s){var c=Math.min(m+s-1,u);e.children.push(this._build(t,m,c,r-1))}}return a(e,this.toBBox),e},r.prototype._chooseSubtree=function(t,i,n,r){for(;r.push(i),!i.leaf&&r.length-1!==n;){for(var e=1/0,a=1/0,h=void 0,o=0;o<i.children.length;o++){var s=i.children[o],l=f(s),u=(m=t,c=s,(Math.max(c.maxX,m.maxX)-Math.min(c.minX,m.minX))*(Math.max(c.maxY,m.maxY)-Math.min(c.minY,m.minY))-l);u<a?(a=u,e=l<e?l:e,h=s):u===a&&l<e&&(e=l,h=s)}i=h||i.children[0]}var m,c;return i},r.prototype._insert=function(t,i,n){var r=n?t:this.toBBox(t),e=[],a=this._chooseSubtree(r,this.data,i,e);for(a.children.push(t),o(a,r);i>=0&&e[i].children.length>this._maxEntries;)this._split(e,i),i--;this._adjustParentBBoxes(r,e,i)},r.prototype._split=function(t,i){var n=t[i],r=n.children.length,e=this._minEntries;this._chooseSplitAxis(n,e,r);var h=this._chooseSplitIndex(n,e,r),o=p(n.children.splice(h,n.children.length-h));o.height=n.height,o.leaf=n.leaf,a(n,this.toBBox),a(o,this.toBBox),i?t[i-1].children.push(o):this._splitRoot(n,o)},r.prototype._splitRoot=function(t,i){this.data=p([t,i]),this.data.height=t.height+1,this.data.leaf=!1,a(this.data,this.toBBox)},r.prototype._chooseSplitIndex=function(t,i,n){for(var r,e,a,o,s,l,u,m=1/0,c=1/0,p=i;p<=n-i;p++){var d=h(t,0,p,this.toBBox),x=h(t,p,n,this.toBBox),v=(e=d,a=x,o=void 0,s=void 0,l=void 0,u=void 0,o=Math.max(e.minX,a.minX),s=Math.max(e.minY,a.minY),l=Math.min(e.maxX,a.maxX),u=Math.min(e.maxY,a.maxY),Math.max(0,l-o)*Math.max(0,u-s)),M=f(d)+f(x);v<m?(m=v,r=p,c=M<c?M:c):v===m&&M<c&&(c=M,r=p)}return r},r.prototype._chooseSplitAxis=function(t,i,n){var r=t.leaf?this.compareMinX:s,e=t.leaf?this.compareMinY:l;this._allDistMargin(t,i,n,r)<this._allDistMargin(t,i,n,e)&&t.children.sort(r)},r.prototype._allDistMargin=function(t,i,n,r){t.children.sort(r);for(var e=this.toBBox,a=h(t,0,i,e),s=h(t,n-i,n,e),l=u(a)+u(s),f=i;f<n-i;f++){var m=t.children[f];o(a,t.leaf?e(m):m),l+=u(a)}for(var c=n-i-1;c>=i;c--){var p=t.children[c];o(s,t.leaf?e(p):p),l+=u(s)}return l},r.prototype._adjustParentBBoxes=function(t,i,n){for(var r=n;r>=0;r--)o(i[r],t)},r.prototype._condense=function(t){for(var i=t.length-1,n=void 0;i>=0;i--)0===t[i].children.length?i>0?(n=t[i-1].children).splice(n.indexOf(t[i]),1):this.clear():a(t[i],this.toBBox)},r});
+!function(t,i){"object"==typeof exports&&"undefined"!=typeof module?module.exports=i():"function"==typeof define&&define.amd?define(i):(t=t||self).RBush=i()}(this,function(){"use strict";function t(t,r,e,a,h){!function t(n,r,e,a,h){for(;a>e;){if(a-e>600){var o=a-e+1,s=r-e+1,l=Math.log(o),f=.5*Math.exp(2*l/3),u=.5*Math.sqrt(l*f*(o-f)/o)*(s-o/2<0?-1:1),m=Math.max(e,Math.floor(r-s*f/o+u)),c=Math.min(a,Math.floor(r+(o-s)*f/o+u));t(n,r,m,c,h)}var p=n[r],d=e,x=a;for(i(n,e,r),h(n[a],p)>0&&i(n,e,a);d<x;){for(i(n,d,x),d++,x--;h(n[d],p)<0;)d++;for(;h(n[x],p)>0;)x--}0===h(n[e],p)?i(n,e,x):i(n,++x,a),x<=r&&(e=x+1),r<=x&&(a=x-1)}}(t,r,e||0,a||t.length-1,h||n)}function i(t,i,n){var r=t[i];t[i]=t[n],t[n]=r}function n(t,i){return t<i?-1:t>i?1:0}var r=function(t){void 0===t&&(t=9),this._maxEntries=Math.max(4,t),this._minEntries=Math.max(2,Math.ceil(.4*this._maxEntries)),this.clear()};function e(t,i,n){if(!n)return i.indexOf(t);for(var r=0;r<i.length;r++)if(n(t,i[r]))return r;return-1}function a(t,i){h(t,0,t.children.length,i,t)}function h(t,i,n,r,e){e||(e=p(null)),e.minX=1/0,e.minY=1/0,e.maxX=-1/0,e.maxY=-1/0;for(var a=i;a<n;a++){var h=t.children[a];o(e,t.leaf?r(h):h)}return e}function o(t,i){return t.minX=Math.min(t.minX,i.minX),t.minY=Math.min(t.minY,i.minY),t.maxX=Math.max(t.maxX,i.maxX),t.maxY=Math.max(t.maxY,i.maxY),t}function s(t,i){return t.minX-i.minX}function l(t,i){return t.minY-i.minY}function f(t){return(t.maxX-t.minX)*(t.maxY-t.minY)}function u(t){return t.maxX-t.minX+(t.maxY-t.minY)}function m(t,i){return t.minX<=i.minX&&t.minY<=i.minY&&i.maxX<=t.maxX&&i.maxY<=t.maxY}function c(t,i){return i.minX<=t.maxX&&i.minY<=t.maxY&&i.maxX>=t.minX&&i.maxY>=t.minY}function p(t){return{children:t,height:1,leaf:!0,minX:1/0,minY:1/0,maxX:-1/0,maxY:-1/0}}function d(i,n,r,e,a){for(var h=[n,r];h.length;)if(!((r=h.pop())-(n=h.pop())<=e)){var o=n+Math.ceil((r-n)/e/2)*e;t(i,o,n,r,a),h.push(n,o,o,r)}}return r.prototype.all=function(){return this._all(this.data,[])},r.prototype.search=function(t){var i=this.data,n=[];if(!c(t,i))return n;for(var r=this.toBBox,e=[];i;){for(var a=0;a<i.children.length;a++){var h=i.children[a],o=i.leaf?r(h):h;c(t,o)&&(i.leaf?n.push(h):m(t,o)?this._all(h,n):e.push(h))}i=e.pop()}return n},r.prototype.collides=function(t){var i=this.data;if(!c(t,i))return!1;for(var n=[];i;){for(var r=0;r<i.children.length;r++){var e=i.children[r],a=i.leaf?this.toBBox(e):e;if(c(t,a)){if(i.leaf||m(t,a))return!0;n.push(e)}}i=n.pop()}return!1},r.prototype.load=function(t){if(!t||!t.length)return this;if(t.length<this._minEntries){for(var i=0;i<t.length;i++)this.insert(t[i]);return this}var n=this._build(t.slice(),0,t.length-1,0);if(this.data.children.length)if(this.data.height===n.height)this._splitRoot(this.data,n);else{if(this.data.height<n.height){var r=this.data;this.data=n,n=r}this._insert(n,this.data.height-n.height-1,!0)}else this.data=n;return this},r.prototype.insert=function(t){return t&&this._insert(t,this.data.height-1),this},r.prototype.clear=function(){return this.data=p([]),this},r.prototype.remove=function(t,i){if(!t)return this;for(var n,r,a,h=this.data,o=this.toBBox(t),s=[],l=[];h||s.length;){if(h||(h=s.pop(),r=s[s.length-1],n=l.pop(),a=!0),h.leaf){var f=e(t,h.children,i);if(-1!==f)return h.children.splice(f,1),s.push(h),this._condense(s),this}a||h.leaf||!m(h,o)?r?(n++,h=r.children[n],a=!1):h=null:(s.push(h),l.push(n),n=0,r=h,h=h.children[0])}return this},r.prototype.toBBox=function(t){return t},r.prototype.compareMinX=function(t,i){return t.minX-i.minX},r.prototype.compareMinY=function(t,i){return t.minY-i.minY},r.prototype.toJSON=function(){return this.data},r.prototype.fromJSON=function(t){return this.data=t,this},r.prototype._all=function(t,i){for(var n=[];t;)t.leaf?i.push.apply(i,t.children):n.push.apply(n,t.children),t=n.pop();return i},r.prototype._build=function(t,i,n,r){var e,h=n-i+1,o=this._maxEntries;if(h<=o)return a(e=p(t.slice(i,n+1)),this.toBBox),e;r||(r=Math.ceil(Math.log(h)/Math.log(o)),o=Math.ceil(h/Math.pow(o,r-1))),(e=p([])).leaf=!1,e.height=r;var s=Math.ceil(h/o),l=s*Math.ceil(Math.sqrt(o));d(t,i,n,l,this.compareMinX);for(var f=i;f<=n;f+=l){var u=Math.min(f+l-1,n);d(t,f,u,s,this.compareMinY);for(var m=f;m<=u;m+=s){var c=Math.min(m+s-1,u);e.children.push(this._build(t,m,c,r-1))}}return a(e,this.toBBox),e},r.prototype._chooseSubtree=function(t,i,n,r){for(;r.push(i),!i.leaf&&r.length-1!==n;){for(var e=1/0,a=1/0,h=void 0,o=0;o<i.children.length;o++){var s=i.children[o],l=f(s),u=(m=t,c=s,(Math.max(c.maxX,m.maxX)-Math.min(c.minX,m.minX))*(Math.max(c.maxY,m.maxY)-Math.min(c.minY,m.minY))-l);u<a?(a=u,e=l<e?l:e,h=s):u===a&&l<e&&(e=l,h=s)}i=h||i.children[0]}var m,c;return i},r.prototype._insert=function(t,i,n){var r=n?t:this.toBBox(t),e=[],a=this._chooseSubtree(r,this.data,i,e);for(a.children.push(t),o(a,r);i>=0&&e[i].children.length>this._maxEntries;)this._split(e,i),i--;this._adjustParentBBoxes(r,e,i)},r.prototype._split=function(t,i){var n=t[i],r=n.children.length,e=this._minEntries;this._chooseSplitAxis(n,e,r);var h=this._chooseSplitIndex(n,e,r),o=p(n.children.splice(h,n.children.length-h));o.height=n.height,o.leaf=n.leaf,a(n,this.toBBox),a(o,this.toBBox),i?t[i-1].children.push(o):this._splitRoot(n,o)},r.prototype._splitRoot=function(t,i){this.data=p([t,i]),this.data.height=t.height+1,this.data.leaf=!1,a(this.data,this.toBBox)},r.prototype._chooseSplitIndex=function(t,i,n){for(var r,e,a,o,s,l,u,m=1/0,c=1/0,p=i;p<=n-i;p++){var d=h(t,0,p,this.toBBox),x=h(t,p,n,this.toBBox),v=(e=d,a=x,o=void 0,s=void 0,l=void 0,u=void 0,o=Math.max(e.minX,a.minX),s=Math.max(e.minY,a.minY),l=Math.min(e.maxX,a.maxX),u=Math.min(e.maxY,a.maxY),Math.max(0,l-o)*Math.max(0,u-s)),M=f(d)+f(x);v<m?(m=v,r=p,c=M<c?M:c):v===m&&M<c&&(c=M,r=p)}return r||n-i},r.prototype._chooseSplitAxis=function(t,i,n){var r=t.leaf?this.compareMinX:s,e=t.leaf?this.compareMinY:l;this._allDistMargin(t,i,n,r)<this._allDistMargin(t,i,n,e)&&t.children.sort(r)},r.prototype._allDistMargin=function(t,i,n,r){t.children.sort(r);for(var e=this.toBBox,a=h(t,0,i,e),s=h(t,n-i,n,e),l=u(a)+u(s),f=i;f<n-i;f++){var m=t.children[f];o(a,t.leaf?e(m):m),l+=u(a)}for(var c=n-i-1;c>=i;c--){var p=t.children[c];o(s,t.leaf?e(p):p),l+=u(s)}return l},r.prototype._adjustParentBBoxes=function(t,i,n){for(var r=n;r>=0;r--)o(i[r],t)},r.prototype._condense=function(t){for(var i=t.length-1,n=void 0;i>=0;i--)0===t[i].children.length?i>0?(n=t[i-1].children).splice(n.indexOf(t[i]),1):this.clear():a(t[i],this.toBBox)},r});
 
 },{}],"../node_modules/ol/render/canvas/Executor.js":[function(require,module,exports) {
 "use strict";
@@ -16750,12 +16850,8 @@ function (_super) {
       if (strokeKey) {
         context.strokeStyle = strokeState.strokeStyle;
         context.lineWidth = strokeWidth;
-        context.lineCap =
-        /** @type {CanvasLineCap} */
-        strokeState.lineCap;
-        context.lineJoin =
-        /** @type {CanvasLineJoin} */
-        strokeState.lineJoin;
+        context.lineCap = strokeState.lineCap;
+        context.lineJoin = strokeState.lineJoin;
         context.miterLimit = strokeState.miterLimit;
 
         if (context.setLineDash && strokeState.lineDash.length) {
@@ -18421,16 +18517,6 @@ function (_super) {
     if (image.getState() === _ImageState.default.LOADED) {
       this.renderIfReadyAndVisible();
     }
-  };
-  /**
-   * @param {import("../coordinate.js").Coordinate} coordinate Coordinate.
-   * @param {import("../PluggableMap.js").FrameState} frameState Frame state.
-   * @return {boolean} Is there a feature at the given coordinate?
-   */
-
-
-  LayerRenderer.prototype.hasFeatureAtCoordinate = function (coordinate, frameState) {
-    return false;
   };
   /**
    * Load the image if not already loaded, and register the image change
@@ -22241,7 +22327,7 @@ exports.VectorSourceEvent = VectorSourceEvent;
  * by this source are suitable for editing. See {@link module:ol/source/VectorTile~VectorTile} for
  * vector data that is optimized for rendering.
  *
- * @fires VectorSourceEvent<Geometry>
+ * @fires VectorSourceEvent
  * @api
  * @template {import("../geom/Geometry.js").default} Geometry
  */
@@ -22333,12 +22419,12 @@ function (_super) {
 
     _this.idIndex_ = {};
     /**
-     * A lookup of features without id (keyed by getUid(feature)).
+     * A lookup of features by uid (using getUid(feature)).
      * @private
      * @type {!Object<string, import("../Feature.js").default<Geometry>>}
      */
 
-    _this.undefIdIndex_ = {};
+    _this.uidIndex_ = {};
     /**
      * @private
      * @type {Object<string, Array<import("../events.js").EventsKey>>}
@@ -22454,10 +22540,12 @@ function (_super) {
       } else {
         valid = false;
       }
-    } else {
-      (0, _asserts.assert)(!(featureKey in this.undefIdIndex_), 30); // The passed `feature` was already added to the source
+    }
 
-      this.undefIdIndex_[featureKey] = feature;
+    if (valid) {
+      (0, _asserts.assert)(!(featureKey in this.uidIndex_), 30); // The passed `feature` was already added to the source
+
+      this.uidIndex_[featureKey] = feature;
     }
 
     return valid;
@@ -22592,7 +22680,7 @@ function (_super) {
       if (!this.featuresCollection_) {
         this.featureChangeKeys_ = {};
         this.idIndex_ = {};
-        this.undefIdIndex_ = {};
+        this.uidIndex_ = {};
       }
     } else {
       if (this.featuresRtree_) {
@@ -22881,6 +22969,18 @@ function (_super) {
     return feature !== undefined ? feature : null;
   };
   /**
+   * Get a feature by its internal unique identifier (using `getUid`).
+   *
+   * @param {string} uid Feature identifier.
+   * @return {import("../Feature.js").default<Geometry>} The feature (or `null` if not found).
+   */
+
+
+  VectorSource.prototype.getFeatureByUid = function (uid) {
+    var feature = this.uidIndex_[uid];
+    return feature !== undefined ? feature : null;
+  };
+  /**
    * Get the format associated with this source.
    *
    * @return {import("../format/Feature.js").default|undefined} The feature format.
@@ -22952,20 +23052,13 @@ function (_super) {
     if (id !== undefined) {
       var sid = id.toString();
 
-      if (featureKey in this.undefIdIndex_) {
-        delete this.undefIdIndex_[featureKey];
+      if (this.idIndex_[sid] !== feature) {
+        this.removeFromIdIndex_(feature);
         this.idIndex_[sid] = feature;
-      } else {
-        if (this.idIndex_[sid] !== feature) {
-          this.removeFromIdIndex_(feature);
-          this.idIndex_[sid] = feature;
-        }
       }
     } else {
-      if (!(featureKey in this.undefIdIndex_)) {
-        this.removeFromIdIndex_(feature);
-        this.undefIdIndex_[featureKey] = feature;
-      }
+      this.removeFromIdIndex_(feature);
+      this.uidIndex_[featureKey] = feature;
     }
 
     this.changed();
@@ -22985,7 +23078,7 @@ function (_super) {
     if (id !== undefined) {
       return id in this.idIndex_;
     } else {
-      return (0, _util.getUid)(feature) in this.undefIdIndex_;
+      return (0, _util.getUid)(feature) in this.uidIndex_;
     }
   };
   /**
@@ -23104,10 +23197,9 @@ function (_super) {
 
     if (id !== undefined) {
       delete this.idIndex_[id.toString()];
-    } else {
-      delete this.undefIdIndex_[featureKey];
     }
 
+    delete this.uidIndex_[featureKey];
     this.dispatchEvent(new VectorSourceEvent(_VectorEventType.default.REMOVEFEATURE, feature));
   };
   /**
@@ -24669,7 +24761,7 @@ function listenImage(image, loadHandler, errorHandler) {
   /** @type {HTMLImageElement} */
   image;
 
-  if (_has.IMAGE_DECODE) {
+  if (img.src && _has.IMAGE_DECODE) {
     var promise = img.decode();
     var listening_1 = true;
 
@@ -30508,12 +30600,11 @@ function (_super) {
     );
   };
   /**
-   * @param {number} pixelRatio Pixel ratio for center rounding.
    * @return {State} View state.
    */
 
 
-  View.prototype.getState = function (pixelRatio) {
+  View.prototype.getState = function () {
     var center =
     /** @type {import("./coordinate.js").Coordinate} */
     this.getCenter();
@@ -30750,7 +30841,6 @@ function (_super) {
    * constraint will apply.
    * @param {number} ratio The ratio to apply on the view resolution.
    * @param {import("./coordinate.js").Coordinate=} opt_anchor The origin of the transformation.
-   * @observable
    * @api
    */
 
@@ -30784,7 +30874,6 @@ function (_super) {
    * constraint will apply.
    * @param {number} delta Relative value to add to the zoom rotation, in radians.
    * @param {import("./coordinate.js").Coordinate=} opt_anchor The rotation center.
-   * @observable
    * @api
    */
 
@@ -31257,6 +31346,10 @@ var __extends = void 0 && (void 0).__extends || function () {
  * visible.
  * @property {number} [maxResolution] The maximum resolution (exclusive) below which this layer will
  * be visible.
+ * @property {number} [minZoom] The minimum view zoom level (exclusive) above which this layer will be
+ * visible.
+ * @property {number} [maxZoom] The maximum view zoom level (inclusive) at which this layer will
+ * be visible.
  * @property {Array<import("./Base.js").default>|import("../Collection.js").default<import("./Base.js").default>} [layers] Child layers.
  */
 
@@ -31450,6 +31543,8 @@ function (_super) {
       layerState.visible = layerState.visible && ownLayerState.visible;
       layerState.maxResolution = Math.min(layerState.maxResolution, ownLayerState.maxResolution);
       layerState.minResolution = Math.max(layerState.minResolution, ownLayerState.minResolution);
+      layerState.minZoom = Math.max(layerState.minZoom, ownLayerState.minZoom);
+      layerState.maxZoom = Math.min(layerState.maxZoom, ownLayerState.maxZoom);
 
       if (ownLayerState.extent !== undefined) {
         if (layerState.extent !== undefined) {
@@ -32929,7 +33024,7 @@ function (_super) {
 
     if (size !== undefined && (0, _size.hasArea)(size) && view && view.isDef()) {
       var viewHints = view.getHints(this.frameState_ ? this.frameState_.viewHints : undefined);
-      viewState = view.getState(this.pixelRatio_);
+      viewState = view.getState();
       frameState = {
         animate: false,
         coordinateToPixelTransform: this.coordinateToPixelTransform_,
@@ -33573,12 +33668,11 @@ function (_super) {
 
     var visibleAttributions = [];
     var layerStatesArray = frameState.layerStatesArray;
-    var resolution = frameState.viewState.resolution;
 
     for (var i = 0, ii = layerStatesArray.length; i < ii; ++i) {
       var layerState = layerStatesArray[i];
 
-      if (!(0, _Layer.visibleAtResolution)(layerState, resolution)) {
+      if (!(0, _Layer.inView)(layerState, frameState.viewState)) {
         continue;
       }
 
@@ -34621,12 +34715,6 @@ function (_super) {
      */
 
     _this.transform_ = null;
-    /**
-     * @private
-     * @type {import("../pixel.js").Pixel}
-     */
-
-    _this.lastMouseMovePixel_ = null;
     return _this;
   }
   /**
@@ -34676,8 +34764,7 @@ function (_super) {
 
   MousePosition.prototype.handleMouseMove = function (event) {
     var map = this.getMap();
-    this.lastMouseMovePixel_ = map.getEventPixel(event);
-    this.updateHTML_(this.lastMouseMovePixel_);
+    this.updateHTML_(map.getEventPixel(event));
   };
   /**
    * @param {Event} event Browser event.
@@ -34687,7 +34774,6 @@ function (_super) {
 
   MousePosition.prototype.handleMouseOut = function (event) {
     this.updateHTML_(null);
-    this.lastMouseMovePixel_ = null;
   };
   /**
    * @inheritDoc
@@ -35763,18 +35849,14 @@ function (_super) {
     var contextStrokeState = this.contextStrokeState_;
 
     if (!contextStrokeState) {
-      context.lineCap =
-      /** @type {CanvasLineCap} */
-      strokeState.lineCap;
+      context.lineCap = strokeState.lineCap;
 
       if (context.setLineDash) {
         context.setLineDash(strokeState.lineDash);
         context.lineDashOffset = strokeState.lineDashOffset;
       }
 
-      context.lineJoin =
-      /** @type {CanvasLineJoin} */
-      strokeState.lineJoin;
+      context.lineJoin = strokeState.lineJoin;
       context.lineWidth = strokeState.lineWidth;
       context.miterLimit = strokeState.miterLimit;
       context.strokeStyle = strokeState.strokeStyle;
@@ -35789,9 +35871,7 @@ function (_super) {
       };
     } else {
       if (contextStrokeState.lineCap != strokeState.lineCap) {
-        contextStrokeState.lineCap = context.lineCap =
-        /** @type {CanvasLineCap} */
-        strokeState.lineCap;
+        contextStrokeState.lineCap = context.lineCap = strokeState.lineCap;
       }
 
       if (context.setLineDash) {
@@ -35805,9 +35885,7 @@ function (_super) {
       }
 
       if (contextStrokeState.lineJoin != strokeState.lineJoin) {
-        contextStrokeState.lineJoin = context.lineJoin =
-        /** @type {CanvasLineJoin} */
-        strokeState.lineJoin;
+        contextStrokeState.lineJoin = context.lineJoin = strokeState.lineJoin;
       }
 
       if (contextStrokeState.lineWidth != strokeState.lineWidth) {
@@ -36284,7 +36362,6 @@ function (_super) {
   MapRenderer.prototype.forEachFeatureAtCoordinate = function (coordinate, frameState, hitTolerance, callback, thisArg, layerFilter, thisArg2) {
     var result;
     var viewState = frameState.viewState;
-    var viewResolution = viewState.resolution;
     /**
      * @param {boolean} managed Managed layer.
      * @param {import("../Feature.js").FeatureLike} feature Feature.
@@ -36330,7 +36407,7 @@ function (_super) {
       /** @type {import("../layer/Layer.js").default} */
       layerState.layer;
 
-      if (layer.hasRenderer() && (0, _Layer.visibleAtResolution)(layerState, viewResolution) && layerFilter.call(thisArg2, layer)) {
+      if (layer.hasRenderer() && (0, _Layer.inView)(layerState, viewState) && layerFilter.call(thisArg2, layer)) {
         var layerRenderer = layer.getRenderer();
         var source = layer.getSource();
 
@@ -36575,7 +36652,7 @@ function (_super) {
     var layerStatesArray = frameState.layerStatesArray.sort(function (a, b) {
       return a.zIndex - b.zIndex;
     });
-    var viewResolution = frameState.viewState.resolution;
+    var viewState = frameState.viewState;
     this.children_.length = 0;
     var hasOverlay = false;
     var previousElement = null;
@@ -36585,7 +36662,7 @@ function (_super) {
       hasOverlay = hasOverlay || layerState.hasOverlay;
       frameState.layerIndex = i;
 
-      if (!(0, _Layer.visibleAtResolution)(layerState, viewResolution) || layerState.sourceState != _State.default.READY && layerState.sourceState != _State.default.UNDEFINED) {
+      if (!(0, _Layer.inView)(layerState, viewState) || layerState.sourceState != _State.default.READY && layerState.sourceState != _State.default.UNDEFINED) {
         continue;
       }
 
@@ -36626,7 +36703,6 @@ function (_super) {
 
   CompositeMapRenderer.prototype.forEachLayerAtPixel = function (pixel, frameState, hitTolerance, callback, layerFilter) {
     var viewState = frameState.viewState;
-    var viewResolution = viewState.resolution;
     var layerStates = frameState.layerStatesArray;
     var numLayers = layerStates.length;
 
@@ -36634,7 +36710,7 @@ function (_super) {
       var layerState = layerStates[i];
       var layer = layerState.layer;
 
-      if (layer.hasRenderer() && (0, _Layer.visibleAtResolution)(layerState, viewResolution) && layerFilter(layer)) {
+      if (layer.hasRenderer() && (0, _Layer.inView)(layerState, viewState) && layerFilter(layer)) {
         var layerRenderer = layer.getRenderer();
         var data = layerRenderer.getDataAtPixel(pixel, frameState, hitTolerance);
 
@@ -41019,6 +41095,8 @@ var __extends = void 0 && (void 0).__extends || function () {
  * Default is {@link module:ol/events/condition~shiftKeyOnly}.
  * @property {number} [duration=200] Animation duration in milliseconds.
  * @property {boolean} [out=false] Use interaction for zooming out.
+ * @property {number} [minArea=64] The minimum area of the box in pixel, this value is used by the parent default
+ * `boxEndCondition` function.
  */
 
 /**
@@ -41048,6 +41126,7 @@ function (_super) {
     _this = _super.call(this, {
       condition: condition,
       className: options.className || 'ol-dragzoom',
+      minArea: options.minArea,
       onBoxEnd: onBoxEnd
     }) || this;
     /**
@@ -55059,6 +55138,8 @@ var _asserts = require("../asserts.js");
  * image service additional to the ones indicated by the compliance level.
  * @property {Array<string>} [extraFeatures] Additional supported features whose support
  * is not indicated by the compliance level.
+ * @property {Array<string>} [preferredFormats] Image formats that should preferrably
+ * be used.
  */
 
 /**
@@ -55120,14 +55201,14 @@ IIIF_PROFILE_VALUES[Versions.VERSION3] = {
     qualities: ['default']
   },
   'level1': {
-    supports: ['regionByPx', 'regionSquare', 'sizeByW', 'sizeByH'],
+    supports: ['regionByPx', 'regionSquare', 'sizeByW', 'sizeByH', 'sizeByWh'],
     formats: ['jpg'],
     qualities: ['default']
   },
   'level2': {
     supports: ['regionByPx', 'regionSquare', 'regionByPct', 'sizeByW', 'sizeByH', 'sizeByPct', 'sizeByConfinedWh', 'sizeByWh'],
-    formats: ['jpg'],
-    qualities: ['default', 'bitonal']
+    formats: ['jpg', 'png'],
+    qualities: ['default']
   }
 };
 IIIF_PROFILE_VALUES['none'] = {
@@ -55184,7 +55265,13 @@ function generateVersion2Options(iiifInfo) {
 }
 
 function generateVersion3Options(iiifInfo) {
-  var levelProfile = iiifInfo.getComplianceLevelSupportedFeatures();
+  var levelProfile = iiifInfo.getComplianceLevelSupportedFeatures(),
+      formats = iiifInfo.imageInfo.extraFormats === undefined ? levelProfile.formats : levelProfile.formats.concat(iiifInfo.imageInfo.extraFormats),
+      preferredFormat = iiifInfo.imageInfo.preferredFormats !== undefined && Array.isArray(iiifInfo.imageInfo.preferredFormats) && iiifInfo.imageInfo.preferredFormats.length > 0 ? iiifInfo.imageInfo.preferredFormats.filter(function (format) {
+    return ['jpg', 'png', 'gif'].includes(format);
+  }).reduce(function (acc, format) {
+    return acc === undefined && formats.includes(format) ? format : acc;
+  }, undefined) : undefined;
   return {
     url: iiifInfo.imageInfo['id'],
     sizes: iiifInfo.imageInfo.sizes === undefined ? undefined : iiifInfo.imageInfo.sizes.map(function (size) {
@@ -55199,11 +55286,9 @@ function generateVersion3Options(iiifInfo) {
       return tile.scaleFactors;
     })[0],
     supports: iiifInfo.imageInfo.extraFeatures === undefined ? levelProfile.supports : levelProfile.supports.concat(iiifInfo.imageInfo.extraFeatures),
-    formats: iiifInfo.imageInfo.extraFormats === undefined ? levelProfile.formats : levelProfile.formats.concat(iiifInfo.imageInfo.extraFormats),
-    qualities: iiifInfo.imageInfo.extraQualities === undefined ? levelProfile.qualities : levelProfile.supports.concat(iiifInfo.imageInfo.extraQualities),
-    maxWidth: undefined,
-    maxHeight: undefined,
-    maxArea: undefined
+    formats: formats,
+    qualities: iiifInfo.imageInfo.extraQualities === undefined ? levelProfile.qualities : levelProfile.qualities.concat(iiifInfo.imageInfo.extraQualities),
+    preferredFormat: preferredFormat
   };
 }
 
@@ -55393,7 +55478,7 @@ function () {
       version: version,
       size: [this.imageInfo.width, this.imageInfo.height],
       sizes: imageOptions.sizes,
-      format: imageOptions.formats.includes(options.format) ? options.format : 'jpg',
+      format: options.format !== undefined && imageOptions.formats.includes(options.format) ? options.format : imageOptions.preferredFormat !== undefined ? imageOptions.preferredFormat : 'jpg',
       supports: imageOptions.supports,
       quality: options.quality && imageOptions.qualities.includes(options.quality) ? options.quality : imageOptions.qualities.includes('native') ? 'native' : 'default',
       resolutions: Array.isArray(imageOptions.resolutions) ? imageOptions.resolutions.sort(function (a, b) {
@@ -55520,7 +55605,7 @@ function (_super) {
   function IIIF(opt_options) {
     var _this = this;
     /**
-     * @type {Partial<Options>} options
+     * @type {Partial<Options>}
      */
 
 
@@ -55847,12 +55932,7 @@ function (_super) {
     var triangulation = new _Triangulation.default(sourceProj, targetProj, limitedTargetExtent, maxSourceExtent, sourceResolution * errorThresholdInPixels);
     var sourceExtent = triangulation.calculateSourceExtent();
     var sourceImage = getImageFunction(sourceExtent, sourceResolution, pixelRatio);
-    var state = _ImageState.default.LOADED;
-
-    if (sourceImage) {
-      state = _ImageState.default.IDLE;
-    }
-
+    var state = sourceImage ? _ImageState.default.IDLE : _ImageState.default.EMPTY;
     var sourcePixelRatio = sourceImage ? sourceImage.getPixelRatio() : 1;
     _this = _super.call(this, targetExtent, targetResolution, sourcePixelRatio, state) || this;
     /**
@@ -57584,6 +57664,48 @@ function (_super) {
     baseParams[this.v13_ ? 'I' : 'X'] = x;
     baseParams[this.v13_ ? 'J' : 'Y'] = y;
     return this.getRequestUrl_(extent, GETFEATUREINFO_IMAGE_SIZE, 1, sourceProjectionObj || projectionObj, baseParams);
+  };
+  /**
+   * Return the GetLegendGraphic URL, optionally optimized for the passed
+   * resolution and possibly including any passed specific parameters. Returns
+   * `undefined` if the GetLegendGraphic URL cannot be constructed.
+   *
+   * @param {number} [resolution] Resolution. If set to undefined, `SCALE`
+   *     will not be calculated and included in URL.
+   * @param {Object} [params] GetLegendGraphic params. Default `FORMAT` is
+   *     `image/png`. `VERSION` should not be specified here.
+   * @return {string|undefined} GetLegendGraphic URL.
+   * @api
+   */
+
+
+  ImageWMS.prototype.getGetLegendGraphicUrl = function (resolution, params) {
+    var layers = this.params_.LAYERS;
+    var isSingleLayer = !Array.isArray(layers) || this.params_['LAYERS'].length === 1;
+
+    if (this.url_ === undefined || !isSingleLayer) {
+      return undefined;
+    }
+
+    var baseParams = {
+      'SERVICE': 'WMS',
+      'VERSION': _common.DEFAULT_WMS_VERSION,
+      'REQUEST': 'GetLegendGraphic',
+      'FORMAT': 'image/png',
+      'LAYER': layers
+    };
+
+    if (resolution !== undefined) {
+      var mpu = this.getProjection() ? this.getProjection().getMetersPerUnit() : 1;
+      var dpi = 25.4 / 0.28;
+      var inchesPerMeter = 39.37;
+      baseParams['SCALE'] = resolution * mpu * inchesPerMeter * dpi;
+    }
+
+    (0, _obj.assign)(baseParams, params);
+    return (0, _uri.appendParams)(
+    /** @type {string} */
+    this.url_, baseParams);
   };
   /**
    * Get the user-provided params, i.e. those passed to the constructor through
@@ -61252,6 +61374,48 @@ function (_super) {
     return this.getRequestUrl_(tileCoord, tileSize, tileExtent, 1, sourceProjectionObj || projectionObj, baseParams);
   };
   /**
+   * Return the GetLegendGraphic URL, optionally optimized for the passed
+   * resolution and possibly including any passed specific parameters. Returns
+   * `undefined` if the GetLegendGraphic URL cannot be constructed.
+   *
+   * @param {number} [resolution] Resolution. If set to undefined, `SCALE`
+   *     will not be calculated and included in URL.
+   * @param {Object} [params] GetLegendGraphic params. Default `FORMAT` is
+   *     `image/png`. `VERSION` should not be specified here.
+   * @return {string|undefined} GetLegendGraphic URL.
+   * @api
+   */
+
+
+  TileWMS.prototype.getGetLegendGraphicUrl = function (resolution, params) {
+    var layers = this.params_.LAYERS;
+    var isSingleLayer = !Array.isArray(layers) || this.params_['LAYERS'].length === 1;
+
+    if (this.urls[0] === undefined || !isSingleLayer) {
+      return undefined;
+    }
+
+    var baseParams = {
+      'SERVICE': 'WMS',
+      'VERSION': _common.DEFAULT_WMS_VERSION,
+      'REQUEST': 'GetLegendGraphic',
+      'FORMAT': 'image/png',
+      'LAYER': layers
+    };
+
+    if (resolution !== undefined) {
+      var mpu = this.getProjection() ? this.getProjection().getMetersPerUnit() : 1;
+      var dpi = 25.4 / 0.28;
+      var inchesPerMeter = 39.37;
+      baseParams['SCALE'] = resolution * mpu * inchesPerMeter * dpi;
+    }
+
+    (0, _obj.assign)(baseParams, params);
+    return (0, _uri.appendParams)(
+    /** @type {string} */
+    this.urls[0], baseParams);
+  };
+  /**
    * @inheritDoc
    */
 
@@ -62250,110 +62414,115 @@ function (_super) {
 
 
   VectorTile.prototype.getSourceTiles = function (pixelRatio, projection, tile) {
-    var sourceTiles = [];
     var urlTileCoord = tile.wrappedTileCoord;
+    var tileGrid = this.getTileGridForProjection(projection);
+    var extent = tileGrid.getTileCoordExtent(urlTileCoord);
+    var z = urlTileCoord[0];
+    var resolution = tileGrid.getResolution(z); // make extent 1 pixel smaller so we don't load tiles for < 0.5 pixel render space
 
-    if (urlTileCoord) {
-      var tileGrid = this.getTileGridForProjection(projection);
-      var extent = tileGrid.getTileCoordExtent(urlTileCoord);
-      var z = urlTileCoord[0];
-      var resolution = tileGrid.getResolution(z); // make extent 1 pixel smaller so we don't load tiles for < 0.5 pixel render space
+    (0, _extent.buffer)(extent, -1 / resolution, extent);
+    var sourceTileGrid = this.tileGrid;
+    var sourceExtent = sourceTileGrid.getExtent();
 
-      (0, _extent.buffer)(extent, -1 / resolution, extent);
-      var sourceTileGrid_1 = this.tileGrid;
-      var sourceExtent = sourceTileGrid_1.getExtent();
+    if (sourceExtent) {
+      (0, _extent.getIntersection)(extent, sourceExtent, extent);
+    }
 
-      if (sourceExtent) {
-        (0, _extent.getIntersection)(extent, sourceExtent, extent);
-      }
+    var sourceZ = sourceTileGrid.getZForResolution(resolution, 1);
+    var minZoom = sourceTileGrid.getMinZoom();
+    var previousSourceTiles = this.sourceTilesByTileKey_[(0, _tilecoord.getKey)(tile.tileCoord)];
 
-      var sourceZ_1 = sourceTileGrid_1.getZForResolution(resolution, 1);
-      var minZoom = sourceTileGrid_1.getMinZoom();
-      var loadedZ_1 = sourceZ_1 + 1;
-      var covered_1, empty_1;
+    if (previousSourceTiles && previousSourceTiles.length > 0 && previousSourceTiles[0].tileCoord[0] === sourceZ) {
+      return previousSourceTiles;
+    }
 
-      do {
-        --loadedZ_1;
-        covered_1 = true;
-        empty_1 = true;
-        sourceTileGrid_1.forEachTileCoord(extent, loadedZ_1, function (sourceTileCoord) {
-          var tileKey = (0, _tilecoord.getKey)(sourceTileCoord);
-          var sourceTile;
+    var sourceTiles = [];
+    var loadedZ = sourceZ + 1;
+    var covered, empty;
 
-          if (tileKey in this.sourceTiles_) {
-            sourceTile = this.sourceTiles_[tileKey];
-            var state = sourceTile.getState();
+    do {
+      --loadedZ;
+      covered = true;
+      empty = true;
+      sourceTileGrid.forEachTileCoord(extent, loadedZ, function (sourceTileCoord) {
+        var tileKey = (0, _tilecoord.getKey)(sourceTileCoord);
+        var sourceTile;
 
-            if (state === _TileState.default.LOADED || state === _TileState.default.ERROR || state === _TileState.default.EMPTY) {
-              empty_1 = empty_1 && state === _TileState.default.EMPTY;
-              sourceTiles.push(sourceTile);
-              return;
-            }
-          } else if (loadedZ_1 === sourceZ_1) {
-            var tileUrl = this.tileUrlFunction(sourceTileCoord, pixelRatio, projection);
-            sourceTile = new this.tileClass(sourceTileCoord, tileUrl == undefined ? _TileState.default.EMPTY : _TileState.default.IDLE, tileUrl == undefined ? '' : tileUrl, this.format_, this.tileLoadFunction);
-            sourceTile.extent = sourceTileGrid_1.getTileCoordExtent(sourceTileCoord);
-            sourceTile.projection = projection;
-            sourceTile.resolution = sourceTileGrid_1.getResolution(sourceTileCoord[0]);
-            this.sourceTiles_[tileKey] = sourceTile;
-            empty_1 = empty_1 && sourceTile.getState() === _TileState.default.EMPTY;
-            (0, _events.listen)(sourceTile, _EventType.default.CHANGE, this.handleTileChange, this);
-            sourceTile.load();
-          } else {
-            empty_1 = false;
-          }
+        if (tileKey in this.sourceTiles_) {
+          sourceTile = this.sourceTiles_[tileKey];
+          var state = sourceTile.getState();
 
-          covered_1 = false;
-
-          if (!sourceTile) {
+          if (state === _TileState.default.LOADED || state === _TileState.default.ERROR || state === _TileState.default.EMPTY) {
+            empty = empty && state === _TileState.default.EMPTY;
+            sourceTiles.push(sourceTile);
             return;
           }
+        } else if (loadedZ === sourceZ) {
+          var tileUrl = this.tileUrlFunction(sourceTileCoord, pixelRatio, projection);
 
-          if (sourceTile.getState() !== _TileState.default.EMPTY && tile.getState() === _TileState.default.IDLE) {
-            tile.loadingSourceTiles++;
-            var key_1 = (0, _events.listen)(sourceTile, _EventType.default.CHANGE, function () {
-              var state = sourceTile.getState();
-              var sourceTileKey = (0, _tilecoord.getKey)(sourceTile.tileCoord);
-
-              if (state === _TileState.default.LOADED || state === _TileState.default.ERROR) {
-                if (state === _TileState.default.LOADED) {
-                  (0, _events.unlistenByKey)(key_1);
-                  tile.loadingSourceTiles--;
-                  delete tile.errorSourceTileKeys[sourceTileKey];
-                } else if (state === _TileState.default.ERROR) {
-                  tile.errorSourceTileKeys[sourceTileKey] = true;
-                }
-
-                if (tile.loadingSourceTiles - Object.keys(tile.errorSourceTileKeys).length === 0) {
-                  tile.hifi = true;
-                  tile.sourceZ = sourceZ_1;
-                  tile.setState((0, _obj.isEmpty)(tile.errorSourceTileKeys) ? _TileState.default.LOADED : _TileState.default.ERROR);
-                }
-              }
-            });
+          if (tileUrl !== undefined) {
+            sourceTile = new this.tileClass(sourceTileCoord, _TileState.default.IDLE, tileUrl, this.format_, this.tileLoadFunction);
+            sourceTile.extent = sourceTileGrid.getTileCoordExtent(sourceTileCoord);
+            sourceTile.projection = projection;
+            sourceTile.resolution = sourceTileGrid.getResolution(sourceTileCoord[0]);
+            this.sourceTiles_[tileKey] = sourceTile;
+            empty = false;
+            (0, _events.listen)(sourceTile, _EventType.default.CHANGE, this.handleTileChange, this);
+            sourceTile.load();
           }
-        }.bind(this));
-
-        if (!covered_1) {
-          sourceTiles.length = 0;
+        } else {
+          empty = false;
         }
-      } while (!covered_1 && loadedZ_1 > minZoom);
 
-      if (!empty_1 && tile.getState() === _TileState.default.IDLE) {
-        tile.setState(_TileState.default.LOADING);
+        covered = false;
+
+        if (!sourceTile) {
+          return;
+        }
+
+        if (sourceTile.getState() !== _TileState.default.EMPTY && tile.getState() === _TileState.default.IDLE) {
+          tile.loadingSourceTiles++;
+          var key_1 = (0, _events.listen)(sourceTile, _EventType.default.CHANGE, function () {
+            var state = sourceTile.getState();
+            var sourceTileKey = (0, _tilecoord.getKey)(sourceTile.tileCoord);
+
+            if (state === _TileState.default.LOADED || state === _TileState.default.ERROR) {
+              if (state === _TileState.default.LOADED) {
+                (0, _events.unlistenByKey)(key_1);
+                tile.loadingSourceTiles--;
+                delete tile.errorSourceTileKeys[sourceTileKey];
+              } else if (state === _TileState.default.ERROR) {
+                tile.errorSourceTileKeys[sourceTileKey] = true;
+              }
+
+              if (tile.loadingSourceTiles - Object.keys(tile.errorSourceTileKeys).length === 0) {
+                tile.hifi = true;
+                tile.sourceZ = sourceZ;
+                tile.setState((0, _obj.isEmpty)(tile.errorSourceTileKeys) ? _TileState.default.LOADED : _TileState.default.ERROR);
+              }
+            }
+          });
+        }
+      }.bind(this));
+
+      if (!covered) {
+        sourceTiles.length = 0;
       }
+    } while (!covered && loadedZ > minZoom);
 
-      if (covered_1 || empty_1) {
-        tile.hifi = sourceZ_1 === loadedZ_1;
-        tile.sourceZ = loadedZ_1;
-        var previousSourceTiles = this.sourceTilesByTileKey_[(0, _tilecoord.getKey)(tile.tileCoord)];
+    if (!empty && tile.getState() === _TileState.default.IDLE) {
+      tile.setState(_TileState.default.LOADING);
+    }
 
-        if (tile.getState() < _TileState.default.LOADED) {
-          tile.setState(empty_1 ? _TileState.default.EMPTY : _TileState.default.LOADED);
-        } else if (!previousSourceTiles || !(0, _array.equals)(sourceTiles, previousSourceTiles)) {
-          this.removeSourceTiles(tile);
-          this.addSourceTiles(tile, sourceTiles);
-        }
+    if (covered || empty) {
+      tile.hifi = sourceZ === loadedZ;
+      tile.sourceZ = loadedZ;
+
+      if (tile.getState() < _TileState.default.LOADED) {
+        tile.setState(empty ? _TileState.default.EMPTY : _TileState.default.LOADED);
+      } else if (!previousSourceTiles || !(0, _array.equals)(sourceTiles, previousSourceTiles)) {
+        this.removeSourceTiles(tile);
+        this.addSourceTiles(tile, sourceTiles);
       }
     }
 
@@ -62403,20 +62572,33 @@ function (_super) {
 
   VectorTile.prototype.getTile = function (z, x, y, pixelRatio, projection) {
     var tileCoordKey = (0, _tilecoord.getKeyZXY)(z, x, y);
+    var key = this.getKey();
+    var tile;
 
     if (this.tileCache.containsKey(tileCoordKey)) {
-      return (
-        /** @type {!import("../Tile.js").default} */
-        this.tileCache.get(tileCoordKey)
-      );
-    } else {
-      var tileCoord = [z, x, y];
-      var urlTileCoord = this.getTileCoordForTileUrlFunction(tileCoord, projection);
-      var tile = new _VectorRenderTile.default(tileCoord, urlTileCoord !== null ? _TileState.default.IDLE : _TileState.default.EMPTY, urlTileCoord, this.tileGrid, this.getSourceTiles.bind(this, pixelRatio, projection), this.removeSourceTiles.bind(this));
-      tile.key = this.getRevision().toString();
-      this.tileCache.set(tileCoordKey, tile);
-      return tile;
+      tile =
+      /** @type {!import("../Tile.js").default} */
+      this.tileCache.get(tileCoordKey);
+
+      if (tile.key === key) {
+        return tile;
+      }
     }
+
+    var tileCoord = [z, x, y];
+    var urlTileCoord = this.getTileCoordForTileUrlFunction(tileCoord, projection);
+    var newTile = new _VectorRenderTile.default(tileCoord, urlTileCoord !== null ? _TileState.default.IDLE : _TileState.default.EMPTY, urlTileCoord, this.tileGrid, this.getSourceTiles.bind(this, pixelRatio, projection), this.removeSourceTiles.bind(this));
+    newTile.key = key;
+
+    if (tile) {
+      newTile.interimTile = tile;
+      newTile.refreshInterimChain();
+      this.tileCache.replace(tileCoordKey, newTile);
+    } else {
+      this.tileCache.set(tileCoordKey, newTile);
+    }
+
+    return newTile;
   };
   /**
    * @inheritDoc
@@ -64667,6 +64849,30 @@ function (_super) {
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.useProgram(this.currentProgram_);
+    this.applyFrameState(frameState);
+    this.applyUniforms(frameState);
+  };
+  /**
+   * Clear the render target & bind it for future draw operations.
+   * This is similar to `prepareDraw`, only post processes will not be applied.
+   * Note: the whole viewport will be drawn to the render target, regardless of its size.
+   * @param {import("../PluggableMap.js").FrameState} frameState current frame state
+   * @param {import("./RenderTarget.js").default} renderTarget Render target to draw to
+   * @param {boolean} [opt_disableAlphaBlend] If true, no alpha blending will happen.
+   */
+
+
+  WebGLHelper.prototype.prepareDrawToRenderTarget = function (frameState, renderTarget, opt_disableAlphaBlend) {
+    var gl = this.getGL();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget.getFramebuffer());
+    gl.viewport(0, 0, frameState.size[0], frameState.size[1]);
+    gl.bindTexture(gl.TEXTURE_2D, renderTarget.getTexture());
+    gl.clearColor(0.0, 0.0, 0.0, 0.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, opt_disableAlphaBlend ? gl.ZERO : gl.ONE_MINUS_SRC_ALPHA);
+    gl.useProgram(this.currentProgram_);
     this.applyFrameState(frameState);
     this.applyUniforms(frameState);
   };
@@ -64984,59 +65190,38 @@ function (_super) {
   WebGLHelper.prototype.handleWebGLContextRestored = function () {}; // TODO: shutdown program
 
   /**
-   * TODO: these are not used and should be reworked
-   * @param {number=} opt_wrapS wrapS.
-   * @param {number=} opt_wrapT wrapT.
-   * @return {WebGLTexture} The texture.
+   * Will create or reuse a given webgl texture and apply the given size. If no image data
+   * specified, the texture will be empty, otherwise image data will be used and the `size`
+   * parameter will be ignored.
+   * Note: wrap parameters are set to clamp to edge, min filter is set to linear.
+   * @param {Array<number>} size Expected size of the texture
+   * @param {ImageData|HTMLImageElement|HTMLCanvasElement} [opt_data] Image data/object to bind to the texture
+   * @param {WebGLTexture} [opt_texture] Existing texture to reuse
+   * @return {WebGLTexture} The generated texture
+   * @api
    */
 
 
-  WebGLHelper.prototype.createTextureInternal = function (opt_wrapS, opt_wrapT) {
+  WebGLHelper.prototype.createTexture = function (size, opt_data, opt_texture) {
     var gl = this.getGL();
-    var texture = gl.createTexture();
+    var texture = opt_texture || gl.createTexture(); // set params & size
+
+    var level = 0;
+    var internalFormat = gl.RGBA;
+    var border = 0;
+    var format = gl.RGBA;
+    var type = gl.UNSIGNED_BYTE;
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+    if (opt_data) {
+      gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, format, type, opt_data);
+    } else {
+      gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, size[0], size[1], border, format, type, null);
+    }
+
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-
-    if (opt_wrapS !== undefined) {
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, opt_wrapS);
-    }
-
-    if (opt_wrapT !== undefined) {
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, opt_wrapT);
-    }
-
-    return texture;
-  };
-  /**
-   * TODO: these are not used and should be reworked
-   * @param {number} width Width.
-   * @param {number} height Height.
-   * @param {number=} opt_wrapS wrapS.
-   * @param {number=} opt_wrapT wrapT.
-   * @return {WebGLTexture} The texture.
-   */
-
-
-  WebGLHelper.prototype.createEmptyTexture = function (width, height, opt_wrapS, opt_wrapT) {
-    var gl = this.getGL();
-    var texture = this.createTextureInternal(opt_wrapS, opt_wrapT);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-    return texture;
-  };
-  /**
-   * TODO: these are not used and should be reworked
-   * @param {HTMLCanvasElement|HTMLImageElement|HTMLVideoElement} image Image.
-   * @param {number=} opt_wrapS wrapS.
-   * @param {number=} opt_wrapT wrapT.
-   * @return {WebGLTexture} The texture.
-   */
-
-
-  WebGLHelper.prototype.createTexture = function (image, opt_wrapS, opt_wrapT) {
-    var gl = this.getGL();
-    var texture = this.createTextureInternal(opt_wrapS, opt_wrapT);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     return texture;
   };
 
@@ -65053,7 +65238,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.writePointFeatureInstructions = writePointFeatureInstructions;
 exports.writePointFeatureToBuffers = writePointFeatureToBuffers;
-exports.getBlankTexture = getBlankTexture;
+exports.getBlankImageData = getBlankImageData;
+exports.colorEncodeId = colorEncodeId;
+exports.colorDecodeId = colorDecodeId;
 exports.default = exports.POINT_VERTEX_STRIDE = exports.POINT_INSTRUCTIONS_COUNT = exports.WebGLWorkerMessageType = void 0;
 
 var _Layer = _interopRequireDefault(require("../Layer.js"));
@@ -65328,11 +65515,48 @@ function writePointFeatureToBuffers(instructions, elementIndex, vertexBuffer, in
  */
 
 
-function getBlankTexture() {
+function getBlankImageData() {
   var canvas = document.createElement('canvas');
   var image = canvas.getContext('2d').createImageData(1, 1);
   image.data[0] = image.data[1] = image.data[2] = image.data[3] = 255;
   return image;
+}
+/**
+ * Generates a color array based on a numerical id
+ * Note: the range for each component is 0 to 1 with 256 steps
+ * @param {number} id Id
+ * @param {Array<number>} [opt_array] Reusable array
+ * @return {Array<number>} Color array containing the encoded id
+ */
+
+
+function colorEncodeId(id, opt_array) {
+  var array = opt_array || [];
+  var radix = 256;
+  var divide = radix - 1;
+  array[0] = Math.floor(id / radix / radix / radix) / divide;
+  array[1] = Math.floor(id / radix / radix) % radix / divide;
+  array[2] = Math.floor(id / radix) % radix / divide;
+  array[3] = id % radix / divide;
+  return array;
+}
+/**
+ * Reads an id from a color-encoded array
+ * Note: the expected range for each component is 0 to 1 with 256 steps.
+ * @param {Array<number>} color Color array containing the encoded id
+ * @return {number} Decoded id
+ */
+
+
+function colorDecodeId(color) {
+  var id = 0;
+  var radix = 256;
+  var mult = radix - 1;
+  id += Math.round(color[0] * radix * radix * radix * mult);
+  id += Math.round(color[1] * radix * radix * mult);
+  id += Math.round(color[2] * radix * mult);
+  id += Math.round(color[3] * mult);
+  return id;
 }
 
 var _default = WebGLLayerRenderer;
@@ -65353,7 +65577,188 @@ var url = URL.createObjectURL(blob);
 function create() {
   return new Worker(url);
 }
-},{}],"../node_modules/ol/renderer/webgl/PointsLayer.js":[function(require,module,exports) {
+},{}],"../node_modules/ol/webgl/RenderTarget.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _array = require("../array.js");
+
+/**
+ * A wrapper class to simplify rendering to a texture instead of the final canvas
+ * @module ol/webgl/RenderTarget
+ */
+// for pixel color reading
+var tmpArray4 = new Uint8Array(4);
+/**
+ * @classdesc
+ * This class is a wrapper around the association of both a `WebGLTexture` and a `WebGLFramebuffer` instances,
+ * simplifying initialization and binding for rendering.
+ * @api
+ */
+
+var WebGLRenderTarget =
+/** @class */
+function () {
+  /**
+   * @param {import("./Helper.js").default} helper WebGL helper; mandatory.
+   * @param {Array<number>} [opt_size] Expected size of the render target texture; note: this can be changed later on.
+   */
+  function WebGLRenderTarget(helper, opt_size) {
+    /**
+     * @private
+     * @type {import("./Helper.js").default}
+     */
+    this.helper_ = helper;
+    var gl = helper.getGL();
+    /**
+     * @private
+     * @type {WebGLTexture}
+     */
+
+    this.texture_ = gl.createTexture();
+    /**
+     * @private
+     * @type {WebGLFramebuffer}
+     */
+
+    this.framebuffer_ = gl.createFramebuffer();
+    /**
+     * @type {Array<number>}
+     * @private
+     */
+
+    this.size_ = opt_size || [1, 1];
+    /**
+     * @type {Uint8Array}
+     * @private
+     */
+
+    this.data_ = new Uint8Array(0);
+    /**
+     * @type {boolean}
+     * @private
+     */
+
+    this.dataCacheDirty_ = true;
+    this.updateSize_();
+  }
+  /**
+   * Changes the size of the render target texture. Note: will do nothing if the size
+   * is already the same.
+   * @param {Array<number>} size Expected size of the render target texture
+   * @api
+   */
+
+
+  WebGLRenderTarget.prototype.setSize = function (size) {
+    if ((0, _array.equals)(size, this.size_)) {
+      return;
+    }
+
+    this.size_[0] = size[0];
+    this.size_[1] = size[1];
+    this.updateSize_();
+  };
+  /**
+   * Returns the size of the render target texture
+   * @return {Array<number>} Size of the render target texture
+   * @api
+   */
+
+
+  WebGLRenderTarget.prototype.getSize = function () {
+    return this.size_;
+  };
+  /**
+   * This will cause following calls to `#readAll` or `#readPixel` to download the content of the
+   * render target into memory, which is an expensive operation.
+   * This content will be kept in cache but should be cleared after each new render.
+   * @api
+   */
+
+
+  WebGLRenderTarget.prototype.clearCachedData = function () {
+    this.dataCacheDirty_ = true;
+  };
+  /**
+   * Returns the full content of the frame buffer as a series of r, g, b, a components
+   * in the 0-255 range (unsigned byte).
+   * @return {Uint8Array} Integer array of color values
+   * @api
+   */
+
+
+  WebGLRenderTarget.prototype.readAll = function () {
+    if (this.dataCacheDirty_) {
+      var size = this.size_;
+      var gl = this.helper_.getGL();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer_);
+      gl.readPixels(0, 0, size[0], size[1], gl.RGBA, gl.UNSIGNED_BYTE, this.data_);
+      this.dataCacheDirty_ = false;
+    }
+
+    return this.data_;
+  };
+  /**
+   * Reads one pixel of the frame buffer as an array of r, g, b, a components
+   * in the 0-255 range (unsigned byte).
+   * @param {number} x Pixel coordinate
+   * @param {number} y Pixel coordinate
+   * @returns {Uint8Array} Integer array with one color value (4 components)
+   * @api
+   */
+
+
+  WebGLRenderTarget.prototype.readPixel = function (x, y) {
+    this.readAll();
+    var index = Math.floor(x) + (this.size_[1] - Math.floor(y) - 1) * this.size_[0];
+    tmpArray4[0] = this.data_[index * 4];
+    tmpArray4[1] = this.data_[index * 4 + 1];
+    tmpArray4[2] = this.data_[index * 4 + 2];
+    tmpArray4[3] = this.data_[index * 4 + 3];
+    return tmpArray4;
+  };
+  /**
+   * @return {WebGLTexture} Texture to render to
+   */
+
+
+  WebGLRenderTarget.prototype.getTexture = function () {
+    return this.texture_;
+  };
+  /**
+   * @return {WebGLFramebuffer} Frame buffer of the render target
+   */
+
+
+  WebGLRenderTarget.prototype.getFramebuffer = function () {
+    return this.framebuffer_;
+  };
+  /**
+   * @private
+   */
+
+
+  WebGLRenderTarget.prototype.updateSize_ = function () {
+    var size = this.size_;
+    var gl = this.helper_.getGL();
+    this.texture_ = this.helper_.createTexture(size, null, this.texture_);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer_);
+    gl.viewport(0, 0, size[0], size[1]);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texture_, 0);
+    this.data_ = new Uint8Array(size[0] * size[1] * 4);
+  };
+
+  return WebGLRenderTarget;
+}();
+
+var _default = WebGLRenderTarget;
+exports.default = _default;
+},{"../array.js":"../node_modules/ol/array.js"}],"../node_modules/ol/renderer/webgl/PointsLayer.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -65378,6 +65783,10 @@ var _extent = require("../../extent.js");
 var _transform = require("../../transform.js");
 
 var _webgl2 = require("../../worker/webgl.js");
+
+var _util = require("../../util.js");
+
+var _RenderTarget = _interopRequireDefault(require("../../webgl/RenderTarget.js"));
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
@@ -65413,6 +65822,7 @@ var __extends = void 0 && (void 0).__extends || function () {
 
 var VERTEX_SHADER = "\n  precision mediump float;\n  attribute vec2 a_position;\n  attribute vec2 a_texCoord;\n  attribute float a_rotateWithView;\n  attribute vec2 a_offsets;\n  attribute float a_opacity;\n  attribute vec4 a_color;\n\n  uniform mat4 u_projectionMatrix;\n  uniform mat4 u_offsetScaleMatrix;\n  uniform mat4 u_offsetRotateMatrix;\n\n  varying vec2 v_texCoord;\n  varying float v_opacity;\n  varying vec4 v_color;\n\n  void main(void) {\n    mat4 offsetMatrix = u_offsetScaleMatrix;\n    if (a_rotateWithView == 1.0) {\n      offsetMatrix = u_offsetScaleMatrix * u_offsetRotateMatrix;\n    }\n    vec4 offsets = offsetMatrix * vec4(a_offsets, 0.0, 0.0);\n    gl_Position = u_projectionMatrix * vec4(a_position, 0.0, 1.0) + offsets;\n    v_texCoord = a_texCoord;\n    v_opacity = a_opacity;\n    v_color = a_color;\n  }";
 var FRAGMENT_SHADER = "\n  precision mediump float;\n\n  uniform sampler2D u_texture;\n\n  varying vec2 v_texCoord;\n  varying float v_opacity;\n  varying vec4 v_color;\n\n  void main(void) {\n    if (v_opacity == 0.0) {\n      discard;\n    }\n    vec4 textureColor = texture2D(u_texture, v_texCoord);\n    gl_FragColor = v_color * textureColor;\n    gl_FragColor.a *= v_opacity;\n    gl_FragColor.rgb *= gl_FragColor.a;\n  }";
+var HIT_FRAGMENT_SHADER = "\n  precision mediump float;\n\n  uniform sampler2D u_texture;\n\n  varying vec2 v_texCoord;\n  varying float v_opacity;\n  varying vec4 v_color;\n\n  void main(void) {\n    if (v_opacity == 0.0) {\n      discard;\n    }\n    vec4 textureColor = texture2D(u_texture, v_texCoord);\n    if (textureColor.a < 0.1) {\n      discard;\n    }\n    gl_FragColor = v_color;\n  }";
 /**
  * @typedef {Object} Options
  * @property {function(import("../../Feature").default):number} [sizeCallback] Will be called on every feature in the
@@ -65432,7 +65842,7 @@ var FRAGMENT_SHADER = "\n  precision mediump float;\n\n  uniform sampler2D u_tex
  * source to compute the opacity of the quad on screen (from 0 to 1). This is only done on source change.
  * Note: this is multiplied with the color of the point which can also have an alpha value < 1.
  * @property {function(import("../../Feature").default):boolean} [rotateWithViewCallback] Will be called on every feature in the
- * source to compute whether the quad on screen must stay upwards (`false`) or follow the view rotation (`true`).
+ * source to compute whether the quad on screen must stay upwards (`false`) or follow the view rotation (`true`). Default is `false`.
  * This is only done on source change.
  * @property {HTMLCanvasElement|HTMLImageElement|ImageData} [texture] Texture to use on points. `texCoordCallback` and `sizeCallback`
  * must be defined for this to have any effect.
@@ -65551,7 +65961,7 @@ function (_super) {
 
     var options = opt_options || {};
     var uniforms = options.uniforms || {};
-    uniforms.u_texture = options.texture || (0, _Layer.getBlankTexture)();
+    uniforms.u_texture = options.texture || (0, _Layer.getBlankImageData)();
     var projectionMatrixTransform = (0, _transform.create)();
     uniforms[_Helper.DefaultUniform.PROJECTION_MATRIX] = projectionMatrixTransform;
     _this = _super.call(this, vectorLayer, {
@@ -65560,10 +65970,10 @@ function (_super) {
     }) || this;
     _this.sourceRevision_ = -1;
     _this.verticesBuffer_ = new _Buffer.default(_webgl.ARRAY_BUFFER, _webgl.DYNAMIC_DRAW);
+    _this.hitVerticesBuffer_ = new _Buffer.default(_webgl.ARRAY_BUFFER, _webgl.DYNAMIC_DRAW);
     _this.indicesBuffer_ = new _Buffer.default(_webgl.ELEMENT_ARRAY_BUFFER, _webgl.DYNAMIC_DRAW);
     _this.program_ = _this.helper.getProgram(options.fragmentShader || FRAGMENT_SHADER, options.vertexShader || VERTEX_SHADER);
-
-    _this.helper.useProgram(_this.program_);
+    _this.hitProgram_ = _this.helper.getProgram(HIT_FRAGMENT_SHADER, options.vertexShader || VERTEX_SHADER);
 
     _this.sizeCallback_ = options.sizeCallback || function () {
       return 1;
@@ -65621,6 +66031,19 @@ function (_super) {
      */
 
     _this.renderInstructions_ = new Float32Array(0);
+    /**
+     * These instructions are used for hit detection
+     * @type {Float32Array}
+     * @private
+     */
+
+    _this.hitRenderInstructions_ = new Float32Array(0);
+    /**
+     * @type {WebGLRenderTarget}
+     * @private
+     */
+
+    _this.hitRenderTarget_ = new _RenderTarget.default(_this.helper);
     _this.worker_ = (0, _webgl2.create)();
 
     _this.worker_.addEventListener('message', function (event) {
@@ -65628,27 +66051,30 @@ function (_super) {
 
       if (received.type === _Layer.WebGLWorkerMessageType.GENERATE_BUFFERS) {
         var projectionTransform = received.projectionTransform;
-        this.verticesBuffer_.fromArrayBuffer(received.vertexBuffer);
-        this.indicesBuffer_.fromArrayBuffer(received.indexBuffer);
-        this.helper.flushBufferData(this.verticesBuffer_);
-        this.helper.flushBufferData(this.indicesBuffer_); // saves the projection transform for the current frame state
 
+        if (received.hitDetection) {
+          this.hitVerticesBuffer_.fromArrayBuffer(received.vertexBuffer);
+          this.helper.flushBufferData(this.hitVerticesBuffer_);
+        } else {
+          this.verticesBuffer_.fromArrayBuffer(received.vertexBuffer);
+          this.helper.flushBufferData(this.verticesBuffer_);
+        }
+
+        this.indicesBuffer_.fromArrayBuffer(received.indexBuffer);
+        this.helper.flushBufferData(this.indicesBuffer_);
         this.renderTransform_ = projectionTransform;
         (0, _transform.makeInverse)(this.invertRenderTransform_, this.renderTransform_);
-        this.renderInstructions_ = new Float32Array(event.data.renderInstructions);
+
+        if (received.hitDetection) {
+          this.hitRenderInstructions_ = new Float32Array(event.data.renderInstructions);
+        } else {
+          this.renderInstructions_ = new Float32Array(event.data.renderInstructions);
+        }
       }
     }.bind(_this));
 
     return _this;
   }
-  /**
-   * @inheritDoc
-   */
-
-
-  WebGLPointsLayerRenderer.prototype.disposeInternal = function () {
-    _super.prototype.disposeInternal.call(this);
-  };
   /**
    * @inheritDoc
    */
@@ -65666,6 +66092,8 @@ function (_super) {
       canvas.style.opacity = opacity;
     }
 
+    this.renderHitDetection(frameState);
+    this.hitRenderTarget_.clearCachedData();
     return canvas;
   };
   /**
@@ -65685,7 +66113,6 @@ function (_super) {
 
     if (sourceChanged) {
       this.sourceRevision_ = vectorSource.getRevision();
-      this.geojsonFeatureCache_ = {};
       var projection = viewState.projection;
       var resolution = viewState.resolution;
       vectorSource.loadFeatures([-Infinity, -Infinity, Infinity, Infinity], resolution, projection);
@@ -65702,6 +66129,7 @@ function (_super) {
 
     this.helper.makeProjectionTransform(frameState, this.currentTransform_);
     (0, _transform.multiply)(this.currentTransform_, this.invertRenderTransform_);
+    this.helper.useProgram(this.program_);
     this.helper.prepareDraw(frameState); // write new data
 
     this.helper.bindBuffer(this.verticesBuffer_);
@@ -65735,12 +66163,18 @@ function (_super) {
 
     if (!this.renderInstructions_ || this.renderInstructions_.length !== totalInstructionsCount) {
       this.renderInstructions_ = new Float32Array(totalInstructionsCount);
+    }
+
+    if (!this.hitRenderInstructions_ || this.hitRenderInstructions_.length !== totalInstructionsCount) {
+      this.hitRenderInstructions_ = new Float32Array(totalInstructionsCount);
     } // loop on features to fill the buffer
 
 
     var feature;
     var tmpCoords = [];
+    var tmpColor = [];
     var elementIndex = 0;
+    var u0, v0, u1, v1, size, opacity, rotateWithView, color;
 
     for (var i = 0; i < features.length; i++) {
       feature = features[i];
@@ -65752,7 +66186,18 @@ function (_super) {
       tmpCoords[0] = this.coordCallback_(feature, 0);
       tmpCoords[1] = this.coordCallback_(feature, 1);
       (0, _transform.apply)(projectionTransform, tmpCoords);
-      elementIndex = (0, _Layer.writePointFeatureInstructions)(this.renderInstructions_, elementIndex, tmpCoords[0], tmpCoords[1], this.texCoordCallback_(feature, 0), this.texCoordCallback_(feature, 1), this.texCoordCallback_(feature, 2), this.texCoordCallback_(feature, 3), this.sizeCallback_(feature), this.opacityCallback_(feature), this.rotateWithViewCallback_(feature), this.colorCallback_(feature, this.colorArray_));
+      u0 = this.texCoordCallback_(feature, 0);
+      v0 = this.texCoordCallback_(feature, 1);
+      u1 = this.texCoordCallback_(feature, 2);
+      v1 = this.texCoordCallback_(feature, 3);
+      size = this.sizeCallback_(feature);
+      opacity = this.opacityCallback_(feature);
+      rotateWithView = this.rotateWithViewCallback_(feature);
+      color = this.colorCallback_(feature, this.colorArray_);
+      (0, _Layer.writePointFeatureInstructions)(this.renderInstructions_, elementIndex, tmpCoords[0], tmpCoords[1], u0, v0, u1, v1, size, opacity, rotateWithView, color); // for hit detection, the feature uid is saved in the opacity value
+      // and the index of the opacity value is encoded in the color values
+
+      elementIndex = (0, _Layer.writePointFeatureInstructions)(this.hitRenderInstructions_, elementIndex, tmpCoords[0], tmpCoords[1], u0, v0, u1, v1, size, opacity > 0 ? Number((0, _util.getUid)(feature)) : 0, rotateWithView, (0, _Layer.colorEncodeId)(elementIndex + 7, tmpColor));
     }
     /** @type import('./Layer').WebGLWorkerGenerateBuffersMessage */
 
@@ -65765,6 +66210,62 @@ function (_super) {
     message['projectionTransform'] = projectionTransform;
     this.worker_.postMessage(message, [this.renderInstructions_.buffer]);
     this.renderInstructions_ = null;
+    /** @type import('./Layer').WebGLWorkerGenerateBuffersMessage */
+
+    var hitMessage = {
+      type: _Layer.WebGLWorkerMessageType.GENERATE_BUFFERS,
+      renderInstructions: this.hitRenderInstructions_.buffer
+    };
+    hitMessage['projectionTransform'] = projectionTransform;
+    hitMessage['hitDetection'] = true;
+    this.worker_.postMessage(hitMessage, [this.hitRenderInstructions_.buffer]);
+    this.hitRenderInstructions_ = null;
+  };
+  /**
+   * @inheritDoc
+   */
+
+
+  WebGLPointsLayerRenderer.prototype.forEachFeatureAtCoordinate = function (coordinate, frameState, hitTolerance, callback, declutteredFeatures) {
+    if (!this.hitRenderInstructions_) {
+      return;
+    }
+
+    var pixel = (0, _transform.apply)(frameState.coordinateToPixelTransform, coordinate.slice());
+    var data = this.hitRenderTarget_.readPixel(pixel[0], pixel[1]);
+    var color = [data[0] / 255, data[1] / 255, data[2] / 255, data[3] / 255];
+    var index = (0, _Layer.colorDecodeId)(color);
+    var opacity = this.hitRenderInstructions_[index];
+    var uid = Math.floor(opacity).toString();
+    var source = this.getLayer().getSource();
+    var feature = source.getFeatureByUid(uid);
+
+    if (feature) {
+      return callback(feature, this.getLayer());
+    }
+  };
+  /**
+   * Render the hit detection data to the corresponding render target
+   * @param {import("../../PluggableMap.js").FrameState} frameState current frame state
+   */
+
+
+  WebGLPointsLayerRenderer.prototype.renderHitDetection = function (frameState) {
+    this.hitRenderTarget_.setSize(frameState.size);
+    this.helper.useProgram(this.hitProgram_);
+    this.helper.prepareDrawToRenderTarget(frameState, this.hitRenderTarget_, true);
+    this.helper.bindBuffer(this.hitVerticesBuffer_);
+    this.helper.bindBuffer(this.indicesBuffer_);
+    var stride = _Layer.POINT_VERTEX_STRIDE;
+    var bytesPerFloat = Float32Array.BYTES_PER_ELEMENT;
+    this.helper.enableAttributeArray(_Helper.DefaultAttrib.POSITION, 2, _webgl.FLOAT, bytesPerFloat * stride, 0);
+    this.helper.enableAttributeArray(_Helper.DefaultAttrib.OFFSETS, 2, _webgl.FLOAT, bytesPerFloat * stride, bytesPerFloat * 2);
+    this.helper.enableAttributeArray(_Helper.DefaultAttrib.TEX_COORD, 2, _webgl.FLOAT, bytesPerFloat * stride, bytesPerFloat * 4);
+    this.helper.enableAttributeArray(_Helper.DefaultAttrib.OPACITY, 1, _webgl.FLOAT, bytesPerFloat * stride, bytesPerFloat * 6);
+    this.helper.enableAttributeArray(_Helper.DefaultAttrib.ROTATE_WITH_VIEW, 1, _webgl.FLOAT, bytesPerFloat * stride, bytesPerFloat * 7);
+    this.helper.enableAttributeArray(_Helper.DefaultAttrib.COLOR, 4, _webgl.FLOAT, bytesPerFloat * stride, bytesPerFloat * 8);
+    var renderCount = this.indicesBuffer_.getArray() ? this.indicesBuffer_.getArray().length : 0;
+    this.helper.drawElements(0, renderCount);
   };
 
   return WebGLPointsLayerRenderer;
@@ -65772,7 +66273,7 @@ function (_super) {
 
 var _default = WebGLPointsLayerRenderer;
 exports.default = _default;
-},{"../../webgl/Buffer.js":"../node_modules/ol/webgl/Buffer.js","../../webgl.js":"../node_modules/ol/webgl.js","../../webgl/Helper.js":"../node_modules/ol/webgl/Helper.js","../../geom/GeometryType.js":"../node_modules/ol/geom/GeometryType.js","./Layer.js":"../node_modules/ol/renderer/webgl/Layer.js","../../ViewHint.js":"../node_modules/ol/ViewHint.js","../../extent.js":"../node_modules/ol/extent.js","../../transform.js":"../node_modules/ol/transform.js","../../worker/webgl.js":"../node_modules/ol/worker/webgl.js"}],"../node_modules/ol/layer/Heatmap.js":[function(require,module,exports) {
+},{"../../webgl/Buffer.js":"../node_modules/ol/webgl/Buffer.js","../../webgl.js":"../node_modules/ol/webgl.js","../../webgl/Helper.js":"../node_modules/ol/webgl/Helper.js","../../geom/GeometryType.js":"../node_modules/ol/geom/GeometryType.js","./Layer.js":"../node_modules/ol/renderer/webgl/Layer.js","../../ViewHint.js":"../node_modules/ol/ViewHint.js","../../extent.js":"../node_modules/ol/extent.js","../../transform.js":"../node_modules/ol/transform.js","../../worker/webgl.js":"../node_modules/ol/worker/webgl.js","../../util.js":"../node_modules/ol/util.js","../../webgl/RenderTarget.js":"../node_modules/ol/webgl/RenderTarget.js"}],"../node_modules/ol/layer/Heatmap.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -66011,21 +66512,18 @@ function (_super) {
 
   Heatmap.prototype.createRenderer = function () {
     return new _PointsLayer.default(this, {
-      vertexShader: "\n        precision mediump float;\n        attribute vec2 a_position;\n        attribute vec2 a_texCoord;\n        attribute float a_rotateWithView;\n        attribute vec2 a_offsets;\n        attribute float a_opacity;\n\n        uniform mat4 u_projectionMatrix;\n        uniform mat4 u_offsetScaleMatrix;\n        uniform mat4 u_offsetRotateMatrix;\n        uniform float u_size;\n\n        varying vec2 v_texCoord;\n        varying float v_opacity;\n\n        void main(void) {\n          mat4 offsetMatrix = u_offsetScaleMatrix;\n          if (a_rotateWithView == 1.0) {\n            offsetMatrix = u_offsetScaleMatrix * u_offsetRotateMatrix;\n          }\n          vec4 offsets = offsetMatrix * vec4(a_offsets, 0.0, 0.0);\n          gl_Position = u_projectionMatrix * vec4(a_position, 0.0, 1.0) + offsets * u_size;\n          v_texCoord = a_texCoord;\n          v_opacity = a_opacity;\n        }",
-      fragmentShader: "\n        precision mediump float;\n        uniform float u_resolution;\n        uniform float u_blurSlope;\n\n        varying vec2 v_texCoord;\n        varying float v_opacity;\n\n        void main(void) {\n          vec2 texCoord = v_texCoord * 2.0 - vec2(1.0, 1.0);\n          float sqRadius = texCoord.x * texCoord.x + texCoord.y * texCoord.y;\n          float value = (1.0 - sqrt(sqRadius)) * u_blurSlope;\n          float alpha = smoothstep(0.0, 1.0, value) * v_opacity;\n          gl_FragColor = vec4(alpha, alpha, alpha, alpha);\n        }",
+      vertexShader: "\n        precision mediump float;\n        attribute vec2 a_position;\n        attribute vec2 a_texCoord;\n        attribute vec2 a_offsets;\n        attribute float a_opacity;\n\n        uniform mat4 u_projectionMatrix;\n        uniform mat4 u_offsetScaleMatrix;\n        uniform float u_size;\n\n        varying vec2 v_texCoord;\n        varying float v_opacity;\n\n        void main(void) {\n          vec4 offsets = u_offsetScaleMatrix * vec4(a_offsets, 0.0, 0.0);\n          gl_Position = u_projectionMatrix * vec4(a_position, 0.0, 1.0) + offsets * u_size;\n          v_texCoord = a_texCoord;\n          v_opacity = a_opacity;\n        }",
+      fragmentShader: "\n        precision mediump float;\n        uniform float u_blurSlope;\n\n        varying vec2 v_texCoord;\n        varying float v_opacity;\n\n        void main(void) {\n          vec2 texCoord = v_texCoord * 2.0 - vec2(1.0, 1.0);\n          float sqRadius = texCoord.x * texCoord.x + texCoord.y * texCoord.y;\n          float value = (1.0 - sqrt(sqRadius)) * u_blurSlope;\n          float alpha = smoothstep(0.0, 1.0, value) * v_opacity;\n          gl_FragColor = vec4(alpha, alpha, alpha, alpha);\n        }",
       uniforms: {
         u_size: function () {
           return (this.get(Property.RADIUS) + this.get(Property.BLUR)) * 2;
         }.bind(this),
         u_blurSlope: function () {
           return this.get(Property.RADIUS) / Math.max(1, this.get(Property.BLUR));
-        }.bind(this),
-        u_resolution: function (frameState) {
-          return frameState.viewState.resolution;
-        }
+        }.bind(this)
       },
       postProcesses: [{
-        fragmentShader: "\n            precision mediump float;\n\n            uniform sampler2D u_image;\n            uniform sampler2D u_gradientTexture;\n\n            varying vec2 v_texCoord;\n            varying vec2 v_screenCoord;\n\n            void main() {\n              vec4 color = texture2D(u_image, v_texCoord);\n              gl_FragColor.a = color.a;\n              gl_FragColor.rgb = texture2D(u_gradientTexture, vec2(0.5, color.a)).rgb;\n              gl_FragColor.rgb *= gl_FragColor.a;\n            }",
+        fragmentShader: "\n            precision mediump float;\n\n            uniform sampler2D u_image;\n            uniform sampler2D u_gradientTexture;\n\n            varying vec2 v_texCoord;\n\n            void main() {\n              vec4 color = texture2D(u_image, v_texCoord);\n              gl_FragColor.a = color.a;\n              gl_FragColor.rgb = texture2D(u_gradientTexture, vec2(0.5, color.a)).rgb;\n              gl_FragColor.rgb *= gl_FragColor.a;\n            }",
         uniforms: {
           u_gradientTexture: this.gradient_
         }
@@ -66469,6 +66967,8 @@ var _transform = require("../../transform.js");
 
 var _ExecutorGroup = _interopRequireWildcard(require("../../render/canvas/ExecutorGroup.js"));
 
+var _obj = require("../../obj.js");
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -66863,16 +67363,16 @@ function (_super) {
     var found;
     var i, ii;
 
-    for (i = 0, ii = renderedTiles.length; i < ii; ++i) {
+    var _loop_2 = function () {
       var tile = renderedTiles[i];
+      var tileExtent = tileGrid.getTileCoordExtent(tile.wrappedTileCoord);
+      var tileContainsCoordinate = (0, _extent.containsCoordinate)(tileExtent, coordinate);
 
       if (!declutter) {
         // When not decluttering, we only need to consider the tile that contains the given
         // coordinate, because each feature will be rendered for each tile that contains it.
-        var tileExtent = tileGrid.getTileCoordExtent(tile.wrappedTileCoord);
-
-        if (!(0, _extent.containsCoordinate)(tileExtent, coordinate)) {
-          continue;
+        if (!tileContainsCoordinate) {
+          return "continue";
         }
       }
 
@@ -66886,18 +67386,24 @@ function (_super) {
          * @return {?} Callback result.
          */
         function (feature) {
-          var key = feature.getId();
+          if (tileContainsCoordinate || declutteredFeatures && declutteredFeatures.indexOf(feature) !== -1) {
+            var key = feature.getId();
 
-          if (key === undefined) {
-            key = (0, _util.getUid)(feature);
-          }
+            if (key === undefined) {
+              key = (0, _util.getUid)(feature);
+            }
 
-          if (!(key in features)) {
-            features[key] = true;
-            return callback(feature, layer);
+            if (!(key in features)) {
+              features[key] = true;
+              return callback(feature, layer);
+            }
           }
         }, layer.getDeclutter() ? declutteredFeatures : null);
       }
+    };
+
+    for (i = 0, ii = renderedTiles.length; i < ii; ++i) {
+      _loop_2();
     }
 
     return found;
@@ -66908,6 +67414,7 @@ function (_super) {
 
 
   CanvasVectorTileLayerRenderer.prototype.handleFontsChanged = function () {
+    (0, _obj.clear)(this.renderTileImageQueue_);
     var layer = this.getLayer();
 
     if (layer.getVisible() && this.renderedLayerRevision_ !== undefined) {
@@ -67212,7 +67719,7 @@ function (_super) {
 
 var _default = CanvasVectorTileLayerRenderer;
 exports.default = _default;
-},{"../../util.js":"../node_modules/ol/util.js","../../dom.js":"../node_modules/ol/dom.js","../../TileState.js":"../node_modules/ol/TileState.js","../../ViewHint.js":"../node_modules/ol/ViewHint.js","../../events.js":"../node_modules/ol/events.js","../../events/EventType.js":"../node_modules/ol/events/EventType.js","../../extent.js":"../node_modules/ol/extent.js","../../layer/VectorTileRenderType.js":"../node_modules/ol/layer/VectorTileRenderType.js","../../render/canvas/BuilderType.js":"../node_modules/ol/render/canvas/BuilderType.js","../../render/canvas/BuilderGroup.js":"../node_modules/ol/render/canvas/BuilderGroup.js","./TileLayer.js":"../node_modules/ol/renderer/canvas/TileLayer.js","../vector.js":"../node_modules/ol/renderer/vector.js","../../transform.js":"../node_modules/ol/transform.js","../../render/canvas/ExecutorGroup.js":"../node_modules/ol/render/canvas/ExecutorGroup.js"}],"../node_modules/ol/layer/VectorTile.js":[function(require,module,exports) {
+},{"../../util.js":"../node_modules/ol/util.js","../../dom.js":"../node_modules/ol/dom.js","../../TileState.js":"../node_modules/ol/TileState.js","../../ViewHint.js":"../node_modules/ol/ViewHint.js","../../events.js":"../node_modules/ol/events.js","../../events/EventType.js":"../node_modules/ol/events/EventType.js","../../extent.js":"../node_modules/ol/extent.js","../../layer/VectorTileRenderType.js":"../node_modules/ol/layer/VectorTileRenderType.js","../../render/canvas/BuilderType.js":"../node_modules/ol/render/canvas/BuilderType.js","../../render/canvas/BuilderGroup.js":"../node_modules/ol/render/canvas/BuilderGroup.js","./TileLayer.js":"../node_modules/ol/renderer/canvas/TileLayer.js","../vector.js":"../node_modules/ol/renderer/vector.js","../../transform.js":"../node_modules/ol/transform.js","../../render/canvas/ExecutorGroup.js":"../node_modules/ol/render/canvas/ExecutorGroup.js","../../obj.js":"../node_modules/ol/obj.js"}],"../node_modules/ol/layer/VectorTile.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -67526,6 +68033,10 @@ var _util = require("../util.js");
 
 var _proj = require("../proj.js");
 
+var _Units = _interopRequireDefault(require("../proj/Units.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 /**
  * @module ol/format/Feature
  */
@@ -67612,9 +68123,9 @@ function () {
     var options;
 
     if (opt_options) {
-      var dataProjection = opt_options.dataProjection ? opt_options.dataProjection : this.readProjection(source);
+      var dataProjection = opt_options.dataProjection ? (0, _proj.get)(opt_options.dataProjection) : this.readProjection(source);
 
-      if (opt_options.extent) {
+      if (opt_options.extent && dataProjection && dataProjection.getUnits() === _Units.default.TILE_PIXELS) {
         dataProjection = (0, _proj.get)(dataProjection);
         dataProjection.setWorldExtent(opt_options.extent);
       }
@@ -67814,7 +68325,7 @@ function transformExtentWithOptions(extent, opt_options) {
     return extent;
   }
 }
-},{"../obj.js":"../node_modules/ol/obj.js","../util.js":"../node_modules/ol/util.js","../proj.js":"../node_modules/ol/proj.js"}],"../node_modules/ol/format/JSONFeature.js":[function(require,module,exports) {
+},{"../obj.js":"../node_modules/ol/obj.js","../util.js":"../node_modules/ol/util.js","../proj.js":"../node_modules/ol/proj.js","../proj/Units.js":"../node_modules/ol/proj/Units.js"}],"../node_modules/ol/format/JSONFeature.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -68401,6 +68912,8 @@ function (_super) {
 
 
 function readGeometry(object, opt_options) {
+  var _a, _b;
+
   if (!object) {
     return null;
   }
@@ -68432,10 +68945,10 @@ function readGeometry(object, opt_options) {
 
     if (rings.length === 1) {
       type = _GeometryType.default.POLYGON;
-      object['rings'] = rings[0];
+      object = Object.assign({}, object, (_a = {}, _a['rings'] = rings[0], _a));
     } else {
       type = _GeometryType.default.MULTI_POLYGON;
-      object['rings'] = rings;
+      object = Object.assign({}, object, (_b = {}, _b['rings'] = rings, _b));
     }
   }
 
@@ -84476,7 +84989,7 @@ function (_super) {
       }
 
       if (options.viewParams !== undefined) {
-        node.setAttribute('viewParams ', options.viewParams);
+        node.setAttribute('viewParams', options.viewParams);
       }
 
       filter = options.filter;
@@ -95891,11 +96404,12 @@ class Notifier {
           this.registration = registration;
         }
       });
-    }); // navigator.serviceWorker.addEventListener('message', (event) => {
-    //   if (event.data.action) {
-    //     actionHandler(event.data);
-    //   }
-    // });
+    });
+    navigator.serviceWorker.addEventListener('message', event => {
+      if (event.data.action) {
+        actionHandler(event.data);
+      }
+    });
   }
 
   showNotification(title, options) {
@@ -96179,7 +96693,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "34605" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "36347" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
