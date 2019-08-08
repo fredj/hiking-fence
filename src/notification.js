@@ -5,14 +5,15 @@ export default class Notifier {
       Notification.requestPermission().then((result) => {
         if (result === 'granted') {
           this.registration = registration;
+
+          navigator.serviceWorker.addEventListener('message', (event) => {
+            if (event.data.action) {
+              actionHandler(event.data);
+            }
+          });
         }
       });
     });
-    // navigator.serviceWorker.addEventListener('message', (event) => {
-    //   if (event.data.action) {
-    //     actionHandler(event.data);
-    //   }
-    // });
   }
 
   showNotification(title, options) {
