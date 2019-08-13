@@ -2,7 +2,9 @@
   "name": "hiking-fence",
   "version": "0.0.0",
   "scripts": {
-    "lint": "eslint src/**/*.js",
+    "lint": "npm run eslint && npm run eclint",
+    "eslint": "eslint src/**/*.js",
+    "eclint": "eclint check $(git ls-files)",
     "start": "parcel serve src/index.html",
     "build": "parcel build src/index.html --public-url ./",
     "gh-pages": "npm run build && gh-pages -d dist"
@@ -15,8 +17,8 @@
     "ol": "6.0.0-beta.12"
   },
   "devDependencies": {
+    "eclint": "^2.8.1",
     "eslint": "^6.1.0",
-    "eslint-config-openlayers": "^12.0.0",
     "gh-pages": "^2.0.1",
     "parcel-bundler": "^1.12.3"
   }
