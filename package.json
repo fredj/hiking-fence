@@ -14,7 +14,7 @@
   ],
   "dependencies": {
     "@turf/buffer": "^5.1.5",
-    "ol": "6.0.0-beta.12"
+    "ol": "6.0.0-beta.14"
   },
   "devDependencies": {
     "eclint": "^2.8.1",
