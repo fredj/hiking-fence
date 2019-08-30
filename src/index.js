@@ -10,6 +10,8 @@ import {map, view} from './map';
 import {getBufferCoordinates} from './geom';
 import Monitor from './monitor';
 
+// ui
+import '@polymer/app-layout/app-layout.js';
 
 /**
  * @type {LineString}

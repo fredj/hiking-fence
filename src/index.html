@@ -6,21 +6,27 @@
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/fontawesome.css">
   </head>
   <body>
-    <div class="map" id="map"></div>
-    <div class="controls">
-      <div class="start">
-        <span class="fa-stack fa-2x">
-          <i class="fas fa-circle fa-stack-2x"></i>
-          <i class="fas fa-hiking fa-stack-1x fa-inverse"></i>
-        </span>
+    <app-drawer-layout>
+      <app-drawer slot="drawer" swipe-open>
+        drawer content
+      </app-drawer>
+
+      <div class="map" id="map"></div>
+      <div class="controls">
+        <div class="start">
+          <span class="fa-stack fa-2x">
+            <i class="fas fa-circle fa-stack-2x"></i>
+            <i class="fas fa-hiking fa-stack-1x fa-inverse"></i>
+          </span>
+        </div>
+        <div class="stop" style="display: none">
+          <span class="fa-stack fa-2x">
+            <i class="fas fa-circle fa-stack-2x"></i>
+            <i class="fas fa-pause fa-stack-1x fa-inverse"></i>
+          </span>
+        </div>
       </div>
-      <div class="stop" style="display: none">
-        <span class="fa-stack fa-2x">
-          <i class="fas fa-circle fa-stack-2x"></i>
-          <i class="fas fa-pause fa-stack-1x fa-inverse"></i>
-        </span>
-      </div>
-    </div>
+    </app-drawer-layout>
     <script src="index.js"></script>
   </body>
 </html>
