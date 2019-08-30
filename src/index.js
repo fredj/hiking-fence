@@ -12,6 +12,9 @@ import Monitor from './monitor';
 
 // ui
 import '@polymer/app-layout/app-layout.js';
+import '@polymer/paper-fab/paper-fab.js';
+import '@polymer/iron-icons/av-icons.js';
+
 
 /**
  * @type {LineString}
@@ -84,17 +87,8 @@ map.addLayer(
   })
 );
 
-const startButton = document.querySelector('.controls .start');
-const stopButton = document.querySelector('.controls .stop');
 
-startButton.addEventListener('click', () => {
-  monitor.tracking = true;
-  startButton.style.display = 'none';
-  stopButton.style.display = '';
-});
-
-stopButton.addEventListener('click', () => {
-  monitor.tracking = false;
-  startButton.style.display = '';
-  stopButton.style.display = 'none';
+document.querySelector('.monitor').addEventListener('click', event => {
+  monitor.tracking = !monitor.tracking;
+  event.target.icon = monitor.tracking ? "av:stop" : "av:play-arrow";
 });
