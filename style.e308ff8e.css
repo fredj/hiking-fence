@@ -5,11 +5,10 @@ html, body, .map {
   padding: 0;
 }
 
-.controls {
+.monitor {
   position: fixed;
-  bottom: 16px;
-  right: 16px;
-  color:#3399CC;
+  bottom: 1em;
+  right: 1em;
 }
 
 
