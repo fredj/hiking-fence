@@ -15,6 +15,9 @@ import '@polymer/app-layout/app-layout.js';
 import '@polymer/paper-fab/paper-fab.js';
 import '@polymer/iron-icons/av-icons.js';
 
+// firebase
+import * as firebase from 'firebase/app';
+import 'firebase/auth';
 
 /**
  * @type {LineString}
@@ -91,4 +94,36 @@ map.addLayer(
 document.querySelector('.monitor').addEventListener('click', event => {
   monitor.tracking = !monitor.tracking;
   event.target.icon = monitor.tracking ? "av:stop" : "av:play-arrow";
+});
+
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB5RUYYnKsSVOV__RTwiQS4h3Yi-pG-tbA",
+  authDomain: "hiking-fence.firebaseapp.com",
+  databaseURL: "https://hiking-fence.firebaseio.com",
+  projectId: "hiking-fence",
+  storageBucket: "",
+  messagingSenderId: "915490164223",
+  appId: "1:915490164223:web:ad338209a3b63196bdebca"
+};
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+
+const provider = new firebase.auth.GoogleAuthProvider();
+
+firebase.auth().signInWithPopup(provider).then(result => {
+  // This gives you a Google Access Token. You can use it to access the Google API.
+  const token = result.credential.accessToken;
+  // The signed-in user info.
+  const user = result.user;
+  // ...
+}).catch(error => {
+  // Handle Errors here.
+  const errorCode = error.code;
+  const errorMessage = error.message;
+  // The email of the user's account used.
+  const email = error.email;
+  // The firebase.auth.AuthCredential type that was used.
+  const credential = error.credential;
+  // ...
 });
