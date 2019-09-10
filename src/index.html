@@ -3,10 +3,16 @@
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
     <link rel="stylesheet" href="style.css">
   </head>
-  <body>
+  <body unresolved>
     <app-drawer-layout>
       <app-drawer slot="drawer" swipe-open>
-        drawer content
+        <dom-bind id="binding">
+          <template>
+            <!--[ <img src="{{user.photoURL}}"> ]-->
+            <div>{{user.displayName}}</div>
+            <div>{{user.email}}</div>
+          </template>
+        </dom-bind>
       </app-drawer>
 
       <div class="map" id="map"></div>

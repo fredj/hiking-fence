@@ -110,8 +110,11 @@ const firebaseConfig = {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 
+const autobind = document.querySelector('#binding')
+
 getUser().then(user => {
   if (user) {
+    autobind.user = user;
     console.log(user.displayName, user.email);
   } else {
     signIn();
