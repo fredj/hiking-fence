@@ -11,6 +11,8 @@ import {map, view} from './map';
 import {getBufferCoordinates} from './geom';
 import Monitor from './monitor';
 
+import './component/app-avatar.js';
+
 // ui
 import '@polymer/app-layout/app-layout.js';
 import '@polymer/paper-fab/paper-fab.js';
@@ -110,11 +112,11 @@ const firebaseConfig = {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 
-const autobind = document.querySelector('#binding')
+const avatar = document.querySelector('app-avatar')
 
 getUser().then(user => {
   if (user) {
-    autobind.user = user;
+    avatar.user = user;
     console.log(user.displayName, user.email);
   } else {
     signIn();
