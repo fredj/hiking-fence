@@ -19,7 +19,7 @@
     "@turf/buffer": "^5.1.5",
     "firebase": "^7.0.0",
     "lit-element": "^2.2.1",
-    "ol": "6.0.0-dev.14"
+    "ol": "6.0.0"
   },
   "devDependencies": {
     "eclint": "^2.8.1",
