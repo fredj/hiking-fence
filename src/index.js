@@ -15,8 +15,7 @@ import './component/app-avatar.js';
 
 // ui
 import '@polymer/app-layout/app-layout.js';
-import '@polymer/paper-fab/paper-fab.js';
-import '@polymer/iron-icons/av-icons.js';
+import '@material/mwc-fab';
 
 // firebase
 import * as firebase from 'firebase/app';
@@ -96,7 +95,7 @@ map.addLayer(
 
 document.querySelector('.monitor').addEventListener('click', event => {
   monitor.tracking = !monitor.tracking;
-  event.target.icon = monitor.tracking ? "av:stop" : "av:play-arrow";
+  event.target.icon = monitor.tracking ? "stop" : "play_arrow";
 });
 
 
