@@ -11,30 +11,18 @@ import {getBufferCoordinates} from './geom';
 import Monitor from './monitor';
 
 // ui
-import '@polymer/app-layout/app-layout.js';
-import '@polymer/paper-fab/paper-fab.js';
-import '@polymer/iron-icons/av-icons.js';
+import '@material/mwc-fab';
+
+import './style.css';
 
 
-/**
- * @type {LineString}
- */
 const segmentGeometry = new LineString([]);
 
-/**
- * @type {Feature}
- */
 const segmentFeature = new Feature(segmentGeometry);
 segmentFeature.setStyle(style.track);
 
-/**
- * @type {Polygon}
- */
 const bufferGeometry = new Polygon([]);
 
-/**
- * @type {Feature}
- */
 const bufferFeature = new Feature(bufferGeometry);
 bufferFeature.setStyle(style.buffer);
 
@@ -90,5 +78,5 @@ map.addLayer(
 
 document.querySelector('.monitor').addEventListener('click', event => {
   monitor.tracking = !monitor.tracking;
-  event.target.icon = monitor.tracking ? "av:stop" : "av:play-arrow";
+  event.target.icon = monitor.tracking ? 'stop' : 'play_arrow';
 });

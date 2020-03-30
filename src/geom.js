@@ -1,4 +1,4 @@
-import {GeoJSON} from 'ol/format';
+import GeoJSON from 'ol/format/GeoJSON';
 
 import buffer from '@turf/buffer';
 
