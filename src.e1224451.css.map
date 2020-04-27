@@ -1,0 +1,1 @@
+{"version":3,"sources":["style.css"],"names":[],"mappings":"AAAA,eACE,UAAW,CACX,WAAY,CACZ,QAAS,CACT,SACF,CAEA,SACE,cAAe,CACf,UAAW,CACX,SACF","file":"src.e1224451.css","sourceRoot":"../src","sourcesContent":["html, body, .map {\n  width: 100%;\n  height: 100%;\n  margin: 0;\n  padding: 0;\n}\n\n.monitor {\n  position: fixed;\n  bottom: 1em;\n  right: 1em;\n}\n"]}
