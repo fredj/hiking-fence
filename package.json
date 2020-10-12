@@ -12,7 +12,7 @@
     "last 1 Chrome version"
   ],
   "dependencies": {
-    "@material/mwc-fab": "^0.14.1",
+    "@material/mwc-fab": "^0.19.1",
     "@turf/buffer": "^5.1.5",
     "ol": "6.4.0"
   },
