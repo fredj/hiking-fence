@@ -2,7 +2,7 @@ import {Map, View} from 'ol';
 import {Tile as TileLayer} from 'ol/layer';
 import {TileJSON as TileJSONSource} from 'ol/source';
 
-const mapbox_token = 'pk.eyJ1IjoiZnJlZGoiLCJhIjoiMndGNGNINCJ9.yG14Tih1Vtuge0hsjL0grA';
+const token = 'RT4ksaerAd67XEsgQmSo';
 
 export const view = new View({
   center: [0, 0],
@@ -15,7 +15,8 @@ export const map = new Map({
     new TileLayer({
       preload: Infinity,
       source: new TileJSONSource({
-        url: `https://api.mapbox.com/v4/mapbox.outdoors.json?secure&access_token=${mapbox_token}`,
+        url: `https://api.maptiler.com/maps/topo/tiles.json?key=${token}`,
+        tileSize: 512,
         crossOrigin: 'anonymous'
       })
     })

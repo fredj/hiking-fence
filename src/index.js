@@ -3,7 +3,6 @@ import {Vector as VectorSource} from 'ol/source';
 import {Vector as VectorLayer} from 'ol/layer';
 import {GPX} from 'ol/format';
 import {LineString, Polygon} from 'ol/geom';
-import {loadFeaturesXhr} from 'ol/featureloader';
 
 import * as style from './style';
 import {map, view} from './map';
@@ -30,12 +29,16 @@ const searchParams = new URLSearchParams(location.search);
 
 const fenceWidth = searchParams.has('width') ? searchParams.get('width') : 75;
 
-const loader = loadFeaturesXhr(searchParams.get('gpx'), new GPX(), (features, projection) => {
+fetch(searchParams.get('gpx')).then(response => response.text()).then(data => {
+  const reader = new GPX();
+  const features = reader.readFeatures(data, {
+    featureProjection: view.getProjection()
+  });
   for (const feature of features) {
     const geom = feature.getGeometry();
     const type = geom.getType();
     if (type === 'MultiLineString' || type === 'LineString') {
-      geom.transform(projection, view.getProjection());
+      // geom.transform(projection, view.getProjection());
       if (geom.getLineString) {
         // MultiLineString
         segmentGeometry.setCoordinates(geom.getLineString(0).getCoordinates());
@@ -48,7 +51,6 @@ const loader = loadFeaturesXhr(searchParams.get('gpx'), new GPX(), (features, pr
     }
   }
 });
-loader();
 
 map.setTarget('map');
 
