@@ -14,7 +14,7 @@
   "dependencies": {
     "@material/mwc-fab": "^0.21.0",
     "@turf/buffer": "^6.3.0",
-    "ol": "6.5.0"
+    "ol": "6.13.0"
   },
   "devDependencies": {
     "eslint": "^7.25.0",
