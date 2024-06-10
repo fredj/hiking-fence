@@ -13,7 +13,7 @@
   ],
   "dependencies": {
     "@material/mwc-fab": "^0.21.0",
-    "@turf/buffer": "^6.3.0",
+    "@turf/buffer": "^7.0.0",
     "ol": "6.5.0"
   },
   "devDependencies": {
